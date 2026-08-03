@@ -41,7 +41,7 @@ The overlay closes on its own if you press nothing for ten seconds (you can chan
 
 After pressing the prefix, press one of the following keys:
 
-- `h` — **help**: reads out every key available in the overlay and briefly explains what each one does.
+- `h` — **help**: reads out every key available in the overlay and briefly explains what each one does. Press the key twice to view the help text in a browseable message dialog.
 - `w` — start or stop tracking the current **window** (any change in the whole foreground window).
 - `f` — start or stop tracking the control that currently has keyboard **focus**.
 - `m` — start or stop tracking the control under the **mouse pointer**.

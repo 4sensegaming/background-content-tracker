@@ -41,7 +41,7 @@ Překrytí se samo zavře, když deset sekund nic nestisknete (tuto prodlevu lze
 
 Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláves:
 
-- `h` – **nápověda**: přečte každou klávesu dostupnou v překrytí a stručně vysvětlí, k čemu slouží.
+- `h` – **nápověda**: přečte každou klávesu dostupnou v překrytí a stručně vysvětlí, k čemu slouží. Dvojím stiskem této klávesy zobrazíte zprávu s nápovědou v dialogovém okně pro pohodlnější čtení.
 - `w` – začne nebo přestane sledovat aktuální **okno** (jakoukoli změnu v celém okně v popředí).
 - `f` – začne nebo přestane sledovat prvek, který má právě **fokus** klávesnice.
 - `m` – začne nebo přestane sledovat prvek pod ukazatelem **myši**.

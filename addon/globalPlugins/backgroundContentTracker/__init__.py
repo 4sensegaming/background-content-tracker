@@ -122,9 +122,32 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self._pendingKind = None
 		self.overlay.open()
 
+	# --- the press-again-to-do-more rule ------------------------------------
+	# A command that has more to offer on a second press speaks first and leaves a
+	# press pending; the overlay stays open for that second press (see
+	# Overlay._handleKey), so it is captured here rather than reaching the app.
+	def _isSecondPress(self, pendingKind, uid):
+		"""True if this press repeats the one still pending, within the timeout."""
+		return (
+			self._pendingKind == pendingKind
+			and self._pendingUid == uid
+			and (time.time() - self._pendingTime) <= addonConfig.get("overlayTimeout")
+		)
+
+	def _awaitSecondPress(self, pendingKind, uid):
+		"""Record this press, so an identical one right after it counts as the second."""
+		self._pendingKind = pendingKind
+		self._pendingUid = uid
+		self._pendingTime = time.time()
+
 	# --- overlay command implementations ------------------------------------
 	def help(self):
-		self._pendingKind = None
+		"""Speak the overlay help; on a second press, open it in a browseable dialog.
+
+		The dialog is NVDA's own browseable message, the one the formatting
+		information is shown in. Its plain text is displayed pre-formatted, so the
+		newlines between the command lines survive as line breaks on screen.
+		"""
 		lines = [
 			# Translators: heading of the overlay help.
 			_("Background Content Tracker commands:"),
@@ -153,7 +176,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# Translators: overlay help line for the P key.
 			_("P: pause or resume all tracking"),
 		]
-		ui.message(u"\n".join(lines))
+		text = u"\n".join(lines)
+		if self._isSecondPress(("help", None), None):
+			self._pendingKind = None
+			# The dialog title reuses the add-on name, an existing message, rather
+			# than minting a new one.
+			ui.browseableMessage(text, _("Background Content Tracker"))
+		else:
+			ui.message(text)
+			self._awaitSecondPress(("help", None), None)
 
 	def _toggle(self, obj, kind):
 		self._pendingKind = None
@@ -198,21 +229,13 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self._infoOrFocus(("newest", None), target)
 
 	def _infoOrFocus(self, pendingKind, target):
-		now = time.time()
-		timeout = addonConfig.get("overlayTimeout")
-		if (
-			self._pendingKind == pendingKind
-			and self._pendingUid == target.uid
-			and (now - self._pendingTime) <= timeout
-		):
+		if self._isSecondPress(pendingKind, target.uid):
 			# Second identical press within the window: move the focus.
 			self._pendingKind = None
 			self._focus(target)
 		else:
 			self.notifier.speakInfo(target)
-			self._pendingKind = pendingKind
-			self._pendingUid = target.uid
-			self._pendingTime = now
+			self._awaitSecondPress(pendingKind, target.uid)
 
 	def _focus(self, target):
 		"""Move focus to a target, re-resolving a stale control object first.
