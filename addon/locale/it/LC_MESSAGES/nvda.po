@@ -4,7 +4,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: backgroundContentTracker 0.7.0\n"
+"Project-Id-Version: backgroundContentTracker 0.8.0\n"
 "Report-Msgid-Bugs-To: nvda-translations@groups.io\n"
 "POT-Creation-Date: 2026-08-02 18:51+0200\n"
 "PO-Revision-Date: 2026-07-12 00:00+0000\n"
