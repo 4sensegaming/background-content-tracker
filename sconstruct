@@ -122,6 +122,9 @@ for mdFile in env.Glob(docsDir/"*/*.md"):
 	moFile = moByLang.get(lang)
 	htmlFile = env.md2html(mdFile, moFile=moFile, mdExtensions=buildVars.markdownExtensions)
 	env.Depends(htmlFile, mdFile)
+	# The title also carries the add-on version, which lives in neither the markdown nor the mo
+	# file, so a version bump on its own has to invalidate the generated html as well.
+	env.Depends(htmlFile, env.Value(env["addon_info"]["addon_version"]))
 	if moFile:
 		env.Depends(htmlFile, moFile)
 	env.Depends(addon, htmlFile)
