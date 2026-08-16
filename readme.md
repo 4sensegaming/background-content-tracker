@@ -124,6 +124,10 @@ NVDA itself can speak and/or beep native progress bar controls, even in the back
 
 When enabled, the add-on will not announce consecutive changes to the same control (part of the window) that has already been announced once, such as timers or countdowns changing every second, like the Claude app counting how long it took the model to think. These controls can often be more annoying than helpful, as they do not provide any real, useful information by themselves. Therefore, you can suppress them being announced as changes by this add-on if you are really interested in the actual output. The default value is enabled.
 
+#### **Consider changed title a disappeared target** (checkbox)
+
+When enabled, if the title of a window being tracked changes, the add-on will consider it a different window and thus act as if the original target has disappeared, even though the physical window is still the same one in the system. The default value is disabled.
+
 ### **Beep parameters** (group)
 
 The options in this group are only available when the **Beep** checkbox above is enabled.

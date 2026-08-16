@@ -43,6 +43,16 @@ def appNameOf(obj):
 	return _safe(lambda: obj.appModule.appName) or ""
 
 
+def titleOf(obj):
+	"""The object's current title (its name), or "".
+
+	Read live from the object rather than taken from the identity descriptor,
+	which records the title the target was *added* with: telling those two apart
+	is the whole point of "Consider changed title a disappeared target".
+	"""
+	return _safe(lambda: obj.name) or ""
+
+
 def objectIdentity(obj):
 	"""Return a JSON-serialisable identity descriptor for an NVDAObject.
 
@@ -152,6 +162,12 @@ class TrackedTarget(object):
 		#: Whether the target's application was in the foreground at the last
 		#: check. Used to re-baseline silently when the user switches away.
 		self.wasInForeground = False
+		#: The window title this target was added with, or ``None``. Only ever
+		#: set for a whole-window target added while "Consider changed title a
+		#: disappeared target" was on; a window that no longer carries it is then
+		#: treated as gone rather than as merely changed. Filled in by
+		#: ``Monitor.onAdded``, because the option is read there.
+		self.trackedTitle = None
 
 	@property
 	def name(self):

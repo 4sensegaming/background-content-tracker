@@ -122,7 +122,11 @@ Samotné NVDA umí ohlašovat nativní indikátory průběhu slovně anebo píp�
 
 #### **Ignorovat opakovaně se měnící prvky** (zaškrtávací políčko)
 
-Pokud je zaškrtnuto, doplněk nebude oznamovat po sobě jdoucí změny stejného prvku (části okna), který již byl jednou oznámen, například časovače nebo odpočtu měnícího se každou sekundu, jako třeba aplikace Claude počítající, jak dlouho modelu trvalo přemýšlení. Tyto prvky bývají často spíše na obtíž než k užitku, protože samy o sobě neposkytují žádnou skutečnou, užitečnou informaci. Proto si můžete nastavit, aby je doplněk neoznamoval jako změny, pokud vás ve skutečnosti zajímá samotný výstup. Výchozí hodnota je zaškrtnuto.
+Pokud je zaškrtnuto, doplněk nebude oznamovat po sobě jdoucí změny stejného prvku (části okna), který už byl jednou oznámen, například časovače nebo odpočtu měnícího se každou sekundu, jako třeba aplikace Claude počítající, jak dlouho modelu trvalo přemýšlení. Tyto prvky bývají často spíše na obtíž než k užitku, protože samy o sobě neposkytují žádnou skutečnou, užitečnou informaci. Proto si můžete nastavit, aby je doplněk neoznamoval jako změny, pokud vás ve skutečnosti zajímá samotný výstup. Výchozí hodnota je zaškrtnuto.
+
+#### **Považovat změnu názvu za zmizení cíle** (zaškrtávací políčko)
+
+Pokud je zaškrtnuto a změní se název okna, které sledujete, doplněk ho začne považovat za jiné okno a tedy se zachová stejně, jako by původní cíl zmizel, přestože fyzické okno v systému je pořád stejné. Výchozí hodnota je nezaškrtnuto.
 
 ### **Parametry pípnutí** (skupina)
 

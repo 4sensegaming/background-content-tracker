@@ -484,10 +484,10 @@ class FakeBigList(NVDAObject):
 
 
 class FakeNotifier:
-    def __init__(self): self.changes = []
+    def __init__(self): self.changes = []; self.tracking = []; self.stopped = []
     def announceChange(self, target, delta): self.changes.append(delta)
-    def announceTracking(self, target): pass
-    def announceStopped(self, target): pass
+    def announceTracking(self, target): self.tracking.append(target)
+    def announceStopped(self, target): self.stopped.append(target)
 
 
 def read(obj, ignoreProgressBars=False):
@@ -1180,6 +1180,92 @@ while not QUEUED and _t.time() < _deadline:
 drain()
 check(handled == [(relTarget, False)], "a failed lookup still reaches the main thread")
 
+# ============ new option: Consider changed title a disappeared target =======
+# A window that renames itself is a different window as far as the user is
+# concerned -- another document, another page -- even though the system still
+# calls it the same one. With this option on, such a target therefore goes down
+# the DISAPPEARANCE path (announced as gone, and dropped or kept exactly as the
+# list-management options dictate) instead of the new title's content being
+# announced as an ordinary change.
+def sweep(m):
+    """One whole monitor poll over every target, then run what it queued."""
+    MONITOR["on"] = True
+    try:
+        m._checkAllTargets(addonConfig.snapshot())
+    finally:
+        MONITOR["on"] = False
+    drain()
+
+ROOTOWNER.clear(); ROOTOWNER.update({100: 100, 200: 200})
+FG["hwnd"] = 200
+addonConfig.setMany({"titleChangeDisappears": True, "rememberTargets": False,
+                     "forgetOnDisappear": True, "changesAtOnce": 0,
+                     "ignoreRepeatedControls": False})
+regTT = targets.TargetRegistry(); notifTT = FakeNotifier()
+monTT = monitor.Monitor(regTT, notifTT)
+ttWin = FakeContainer("Doc A - Editor", [FakeLeaf("line 1")], hwnd=100)
+tgTT = regTT.add(ttWin, "window"); monTT.onAdded(tgTT)
+check(tgTT.trackedTitle == "Doc A - Editor", "title: the title is cached when the target is added")
+ttWin.add(FakeLeaf("line 2")); sweep(monTT)
+check(notifTT.changes == ["line 2"] and notifTT.stopped == [],
+      "title: content arriving under the same title is an ordinary change")
+ttWin.name = "Doc B - Editor"; ttWin.add(FakeLeaf("line 3")); sweep(monTT)
+check(notifTT.stopped == [tgTT], "title: a renamed window is announced as gone")
+check(notifTT.changes == ["line 2"], "title: nothing in the renamed window is announced as a change")
+check(len(regTT) == 0, "title: 'forget when they disappear' drops the renamed window")
+
+# With the option off, the very same rename is nothing but the window carrying on.
+addonConfig.set("titleChangeDisappears", False)
+regTO = targets.TargetRegistry(); notifTO = FakeNotifier()
+monTO = monitor.Monitor(regTO, notifTO)
+oWin = FakeContainer("Doc A - Editor", [FakeLeaf("line 1")], hwnd=100)
+tgTO = regTO.add(oWin, "window"); monTO.onAdded(tgTO)
+check(tgTO.trackedTitle is None, "title off: no title is cached to hold the target to")
+oWin.name = "Doc B - Editor"; oWin.add(FakeLeaf("line 2")); sweep(monTO)
+check(notifTO.stopped == [] and len(regTO) == 1, "title off: a renamed window is still tracked")
+check(notifTO.changes == ["line 2"], "title off: only its content is announced")
+
+# The option is about whole windows: a single control tracked with F is exempt,
+# exactly like the other options in the Window tracking behavior group.
+addonConfig.set("titleChangeDisappears", True)
+regTF = targets.TargetRegistry(); notifTF = FakeNotifier()
+monTF = monitor.Monitor(regTF, notifTF)
+fCtrl = FakeContainer("Message list", [FakeLeaf("Alice: hi")], hwnd=100)
+tgTF = regTF.add(fCtrl, "focus"); monTF.onAdded(tgTF)
+check(tgTF.trackedTitle is None, "title: a control target caches no title")
+fCtrl.name = "Message list (1 unread)"; sweep(monTF)
+check(notifTF.stopped == [] and len(regTF) == 1, "title: a renamed control target is not a disappearance")
+
+# Remember on, forget off: the renamed window is kept as a detached entry and
+# re-attached only once it carries its original title again. _locate is stubbed
+# to always find the window, standing in for an identity match that ignores the
+# name (the automation id short-circuit) -- without the title check in the
+# relocation pass, the window would be re-attached under its new title at once.
+_savedRelocate = monitor.RELOCATE_INTERVAL
+monitor.RELOCATE_INTERVAL = 0.0                 # a relocation pass on every sweep
+try:
+    addonConfig.setMany({"rememberTargets": True, "forgetOnDisappear": False})
+    regTR = targets.TargetRegistry(); notifTR = FakeNotifier()
+    monTR = monitor.Monitor(regTR, notifTR)
+    rWin = FakeContainer("Doc A - Editor", [FakeLeaf("line 1")], hwnd=100)
+    tgTR = regTR.add(rWin, "window"); monTR.onAdded(tgTR)
+    monTR._locate = lambda identity: rWin
+    rWin.name = "Doc B - Editor"; sweep(monTR)
+    check(notifTR.stopped == [tgTR] and tgTR.obj is None, "title: the renamed window is detached")
+    check(len(regTR) == 1, "title: 'forget' off keeps the renamed window as a detached entry")
+    sweep(monTR); sweep(monTR)
+    check(notifTR.tracking == [], "title: it is not re-attached while it carries the new title")
+    rWin.name = "Doc A - Editor"; sweep(monTR)
+    check(notifTR.tracking == [tgTR] and tgTR.obj is rWin,
+          "title: it re-attaches once the original title comes back")
+    check(tgTR.trackedTitle == "Doc A - Editor", "title: re-attaching caches the title again")
+    rWin.add(FakeLeaf("line 2")); sweep(monTR)
+    check(notifTR.changes == ["line 2"], "title: the re-attached window is tracked as before")
+finally:
+    monitor.RELOCATE_INTERVAL = _savedRelocate
+addonConfig.setMany({"titleChangeDisappears": False, "rememberTargets": False,
+                     "forgetOnDisappear": True})
+
 # ============ batched configuration writes ============
 # Every write re-reads the whole settings snapshot, so the settings panel writes
 # its eighteen values in one go rather than paying eighteen full re-reads.
@@ -1198,6 +1284,7 @@ check(addonConfig.get("trackingInterval") == 1, "default trackingInterval 1")
 check(addonConfig.get("changesAtOnce") == 5, "default changesAtOnce 5")
 check(addonConfig.get("ignoreProgressBars") is True, "default ignoreProgressBars True")
 check(addonConfig.get("ignoreRepeatedControls") is True, "default ignoreRepeatedControls True")
+check(addonConfig.get("titleChangeDisappears") is False, "default titleChangeDisappears False")
 
 print("\n%d/%d passed" % (sum(results), len(results)))
 sys.exit(0 if all(results) else 1)

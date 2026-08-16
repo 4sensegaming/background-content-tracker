@@ -67,6 +67,9 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: suppress repeated announcements of the same control (e.g. a timer).
 		self.ignoreRepeatedCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore &repeatedly changing controls")))
 		self.ignoreRepeatedCb.SetValue(addonConfig.get("ignoreRepeatedControls"))
+		# Translators: treat a window that renames itself as a target that has disappeared.
+		self.titleChangeCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Consider c&hanged title a disappeared target")))
+		self.titleChangeCb.SetValue(addonConfig.get("titleChangeDisappears"))
 
 		# Group: Beep parameters ---------------------------------------------
 		# Translators: group of options for the beep, available when Beep is on.
@@ -160,8 +163,8 @@ class BCTSettingsPanel(SettingsPanel):
 
 	def onSave(self):
 		# Written in one go: each individual write re-reads every setting into the
-		# monitor thread's snapshot, so eighteen separate writes would cost
-		# eighteen full re-reads.
+		# monitor thread's snapshot, so nineteen separate writes would cost
+		# nineteen full re-reads.
 		addonConfig.setMany({
 			"enabled": self.enabledCb.IsChecked(),
 			"changeBeep": self.beepCb.IsChecked(),
@@ -170,6 +173,7 @@ class BCTSettingsPanel(SettingsPanel):
 			"changesAtOnce": self.changesAtOnceCtrl.GetValue(),
 			"ignoreProgressBars": self.ignoreProgressCb.IsChecked(),
 			"ignoreRepeatedControls": self.ignoreRepeatedCb.IsChecked(),
+			"titleChangeDisappears": self.titleChangeCb.IsChecked(),
 			"beepDuration": self.durationCtrl.GetValue(),
 			"beepPitch": self.pitchCtrl.GetValue(),
 			"announceTargetType": self.annTypeCb.IsChecked(),

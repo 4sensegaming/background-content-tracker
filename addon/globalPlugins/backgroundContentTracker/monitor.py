@@ -434,18 +434,29 @@ class Monitor(object):
 
 	def onAdded(self, target):
 		obj = target.obj
+		settings = addonConfig.snapshot()
 		target.lastChangeTime = None
 		target.announcedRun = 0
 		target.announcedControls = {}
 		target.pollTick = 0
 		target.wasInForeground = isInForegroundApp(obj)
+		# The title a whole-window target is held to for the rest of its life, so
+		# that a window which later renames itself can be told from the one that
+		# was actually added. Captured only while the option is on: with it off
+		# there is nothing to hold the target to, and a title recorded now would
+		# be the wrong one by the time the option was switched on.
+		target.trackedTitle = (
+			targetsMod.titleOf(obj)
+			if target.kind == "window" and settings["titleChangeDisappears"]
+			else None
+		)
 		# Only take a baseline now if the target is already in the background.
 		# Otherwise it is taken the moment the user switches away from it, which
 		# also spares us from sweeping the application the user is working in.
 		if target.wasInForeground:
 			target.cachedNodes = {}
 			return
-		ignorePB = bool(addonConfig.snapshot()["ignoreProgressBars"]) and target.kind == "window"
+		ignorePB = bool(settings["ignoreProgressBars"]) and target.kind == "window"
 		target.cachedNodes = dict(_sweepEntries(obj, ignorePB))
 
 	# --- polling -------------------------------------------------------------
@@ -496,7 +507,7 @@ class Monitor(object):
 				if now - self._lastRelocate >= RELOCATE_INTERVAL:
 					self._lastRelocate = now
 					for target in detached:
-						self._tryRelocate(target)
+						self._tryRelocate(target, settings)
 		if not self._startupChecked:
 			# The first poll has run, and (relocation being synchronous on this
 			# thread) any remembered target that could be found has been attached
@@ -509,7 +520,7 @@ class Monitor(object):
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
-			if not target.isAlive():
+			if not target.isAlive() or not self._keptItsTitle(target, target.obj, settings):
 				self._handleDisappeared(target, forget)
 				continue
 			self._checkTargetContent(target, settings, announce)
@@ -633,6 +644,27 @@ class Monitor(object):
 			surfaced.append((key, text))
 		return _joinSurfaced(surfaced)
 
+	def _keptItsTitle(self, target, obj, settings):
+		"""Whether ``obj`` still carries the title ``target`` was added with.
+
+		The test behind "Consider changed title a disappeared target": a window
+		that renames itself is a *different* window as far as the user is
+		concerned — a browser window showing another page, an editor holding
+		another document — even though the system still calls it the same one.
+		A negative answer therefore takes the target down the disappearance path
+		(so the list is managed exactly as for a window that closed) rather than
+		announcing the new title's content as a change.
+
+		Always true where the option cannot apply: for anything that is not a
+		whole window, while the option is off, and for a target added before it
+		was switched on, which has no remembered title to be held to.
+		"""
+		if target.kind != "window" or not settings["titleChangeDisappears"]:
+			return True
+		if target.trackedTitle is None:
+			return True
+		return targetsMod.titleOf(obj) == target.trackedTitle
+
 	def _handleDisappeared(self, target, forget):
 		target.obj = None
 		# The user is always told a target is gone, however the list is managed.
@@ -689,10 +721,20 @@ class Monitor(object):
 			daemon=True,
 		).start()
 
-	def _tryRelocate(self, target):
+	def _tryRelocate(self, target, settings=None):
+		if settings is None:
+			settings = addonConfig.snapshot()
 		obj = self._locate(target.identity)
-		if obj is not None:
-			self._attach(target, obj)
+		if obj is None:
+			return
+		if not self._keptItsTitle(target, obj, settings):
+			# A window this target was taken down from because it renamed itself.
+			# The identity match can reach it through a stable automation id alone,
+			# so without this it would be re-attached (and its title re-cached) on
+			# the very next relocation pass, which is the opposite of what the
+			# option asks for. It re-attaches when the old title comes back.
+			return
+		self._attach(target, obj)
 
 	def _locate(self, identity):
 		"""The live NVDAObject whose identity matches ``identity``, or ``None``."""
