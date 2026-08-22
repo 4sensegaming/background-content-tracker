@@ -1,14 +1,14 @@
 # Background Content Tracker: Polish translation.
 # Copyright (C) 2026 Lukáš Hosnedl
 # This file is distributed under the same license as the add-on.
+# Lukáš Hosnedl <lukas@4sensegaming.cz>, 2026.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 0.9.0\n"
-"Report-Msgid-Bugs-To: nvda-translations@groups.io\n"
-"POT-Creation-Date: 2026-08-08 10:46+0200\n"
+"POT-Creation-Date: 2026-08-08 10:45+0200\n"
 "PO-Revision-Date: 2026-07-12 00:00+0000\n"
-"Last-Translator: 4Sense Gaming <lukas@4sensegaming.cz>\n"
+"Last-Translator: Lukáš Hosnedl <lukas@4sensegaming.cz>\n"
 "Language-Team: Polish\n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
@@ -39,6 +39,7 @@ msgstr "obiekt nawigatora"
 
 #. Translators: a start-tracking item in the target menu, e.g. "Track window: Claude".
 #: addon\globalPlugins\backgroundContentTracker\menu.py:52
+#, python-brace-format
 msgid "Track {source}: {name}"
 msgstr "Śledź {source}: {name}"
 
@@ -71,6 +72,7 @@ msgstr "przed chwilą"
 
 #. Translators: relative time in seconds. {n} is the number of seconds.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:49
+#, python-brace-format
 msgid "{n} second ago"
 msgid_plural "{n} seconds ago"
 msgstr[0] "{n} sekundę temu"
@@ -79,6 +81,7 @@ msgstr[2] "{n} sekund temu"
 
 #. Translators: relative time in minutes. {n} is the number of minutes.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:53
+#, python-brace-format
 msgid "{n} minute ago"
 msgid_plural "{n} minutes ago"
 msgstr[0] "{n} minutę temu"
@@ -87,6 +90,7 @@ msgstr[2] "{n} minut temu"
 
 #. Translators: relative time in hours. {n} is the number of hours.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:57
+#, python-brace-format
 msgid "{n} hour ago"
 msgid_plural "{n} hours ago"
 msgstr[0] "{n} godzinę temu"
@@ -98,16 +102,19 @@ msgstr[2] "{n} godzin temu"
 #. re-attached in a quick loop at start-up, and an interrupting message
 #. would leave only the last one audible.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:69
+#, python-brace-format
 msgid "Tracking {target}"
 msgstr "Śledzę {target}"
 
 #. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:74
+#, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr "Zakończono śledzenie {target}"
 
 #. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:126
+#, python-brace-format
 msgid "No target in slot {slot}"
 msgstr "Brak celu w slocie {slot}"
 

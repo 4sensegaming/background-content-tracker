@@ -8,13 +8,3 @@ manifest.ini
 *.nvda-addon
 .sconsign.dblite
 /[0-9]*.[0-9]*.[0-9]*.json
-
-# Local scratch: captured test output, not part of the project.
-logic_before.txt
-reg_before.txt
-
-# GNU gettext binaries. Building the add-on needs msgfmt and xgettext on PATH
-# (they compile the translations); they are kept in this directory locally, but
-# they are third-party executables and do not belong in the repository.
-msgfmt.exe
-xgettext.exe

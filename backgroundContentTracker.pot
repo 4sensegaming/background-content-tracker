@@ -1,22 +1,20 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# Background Content Tracker NVDA Add-on
+# Copyright (C) 2026 Lukáš Hosnedl
+# This file is distributed under the same license as the add-on package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 0.9.0\n"
-"Report-Msgid-Bugs-To: nvda-translations@groups.io\n"
-"POT-Creation-Date: 2026-08-08 10:46+0200\n"
+"POT-Creation-Date: 2026-08-08 10:45+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #. Translators: the "window" source in the target menu's start-tracking items.
 #: addon\globalPlugins\backgroundContentTracker\menu.py:42
@@ -40,6 +38,7 @@ msgstr ""
 
 #. Translators: a start-tracking item in the target menu, e.g. "Track window: Claude".
 #: addon\globalPlugins\backgroundContentTracker\menu.py:52
+#, python-brace-format
 msgid "Track {source}: {name}"
 msgstr ""
 
@@ -72,6 +71,7 @@ msgstr ""
 
 #. Translators: relative time in seconds. {n} is the number of seconds.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:49
+#, python-brace-format
 msgid "{n} second ago"
 msgid_plural "{n} seconds ago"
 msgstr[0] ""
@@ -79,6 +79,7 @@ msgstr[1] ""
 
 #. Translators: relative time in minutes. {n} is the number of minutes.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:53
+#, python-brace-format
 msgid "{n} minute ago"
 msgid_plural "{n} minutes ago"
 msgstr[0] ""
@@ -86,6 +87,7 @@ msgstr[1] ""
 
 #. Translators: relative time in hours. {n} is the number of hours.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:57
+#, python-brace-format
 msgid "{n} hour ago"
 msgid_plural "{n} hours ago"
 msgstr[0] ""
@@ -96,16 +98,19 @@ msgstr[1] ""
 #. re-attached in a quick loop at start-up, and an interrupting message
 #. would leave only the last one audible.
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:69
+#, python-brace-format
 msgid "Tracking {target}"
 msgstr ""
 
 #. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:74
+#, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr ""
 
 #. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
 #: addon\globalPlugins\backgroundContentTracker\notifier.py:126
+#, python-brace-format
 msgid "No target in slot {slot}"
 msgstr ""
 
@@ -155,8 +160,7 @@ msgstr ""
 #. to be shown on installation and add-on information found in add-on store
 #: addon\globalPlugins\backgroundContentTracker\settings.py:26
 #: addon\globalPlugins\backgroundContentTracker\__init__.py:40
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:184
-#: buildVars.py:21
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:184 buildVars.py:21
 msgid "Background Content Tracker"
 msgstr ""
 

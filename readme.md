@@ -1,6 +1,7 @@
 # Background Content Tracker
 
 * Author: Lukáš Hosnedl
+* Minimum NVDA version: 2026.1
 * Last tested NVDA version: 2026.3
 
 ## Description
