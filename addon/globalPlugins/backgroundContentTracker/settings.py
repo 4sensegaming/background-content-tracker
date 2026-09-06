@@ -7,6 +7,11 @@
 dialog. Options are grouped exactly as in the documentation, dependent controls
 are enabled/disabled to match, and values are read from and written to NVDA's
 own configuration.
+
+Everything here is the *global* configuration, which every target inherits. A
+few of these settings (:data:`addonConfig.LOCAL_KEYS`) can also be set on a
+single target, which then follows its own value instead; that is not done from
+this panel, and changing a global here never disturbs a target that has one.
 """
 
 import addonHandler
@@ -134,6 +139,10 @@ class BCTSettingsPanel(SettingsPanel):
 		))
 		self.sortRadio.SetSelection(1 if addonConfig.get("targetSorting") == "newest" else 0)
 
+		# Translators: also track a target while its own application is in the foreground.
+		self.trackForegroundCb = sHelper.addItem(wx.CheckBox(self, label=_("Trac&k even foreground targets")))
+		self.trackForegroundCb.SetValue(addonConfig.get("trackForegroundTargets"))
+
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self.rememberCb = sHelper.addItem(wx.CheckBox(self, label=_("&Remember targets")))
 		self.rememberCb.SetValue(addonConfig.get("rememberTargets"))
@@ -163,8 +172,8 @@ class BCTSettingsPanel(SettingsPanel):
 
 	def onSave(self):
 		# Written in one go: each individual write re-reads every setting into the
-		# monitor thread's snapshot, so nineteen separate writes would cost
-		# nineteen full re-reads.
+		# monitor thread's snapshot, so twenty separate writes would cost twenty
+		# full re-reads.
 		addonConfig.setMany({
 			"enabled": self.enabledCb.IsChecked(),
 			"changeBeep": self.beepCb.IsChecked(),
@@ -183,6 +192,7 @@ class BCTSettingsPanel(SettingsPanel):
 			"menuChangedContent": self.menuContentCb.IsChecked(),
 			"overlayTimeout": self.overlayTimeoutCtrl.GetValue(),
 			"targetSorting": "newest" if self.sortRadio.GetSelection() == 1 else "oldest",
+			"trackForegroundTargets": self.trackForegroundCb.IsChecked(),
 			"rememberTargets": self.rememberCb.IsChecked(),
 			"forgetOnDisappear": self.forgetCb.IsChecked(),
 		})

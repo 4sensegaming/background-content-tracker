@@ -91,6 +91,8 @@ def isInForegroundApp(obj):
 	Such targets are neither read nor announced by the monitor: the whole point of
 	the add-on is to report what you are *not* currently looking at. The query
 	commands use it too, to report "no changes" for a target you are looking at.
+	Both make an exception for a target whose "Track even foreground targets" is
+	on, which is read and announced wherever it is.
 
 	This mirrors NVDA's own foreground test in ``eventHandler.shouldAcceptEvent``.
 	A simple "is it the foreground window" comparison is not enough: an owned
@@ -124,13 +126,20 @@ def isInForegroundApp(obj):
 class TrackedTarget(object):
 	"""One tracked window or control, plus its change-detection state."""
 
-	def __init__(self, uid, obj, kind):
+	def __init__(self, uid, obj, kind, overrides=None):
 		#: Unique, monotonically increasing id. Also encodes insertion order.
 		self.uid = uid
 		#: The live NVDAObject, or ``None`` when the target is detached (gone).
 		self.obj = obj
 		#: How the target was added: "window", "focus", "mouse" or "navigator".
 		self.kind = kind
+		#: This target's own values for the settings in
+		#: :data:`addonConfig.LOCAL_KEYS`. Holds only the ones actually
+		#: overridden: every other setting is inherited from the global
+		#: configuration, so one the user changes later still moves this target.
+		#: Rebound wholesale by :meth:`setOverride`, never mutated in place,
+		#: because it is written on the main thread and read on the monitor one.
+		self.overrides = dict(overrides) if overrides else {}
 		#: Identity descriptor captured at creation, for re-location/persistence.
 		self.identity = objectIdentity(obj) if obj is not None else {}
 		self.createdTime = time.time()
@@ -159,15 +168,49 @@ class TrackedTarget(object):
 		self.lastDelta = ""
 		#: ``time.time()`` of the last detected change, or ``None``.
 		self.lastChangeTime = None
-		#: Whether the target's application was in the foreground at the last
-		#: check. Used to re-baseline silently when the user switches away.
+		#: Whether the target's application was in the foreground at the previous
+		#: check. Only the previous state: what the monitor does about it depends
+		#: on whether the target is tracked in the foreground as well.
 		self.wasInForeground = False
+		#: Whether the cached snapshot predates a spell the monitor did not read —
+		#: because the user was in the target's application, or because the target
+		#: was added while they were there. Such a snapshot is re-taken silently
+		#: instead of being diffed, so that nothing which happened while nobody
+		#: was looking is announced afterwards.
+		self.staleCache = False
 		#: The window title this target was added with, or ``None``. Only ever
 		#: set for a whole-window target added while "Consider changed title a
 		#: disappeared target" was on; a window that no longer carries it is then
 		#: treated as gone rather than as merely changed. Filled in by
 		#: ``Monitor.onAdded``, because the option is read there.
 		self.trackedTitle = None
+
+	def setting(self, key, settings=None):
+		"""The effective value of a local setting: this target's, or the global.
+
+		``settings`` is a configuration snapshot. The monitor thread always has
+		one to hand and passes it, because reading NVDA's live configuration
+		belongs on the main thread; callers on the main thread can leave it out.
+		"""
+		if key in self.overrides:
+			return self.overrides[key]
+		if settings is None:
+			settings = addonConfig.snapshot()
+		return settings[key]
+
+	def setOverride(self, key, value):
+		"""Give this target its own value for a setting, or drop the override.
+
+		A ``value`` of ``None`` removes the override, so the target inherits the
+		global setting again. The dictionary is rebound rather than modified in
+		place: it is written here on the main thread and read on the monitor one.
+		"""
+		overrides = dict(self.overrides)
+		if value is None:
+			overrides.pop(key, None)
+		else:
+			overrides[key] = bool(value)
+		self.overrides = overrides
 
 	@property
 	def name(self):
@@ -210,12 +253,17 @@ class TrackedTarget(object):
 	def hasReportableChange(self):
 		"""Whether a manual query should surface a cached change for this target.
 
-		False while the target is in the foreground — the user is looking at it, so
-		any delta the monitor cached belongs to an earlier spell in the background —
-		and false before the target has changed at all since it was baselined. In
-		both cases the query commands and the menu report "no changes" instead.
+		False before the target has changed at all since it was baselined, and —
+		unless it is tracked in the foreground — false while the target is in the
+		foreground, because the user is looking at it and any delta the monitor
+		cached belongs to an earlier spell in the background. In both cases the
+		query commands and the menu report "no changes" instead. A target tracked
+		in the foreground is read while the user is there, so its cached delta
+		describes what is on screen now and is reported like any other.
 		"""
-		return self.lastChangeTime is not None and not self.isInForeground()
+		if self.lastChangeTime is None:
+			return False
+		return self.setting("trackForegroundTargets") or not self.isInForeground()
 
 	def _reactivateWindow(self, obj):
 		"""Un-minimise and bring the target's top-level window to the foreground.
@@ -301,15 +349,15 @@ class TargetRegistry(object):
 		self._nextUid += 1
 		return uid
 
-	def add(self, obj, kind):
+	def add(self, obj, kind, overrides=None):
 		with self._lock:
-			target = TrackedTarget(self._newUid(), obj, kind)
+			target = TrackedTarget(self._newUid(), obj, kind, overrides)
 			self._targets.append(target)
 			return target
 
-	def addDetached(self, identity, kind):
+	def addDetached(self, identity, kind, overrides=None):
 		with self._lock:
-			target = TrackedTarget(self._newUid(), None, kind)
+			target = TrackedTarget(self._newUid(), None, kind, overrides)
 			target.identity = identity or {}
 			self._targets.append(target)
 			return target

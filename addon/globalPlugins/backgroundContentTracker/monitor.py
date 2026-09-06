@@ -16,9 +16,15 @@ Two rules keep the behaviour honest:
 * A target is never read, let alone announced, while its application is in the
   foreground (:func:`isInForegroundApp`). The add-on reports what you are *not*
   looking at, so the app you are working in is left completely alone.
-* The moment a target moves from the foreground to the background, its snapshot
-  is re-taken silently. Nothing that happened while you were sitting in the
-  application can therefore be announced at you when you switch away.
+* Whenever a snapshot predates a spell that was never read, it is re-taken
+  silently. Nothing that happened while you were sitting in the application can
+  therefore be announced at you when you switch away.
+
+Both rules bend for a target whose "Track even foreground targets" is set: it is
+read and announced wherever its application is, and since it is never left
+unread, there is nothing stale for it to swallow either. Each of these decisions
+is taken per target, through :meth:`.TrackedTarget.setting`, so one target can
+differ from the global configuration in any setting that has a local equivalent.
 
 Reading a target means building a **keyed snapshot of its whole accessible
 subtree** (:func:`_sweepEntries`): one entry per control, keyed by its position
@@ -447,17 +453,22 @@ class Monitor(object):
 		# be the wrong one by the time the option was switched on.
 		target.trackedTitle = (
 			targetsMod.titleOf(obj)
-			if target.kind == "window" and settings["titleChangeDisappears"]
+			if target.kind == "window" and target.setting("titleChangeDisappears", settings)
 			else None
 		)
 		# Only take a baseline now if the target is already in the background.
-		# Otherwise it is taken the moment the user switches away from it, which
-		# also spares us from sweeping the application the user is working in.
+		# Otherwise it is left to the first poll that actually reads the target:
+		# when the user switches away from it, or on the very next poll if it is
+		# tracked in the foreground as well. Either way, the sweep of the
+		# application the user is working in stays off the main thread, which is
+		# where this runs.
 		if target.wasInForeground:
 			target.cachedNodes = {}
+			target.staleCache = True
 			return
-		ignorePB = bool(settings["ignoreProgressBars"]) and target.kind == "window"
+		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and target.kind == "window"
 		target.cachedNodes = dict(_sweepEntries(obj, ignorePB))
+		target.staleCache = False
 
 	# --- polling -------------------------------------------------------------
 	def _run(self):
@@ -498,16 +509,16 @@ class Monitor(object):
 				log.error("Error in Background Content Tracker poll", exc_info=True)
 
 	def _checkAllTargets(self, settings, announce=True):
-		forget = settings["forgetOnDisappear"]
-		remember = settings["rememberTargets"]
-		if remember:
-			detached = self.registry.detachedTargets()
-			if detached:
-				now = time.time()
-				if now - self._lastRelocate >= RELOCATE_INTERVAL:
-					self._lastRelocate = now
-					for target in detached:
-						self._tryRelocate(target, settings)
+		remembered = [
+			target for target in self.registry.detachedTargets()
+			if target.setting("rememberTargets", settings)
+		]
+		if remembered:
+			now = time.time()
+			if now - self._lastRelocate >= RELOCATE_INTERVAL:
+				self._lastRelocate = now
+				for target in remembered:
+					self._tryRelocate(target, settings)
 		if not self._startupChecked:
 			# The first poll has run, and (relocation being synchronous on this
 			# thread) any remembered target that could be found has been attached
@@ -515,13 +526,17 @@ class Monitor(object):
 			# gone rather than merely not yet re-located — so this is where the
 			# "No targets to track" heads-up belongs, not on a start-up timer.
 			self._startupChecked = True
-			if remember and len(self.registry) and not self.registry.liveTargets():
+			if (
+				len(self.registry)
+				and not self.registry.liveTargets()
+				and any(t.setting("rememberTargets", settings) for t in self.registry)
+			):
 				self._callOnMainThread(self.notifier.noTargets)
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
 			if not target.isAlive() or not self._keptItsTitle(target, target.obj, settings):
-				self._handleDisappeared(target, forget)
+				self._handleDisappeared(target, target.setting("forgetOnDisappear", settings))
 				continue
 			self._checkTargetContent(target, settings, announce)
 
@@ -532,25 +547,35 @@ class Monitor(object):
 		if obj is None:
 			return
 		isWindow = target.kind == "window"
-		ignorePB = bool(settings["ignoreProgressBars"]) and isWindow
-		if isInForegroundApp(obj):
-			# The user is in this application. Nothing would be announced, so do
-			# not even read it: the app being worked in is left entirely alone.
-			target.wasInForeground = True
-			return
-		entries = _sweepEntries(obj, ignorePB)
-		if target.wasInForeground:
-			# Just switched away. Re-take the snapshot silently, so that nothing
-			# which happened while the user was present is announced at them now.
-			# This is also where the per-target suppression counters reset: the
-			# user has refocused the target, so both the "changes at once" cap and
-			# the repeatedly-changing-controls memory start afresh.
-			target.wasInForeground = False
-			target.cachedNodes = dict(entries)
+		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and isWindow
+		inForeground = isInForegroundApp(obj)
+		if inForeground != target.wasInForeground:
+			# The user has just arrived at this target, or just left it; either
+			# way they have been at it, so both suppression counters start afresh.
+			# The "changes at once" cap and the repeatedly-changing-controls
+			# memory are there to hold back a target nobody has looked at. This
+			# turns on the foreground state alone, so it still happens for a
+			# target that is read right through the visit instead of being
+			# skipped, which is the only reset such a target ever gets.
 			target.announcedRun = 0
 			target.announcedControls = {}
+		target.wasInForeground = inForeground
+		if inForeground and not target.setting("trackForegroundTargets", settings):
+			# The user is in this application. Nothing would be announced, so do
+			# not even read it: the app being worked in is left entirely alone.
+			# Whatever happens while we are not looking leaves the cache stale.
+			target.staleCache = True
 			return
-		# A genuine background poll. Advance the target's poll clock even when
+		entries = _sweepEntries(obj, ignorePB)
+		if target.staleCache:
+			# The cache predates a spell that was never read: the user was in the
+			# application, or the target was added while they were there. Re-take
+			# the snapshot silently, so that nothing which happened while nobody
+			# was looking is announced at them now.
+			target.staleCache = False
+			target.cachedNodes = dict(entries)
+			return
+		# A poll that counts. Advance the target's poll clock even when
 		# nothing changed, so the "how long has this control been quiet" measure
 		# that ages out repeatedly-changing controls keeps ticking while the
 		# window is idle, not only when something moves.
@@ -616,7 +641,7 @@ class Monitor(object):
 		# pending node whose text is still in here is one that only moved.
 		remaining = oldCounts - consumed
 
-		ignoreRepeated = isWindow and bool(settings["ignoreRepeatedControls"])
+		ignoreRepeated = isWindow and bool(target.setting("ignoreRepeatedControls", settings))
 		announced = target.announcedControls
 		currentTick = target.pollTick
 		if ignoreRepeated and announced:
@@ -659,7 +684,7 @@ class Monitor(object):
 		whole window, while the option is off, and for a target added before it
 		was switched on, which has no remembered title to be held to.
 		"""
-		if target.kind != "window" or not settings["titleChangeDisappears"]:
+		if target.kind != "window" or not target.setting("titleChangeDisappears", settings):
 			return True
 		if target.trackedTitle is None:
 			return True
