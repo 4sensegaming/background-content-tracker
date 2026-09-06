@@ -10,6 +10,7 @@ overlay, settings panel), exposes the single rebindable prefix gesture, and
 implements every overlay command.
 """
 
+import contextlib
 import json
 import time
 from html import escape
@@ -32,9 +33,21 @@ from . import settings as settingsModule
 from .monitor import Monitor
 from .notifier import Notifier
 from .overlay import Overlay
-from .targets import TargetRegistry, objectIdentity
+from .targets import TargetRegistry, objectIdentity, safeCall
 
 addonHandler.initTranslation()
+
+#: The four places a target can be taken from, each with the call that names
+#: whatever is there right now. Stated once because three things address the
+#: same four sources: the overlay's W, F, M and N keys, the target menu's
+#: start-tracking items, and the ``kind`` every target carries for the rest of
+#: its life. The order is the order the menu offers them in.
+_SOURCES = {
+	"window": api.getForegroundObject,
+	"focus": api.getFocusObject,
+	"mouse": api.getMouseObject,
+	"navigator": api.getNavigatorObject,
+}
 
 
 def _helpDocument(heading, commands):
@@ -52,8 +65,8 @@ def _helpDocument(heading, commands):
 	browse mode can jump to the heading with H and move through the commands with
 	I, one list item at a time, instead of meeting one undifferentiated block.
 	"""
-	items = u"\n".join(u"\t<li>{0}</li>".format(escape(line)) for line in commands)
-	return u"<h1>{0}</h1>\n<ul>\n{1}\n</ul>".format(escape(heading), items)
+	items = "\n".join(f"\t<li>{escape(line)}</li>" for line in commands)
+	return f"<h1>{escape(heading)}</h1>\n<ul>\n{items}\n</ul>"
 
 
 class _InputGesturesAtCategory(InputGesturesDialog):
@@ -76,7 +89,7 @@ class _InputGesturesAtCategory(InputGesturesDialog):
 	"""
 
 	def __init__(self, parent, category="", *args, **kwargs):
-		super(_InputGesturesAtCategory, self).__init__(parent, *args, **kwargs)
+		super().__init__(parent, *args, **kwargs)
 		if category:
 			self._selectCategory(category)
 
@@ -96,7 +109,9 @@ class _InputGesturesAtCategory(InputGesturesDialog):
 				self.tree.Expand(item)
 				self.tree.SelectItem(item)
 				return
-		except Exception:
+		# The gesture tree is not a supported interface; a future NVDA rearranging
+		# it costs the selection and nothing else.
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not select the input gesture category", exc_info=True)
 
 
@@ -106,17 +121,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	scriptCategory = _("Background Content Tracker")
 
 	def __init__(self):
-		super(GlobalPlugin, self).__init__()
+		super().__init__()
 		addonConfig.initialize()
 		self.registry = TargetRegistry()
 		self.notifier = Notifier()
-		self.monitor = Monitor(self.registry, self.notifier)
+		# The monitor drops targets that disappear and takes up ones that come
+		# back, so the saved list has to be written out again when it does.
+		self.monitor = Monitor(self.registry, self.notifier, self._saveRememberedTargets)
 		self.overlay = Overlay(self)
 		# State for the "press a number again to move focus" behaviour.
 		self._pendingKind = None
 		self._pendingUid = None
 		self._pendingTime = 0.0
-		gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
+		NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
 		# Some global settings need something done to the targets that already
 		# exist the moment they are switched; see ``_onSettingsChanged``.
 		addonConfig.registerChangeHook(self._onSettingsChanged)
@@ -126,19 +143,19 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def terminate(self):
 		try:
 			self.monitor.stop()
-		except Exception:
+		# NVDA is going down either way; whatever the monitor made of being asked
+		# to stop, the rest of this still has to run.
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Error stopping monitor", exc_info=True)
-		try:
+		with contextlib.suppress(Exception):
 			self.overlay.close()
-		except Exception:
-			pass
 		try:
 			NVDASettingsDialog.categoryClasses.remove(settingsModule.BCTSettingsPanel)
 		except ValueError:
 			pass
 		addonConfig.unregisterChangeHook(self._onSettingsChanged)
 		addonConfig.terminate()
-		super(GlobalPlugin, self).terminate()
+		super().terminate()
 
 	# --- reacting to a change of the global settings ------------------------
 	def _onSettingsChanged(self, changed):
@@ -158,6 +175,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if "ignoreCounters" in changed:
 			self._forgetIgnoredControls()
 		if "rememberTargets" in changed:
+			self._dropUnkeptDetachedTargets()
 			self._saveRememberedTargets()
 
 	def _recaptureTrackedTitles(self):
@@ -196,6 +214,24 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				continue
 			target.forgetIgnoredControls()
 
+	def _dropUnkeptDetachedTargets(self):
+		"""Drop the entries that are gone and are no longer being kept.
+
+		A target that has disappeared stays in the list only to be found again,
+		and only "Remember targets" asks for that (see
+		:meth:`.TrackedTarget.isForgottenWhenGone`). Switching it off — globally,
+		or on one target in the target menu — therefore leaves such an entry with
+		nothing on its way to find it, so it goes rather than sitting there
+		reading "not found" for the rest of the session.
+
+		Silent: the user was told the target was gone when it went, and this only
+		settles what became of the entry afterwards.
+		"""
+		settings = addonConfig.snapshot()
+		for target in self.registry:
+			if target.obj is None and not target.setting("rememberTargets", settings):
+				self.registry.remove(target)
+
 	# --- persistence of remembered targets ----------------------------------
 	def _saveRememberedTargets(self):
 		"""Persist the targets to be remembered, each with its own local settings.
@@ -231,7 +267,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# notify=False: this write is itself what the change hooks do, and
 			# must not set them off again.
 			addonConfig.setMany({"savedTargets": json.dumps(data)}, notify=False)
-		except Exception:
+		# A list that could not be written is a list that is not remembered; it is
+		# no reason to fail the command that changed it.
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not save remembered targets", exc_info=True)
 
 	def _loadRememberedTargets(self):
@@ -241,7 +279,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		try:
 			data = json.loads(raw)
-		except Exception:
+		except ValueError:
 			return
 		if not isinstance(data, list):
 			return
@@ -337,11 +375,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# Translators: overlay help line for the N key.
 			_("N: start or stop tracking the navigator object"),
 			# Translators: overlay help line for shift and control with W, F, M or N.
-			_("Add shift to any of W, F, M or N to remember that one target, control to read it even in the foreground, or both"),
+			_(
+				"Add shift to any of W, F, M or N to remember that one target, control to read it even in the foreground, or both"
+			),
 			# Translators: overlay help line for the T key.
 			_("T: open the target menu"),
 			# Translators: overlay help line for the number keys.
-			_("1 through 0: speak information about the target in that slot; press again to move focus to it"),
+			_(
+				"1 through 0: speak information about the target in that slot; press again to move focus to it"
+			),
 			# Translators: overlay help line for Space and Enter.
 			_("Space or Enter: the most recently added target"),
 			# Translators: overlay help line for Control plus a number.
@@ -368,34 +410,26 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				isHtml=True,
 			)
 		else:
-			ui.message(u"\n".join([heading] + commands))
+			ui.message("\n".join([heading] + commands))
 			self._awaitSecondPress(("help", None), None)
 
-	def _toggle(self, obj, kind, overrides=None):
+	def toggleSource(self, kind, overrides=None):
+		"""Start, or stop, tracking whatever one of :data:`_SOURCES` names now.
+
+		``kind`` is the source's key, which is also the kind the target keeps.
+		``overrides`` are the local settings the target is to be given, and are
+		spent where this press stops tracking instead: there is no new target for
+		them to be given to, and they never reach an existing one.
+		"""
 		self._pendingKind = None
+		obj = _SOURCES[kind]()
 		if obj is None:
 			return
 		existing = self.registry.findByObject(obj)
 		if existing is not None:
-			self.registry.remove(existing)
-			self.notifier.announceStopped(existing)
+			self.stopTracking(existing)
 		else:
-			target = self.registry.add(obj, kind, overrides)
-			self.monitor.onAdded(target)
-			self.notifier.announceTracking(target)
-		self._saveRememberedTargets()
-
-	def toggleWindow(self, overrides=None):
-		self._toggle(api.getForegroundObject(), "window", overrides)
-
-	def toggleFocus(self, overrides=None):
-		self._toggle(api.getFocusObject(), "focus", overrides)
-
-	def toggleMouse(self, overrides=None):
-		self._toggle(api.getMouseObject(), "mouse", overrides)
-
-	def toggleNavigator(self, overrides=None):
-		self._toggle(api.getNavigatorObject(), "navigator", overrides)
+			self.startTracking(obj, kind, overrides)
 
 	def slotInfo(self, index):
 		target = self.registry.slot(index)
@@ -459,9 +493,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if target is None:
 			self.notifier.noTargetInSlot(index + 1)
 			return
-		self.registry.remove(target)
-		self.notifier.announceStopped(target)
-		self._saveRememberedTargets()
+		self.stopTracking(target)
 
 	def stopNewest(self):
 		self._pendingKind = None
@@ -469,9 +501,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if target is None:
 			self.notifier.noTargets()
 			return
-		self.registry.remove(target)
-		self.notifier.announceStopped(target)
-		self._saveRememberedTargets()
+		self.stopTracking(target)
 
 	def clearAll(self):
 		self._pendingKind = None
@@ -501,8 +531,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""
 		settings = addonConfig.snapshot()
 		return any(
-			target.obj is not None or target.setting("rememberTargets", settings)
-			for target in self.registry
+			target.obj is not None or target.setting("rememberTargets", settings) for target in self.registry
 		)
 
 	def openSettings(self):
@@ -550,25 +579,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def _captureSources(self):
 		sources = []
 		seen = []
-		candidates = (
-			("window", api.getForegroundObject()),
-			("focus", api.getFocusObject()),
-			("mouse", api.getMouseObject()),
-			("navigator", api.getNavigatorObject()),
-		)
-		for kind, obj in candidates:
+		for kind, getter in _SOURCES.items():
+			obj = getter()
 			if obj is None or self.registry.findByObject(obj) is not None:
 				continue
-			duplicate = False
-			for previous in seen:
-				try:
-					if previous == obj:
-						duplicate = True
-						break
-				except Exception:
-					pass
-			if duplicate:
-				continue
+			if any(safeCall(lambda p=previous, o=obj: p == o, False) for previous in seen):
+				continue  # the same control under two of the four sources
 			seen.append(obj)
 			sources.append((kind, obj))
 		return sources
@@ -618,4 +634,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# Likewise for what the target has learned about its counters: the
 			# option decided it, so moving the option has to un-decide it.
 			target.forgetIgnoredControls()
+		elif key == "rememberTargets" and not value:
+			# Told not to be remembered. If it is one of the entries left behind by
+			# a target that disappeared, nothing will look for it now, so it goes.
+			self._dropUnkeptDetachedTargets()
 		self._saveRememberedTargets()

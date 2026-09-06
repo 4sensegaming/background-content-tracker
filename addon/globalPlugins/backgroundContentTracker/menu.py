@@ -11,10 +11,14 @@ sources are captured before the menu is shown, because showing it takes the focu
 to the menu.
 """
 
+import contextlib
+
 import addonHandler
 import gui
 import wx
 from logHandler import log
+
+from .targets import safeCall
 
 addonHandler.initTranslation()
 
@@ -24,20 +28,11 @@ def showTargetMenu(plugin, sources):
 	try:
 		_buildAndShow(plugin, sources)
 	except Exception:
-		log.error("Error showing the target menu", exc_info=True)
+		log.exception("Error showing the target menu")
 
 
 def _startLabel(kind, obj):
-	name = ""
-	try:
-		name = obj.name or ""
-	except Exception:
-		name = ""
-	if not name:
-		try:
-			name = obj.role.displayString
-		except Exception:
-			name = ""
+	name = safeCall(lambda: obj.name) or safeCall(lambda: obj.role.displayString) or ""
 	kindLabels = {
 		# Translators: the "window" source in the target menu's start-tracking items.
 		"window": _("window"),
@@ -63,9 +58,12 @@ def _localSettingItems(target):
 	control they would be switches wired to nothing.
 
 	Those are labelled with the settings panel's own words: they read the same
-	wherever they are set. The remaining three are worded for the one target they
-	act on here, rather than for every target at once as the panel's wording has
-	it.
+	wherever they are set. The rest are worded for the one target they act on
+	here, rather than for every target at once as the panel's wording has it.
+
+	Forgetting the target when it disappears is offered only while the target is
+	being remembered, because that is the only time it decides anything; see
+	:meth:`.TrackedTarget.isForgottenWhenGone`.
 
 	Built on each call rather than held in a module-level constant, because the
 	labels are translated at the moment they are built and the user can change
@@ -73,24 +71,31 @@ def _localSettingItems(target):
 	"""
 	items = []
 	if target.kind == "window":
-		items.extend((
-			# Translators: suppress announcements of progress bar controls in a window.
-			("ignoreProgressBars", _("Ignore &progress bars")),
-			# Translators: suppress a control that does nothing but count (e.g. a timer).
-			("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
-			# Translators: treat a window that renames itself as a target that has disappeared.
-			("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
-			# Translators: suppress announcements of the control the user is typing in.
-			("ignoreFocusedControl", _("Ignore focu&sed control")),
-		))
-	items.extend((
-		# Translators: submenu item; read this one target while its own application is in the foreground.
-		("trackForegroundTargets", _("Read this target even when in foreground")),
-		# Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
-		("rememberTargets", _("Remember this target")),
-		# Translators: submenu item; automatically drop this one target once it no longer exists.
-		("forgetOnDisappear", _("Forget this target when it disappears")),
-	))
+		items.extend(
+			(
+				# Translators: suppress announcements of progress bar controls in a window.
+				("ignoreProgressBars", _("Ignore &progress bars")),
+				# Translators: suppress a control that does nothing but count (e.g. a timer).
+				("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
+				# Translators: treat a window that renames itself as a target that has disappeared.
+				("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
+				# Translators: suppress announcements of the control the user is typing in.
+				("ignoreFocusedControl", _("Ignore focu&sed control")),
+			)
+		)
+	items.extend(
+		(
+			# Translators: submenu item; read this one target while its own application is in the foreground.
+			("trackForegroundTargets", _("Read this target even when in foreground")),
+			# Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
+			("rememberTargets", _("Remember this target")),
+		)
+	)
+	if target.setting("rememberTargets"):
+		items.append(
+			# Translators: submenu item; drop this one remembered target once it no longer exists.
+			("forgetOnDisappear", _("Forget this target when it disappears")),
+		)
 	return items
 
 
@@ -168,8 +173,8 @@ def _buildAndShow(plugin, sources):
 	finally:
 		gui.mainFrame.postPopup()
 		for itemId in boundIds:
-			try:
+			# Best effort: the menu is going away either way, and an item that
+			# cannot be unbound is not worth taking the command down for.
+			with contextlib.suppress(Exception):
 				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)
-			except Exception:
-				pass
 		menu.Destroy()

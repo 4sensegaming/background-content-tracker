@@ -46,6 +46,8 @@ computed key name and hand off via ``queueHandler.queueFunction`` — while
 stopped on the main thread only.
 """
 
+import contextlib
+
 import addonHandler
 import core
 import inputCore
@@ -62,14 +64,14 @@ addonHandler.initTranslation()
 #: Maps a number-row/number-pad digit key name to a 0-based slot index.
 _DIGIT_KEYS = {"1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9}
 
-#: The four commands that start or stop tracking something, and the controller
-#: method each one calls. They are the only commands that take modifiers of their
-#: own: shift and control each switch on one of the target's local settings.
+#: The four commands that start or stop tracking something, and the source each
+#: one takes its target from. They are the only commands that take modifiers of
+#: their own: shift and control each switch on one of the target's local settings.
 _TOGGLE_KEYS = {
-	"w": "toggleWindow",
-	"f": "toggleFocus",
-	"m": "toggleMouse",
-	"n": "toggleNavigator",
+	"w": "window",
+	"f": "focus",
+	"m": "mouse",
+	"n": "navigator",
 }
 
 #: How long to hold back the closing announcement when a command has taken the
@@ -81,7 +83,7 @@ _TOGGLE_KEYS = {
 _HANDOFF_ANNOUNCE_DELAY_MS = 400
 
 
-class Overlay(object):
+class Overlay:
 	"""Owns the open/close/timeout mechanics and routes each captured key."""
 
 	def __init__(self, controller):
@@ -156,10 +158,10 @@ class Overlay(object):
 
 	def _cancelTimer(self):
 		if self._timer is not None:
-			try:
+			# A timer that has already fired refuses to be stopped, and that is
+			# exactly the case where there is nothing left to stop.
+			with contextlib.suppress(Exception):
 				self._timer.Stop()
-			except Exception:
-				pass
 			self._timer = None
 
 	def _onTimeout(self, session):
@@ -171,11 +173,11 @@ class Overlay(object):
 	# --- safe from any thread (plain attribute assignment only) --------------
 	def _releaseCapture(self):
 		self._armed = False
-		try:
+		# Reached from the keyboard hook thread as well, where nothing may be
+		# allowed to raise; giving the capture back is best effort either way.
+		with contextlib.suppress(Exception):
 			if inputCore.manager._captureFunc is self._captureRef:
 				inputCore.manager._captureFunc = self._prevCapture
-		except Exception:
-			pass
 		self._prevCapture = None
 
 	# --- KEYBOARD HOOK THREAD: must be fast and non-blocking ------------------
@@ -211,7 +213,7 @@ class Overlay(object):
 				_immediate=True,
 			)
 		except Exception:
-			log.error("Error in overlay capture function", exc_info=True)
+			log.exception("Error in overlay capture function")
 			self._releaseCapture()
 		return False  # swallow the key
 
@@ -229,7 +231,7 @@ class Overlay(object):
 		except Exception:
 			# A command that failed is still a command, and the overlay must not
 			# be left holding the keyboard with no timeout to end it.
-			log.error("Error running an overlay command", exc_info=True)
+			log.exception("Error running an overlay command")
 			recognised = True
 		if not recognised:
 			# Not a command, so it cannot be the second half of a double press
@@ -250,7 +252,7 @@ class Overlay(object):
 		"""
 		# Accept the number pad as well as the number row.
 		if key.startswith("numpad"):
-			suffix = key[len("numpad"):]
+			suffix = key[len("numpad") :]
 			if suffix in _DIGIT_KEYS:
 				key = suffix
 			elif suffix == "enter":
@@ -275,7 +277,7 @@ class Overlay(object):
 				overrides["rememberTargets"] = True
 			if "control" in mods:
 				overrides["trackForegroundTargets"] = True
-			getattr(c, _TOGGLE_KEYS[key])(overrides)
+			c.toggleSource(_TOGGLE_KEYS[key], overrides)
 			return True
 		if mods:
 			return False  # any other modifier combination is not a command

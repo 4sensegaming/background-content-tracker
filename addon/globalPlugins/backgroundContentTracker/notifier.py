@@ -27,12 +27,12 @@ def _describe(roleText, name, includeType, extras):
 	empty pieces are dropped.
 	"""
 	if includeType and roleText:
-		base = u"{role}: {name}".format(role=roleText, name=name) if name else roleText
+		base = f"{roleText}: {name}" if name else roleText
 	else:
 		base = name or roleText
 	parts = [base] if base else []
 	parts.extend([piece for piece in extras if piece])
-	return u", ".join(parts)
+	return ", ".join(parts)
 
 
 def _notFound():
@@ -68,11 +68,22 @@ def relativeTime(when):
 	return ngettext("{n} hour ago", "{n} hours ago", hours).format(n=hours)
 
 
-class Notifier(object):
+class Notifier:
 	"""Turns registry/monitor events into speech and beeps, per the settings."""
 
+	def _describeTarget(self, target, extras=(), typeSetting="announceTargetType"):
+		"""``target`` described for the user, per the settings that shape it.
+
+		Every message this class produces is the same three questions — what the
+		target is called, whether its control type belongs in front of that, and
+		what trailing pieces go after it — so they are asked in one place. Which
+		setting decides the control type is the only thing that varies: the spoken
+		messages follow "Target type", the target menu follows its own.
+		"""
+		return _describe(target.roleText(), target.name, addonConfig.get(typeSetting), extras)
+
 	def announceTracking(self, target):
-		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [])
+		desc = self._describeTarget(target)
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
 		# Queued rather than interrupting: an application coming back can bring
 		# several remembered targets with it, and an interrupting message would
@@ -104,7 +115,7 @@ class Notifier(object):
 		ui.message(text.format(found=found, total=total), speechPriority=Spri.NEXT)
 
 	def announceStopped(self, target):
-		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [])
+		desc = self._describeTarget(target)
 		# Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 		ui.message(_("Stopped tracking {target}").format(target=desc))
 
@@ -115,7 +126,7 @@ class Notifier(object):
 		if not addonConfig.get("changeAnnounce"):
 			return
 		content = delta if addonConfig.get("announceChangedContent") else None
-		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [content])
+		desc = self._describeTarget(target, [content])
 		if desc:
 			ui.message(desc)
 
@@ -132,16 +143,14 @@ class Notifier(object):
 		than replay a delta cached during an earlier spell in the background.
 		"""
 		if not target.isAlive():
-			desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [_notFound()])
-			ui.message(desc)
+			ui.message(self._describeTarget(target, [_notFound()]))
 			return
 		if not target.hasReportableChange():
 			# Translators: on-demand target info when there is nothing new to report.
-			desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [_("no changes yet")])
-			ui.message(desc)
+			ui.message(self._describeTarget(target, [_("no changes yet")]))
 			return
 		content = target.lastDelta if addonConfig.get("announceChangedContent") else None
-		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [content])
+		desc = self._describeTarget(target, [content])
 		if desc:
 			ui.message(desc)
 
@@ -158,19 +167,21 @@ class Notifier(object):
 		the monitor cached belongs to an earlier background spell, not to now.
 		"""
 		if not target.isAlive():
-			return _describe(target.roleText(), target.name, addonConfig.get("menuTargetType"), [_notFound()])
+			return self._describeTarget(target, [_notFound()], "menuTargetType")
 		reportable = target.hasReportableChange()
 		extras = []
 		if addonConfig.get("menuTimeSinceChange"):
 			extras.append(relativeTime(target.lastChangeTime if reportable else None))
 		if addonConfig.get("menuChangedContent") and reportable and target.lastDelta:
 			extras.append(target.lastDelta)
-		return _describe(target.roleText(), target.name, addonConfig.get("menuTargetType"), extras)
+		return self._describeTarget(target, extras, "menuTargetType")
 
 	def beep(self):
 		try:
 			tones.beep(addonConfig.get("beepPitch"), addonConfig.get("beepDuration"))
-		except Exception:
+		# A tone that could not be played is not worth an error, and there is
+		# nothing to be done about it beyond saying nothing.
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Beep failed", exc_info=True)
 
 	def noTargetInSlot(self, slotNumber):

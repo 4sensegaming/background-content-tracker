@@ -128,19 +128,16 @@ def initialize():
 	# The first read is not a change: nothing has had a chance to register a hook
 	# yet, and every setting having "moved" from its default is not news.
 	refresh()
-	action = getattr(config, "post_configProfileSwitch", None)
-	if action is not None:
-		action.register(_onProfileSwitch)
+	config.post_configProfileSwitch.register(_onProfileSwitch)
 
 
 def terminate():
-	"""Undo :func:`initialize`. Main thread only."""
-	action = getattr(config, "post_configProfileSwitch", None)
-	if action is not None:
-		try:
-			action.unregister(_onProfileSwitch)
-		except Exception:
-			pass
+	"""Undo :func:`initialize`. Main thread only.
+
+	An extension point reports an unknown handler rather than complaining, so
+	unregistering one that never got registered is harmless.
+	"""
+	config.post_configProfileSwitch.unregister(_onProfileSwitch)
 
 
 def registerChangeHook(func):
@@ -194,10 +191,11 @@ def notifyChanged(changed):
 	"""
 	if not changed:
 		return
-	for hook in list(_changeHooks):
+	# A copy, because a hook is free to unregister itself as it runs.
+	for hook in tuple(_changeHooks):
 		try:
 			hook(changed)
-		except Exception:
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Error in a configuration change hook", exc_info=True)
 
 

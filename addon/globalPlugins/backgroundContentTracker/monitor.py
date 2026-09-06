@@ -63,46 +63,25 @@ truth and then read the whole target back as new content afterwards. See
 import re
 import threading
 import time
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, deque
 
 import api
 import queueHandler
 import textInfos
-from NVDAObjects import NVDAObjectTextInfo
+import winUser
+from controlTypes import Role, State
 from logHandler import log
+from NVDAObjects import NVDAObject, NVDAObjectTextInfo
 
 from . import addonConfig
 from . import targets as targetsMod
-from .targets import isInForegroundApp
-
-#: The progress bar role, resolved defensively so the module still imports where
-#: ``controlTypes`` is unavailable (the offline tests) or has changed shape.
-try:
-	import controlTypes
-	_role = getattr(controlTypes, "Role", None)
-	if _role is not None:
-		_PROGRESSBAR_ROLE = getattr(_role, "PROGRESSBAR", None)
-	else:
-		_PROGRESSBAR_ROLE = getattr(controlTypes, "ROLE_PROGRESSBAR", None)
-except Exception:
-	_PROGRESSBAR_ROLE = None
+from .targets import isInForegroundApp, safeCall
 
 #: The states that mean a control is not actually being shown to anyone: hidden,
 #: or scrolled out of view. They are what NVDA's own ProgressBar behaviour
 #: refuses to report a bar carrying, and they are worth asking of anything about
-#: to be announced. Resolved as defensively as the role above; where they cannot
-#: be resolved the set is empty, which turns the check off rather than muting
-#: everything.
-try:
-	_state = getattr(controlTypes, "State", None)
-	_HIDDEN_STATES = frozenset(
-		value for value in (
-			getattr(_state, "INVISIBLE", None),
-			getattr(_state, "OFFSCREEN", None),
-		) if value is not None
-	) if _state is not None else frozenset()
-except Exception:
-	_HIDDEN_STATES = frozenset()
+#: to be announced.
+_HIDDEN_STATES = frozenset((State.INVISIBLE, State.OFFSCREEN))
 
 #: The monitor thread's base tick, in seconds. The configurable tracking
 #: interval is rounded up to a whole number of these, so it is also the finest
@@ -150,7 +129,7 @@ MAX_CACHE_ENTRIES = 100000
 MAX_CACHE_CHARS = 20 * 1000 * 1000
 #: The character an accessibility API substitutes for an embedded child object.
 #: A container's "own text" is often nothing but a row of these.
-_OBJECT_REPLACEMENT = u"￼"
+_OBJECT_REPLACEMENT = "￼"
 
 
 def _hasOwnText(obj):
@@ -162,48 +141,29 @@ def _hasOwnText(obj):
 	Checking the class costs nothing, so it keeps the far more expensive
 	:func:`_ownText` off every node that could not answer it anyway.
 	"""
-	try:
-		return obj.TextInfo is not NVDAObjectTextInfo
-	except Exception:
-		return False
+	return safeCall(lambda: obj.TextInfo is not NVDAObjectTextInfo, False) is True
 
 
 def _ownText(obj):
-	try:
-		return obj.makeTextInfo(textInfos.POSITION_ALL).text or ""
-	except Exception:
-		return ""
+	return safeCall(lambda: obj.makeTextInfo(textInfos.POSITION_ALL).text, "") or ""
 
 
 def _labelOf(obj):
-	parts = []
-	for attr in ("name", "value"):
-		try:
-			value = getattr(obj, attr)
-		except Exception:
-			value = None
-		if isinstance(value, str) and value and not value.isspace():
-			parts.append(value)
-	return u" ".join(parts)
+	values = (safeCall(lambda: obj.name), safeCall(lambda: obj.value))
+	return " ".join(value for value in values if isinstance(value, str) and value and not value.isspace())
 
 
 #: ``NVDAObject``'s own generic child accessors. A class that has not overridden
 #: them answers ``getChild`` by building the whole child list, so fetching a tail
 #: one child at a time would be quadratic there; only a class that provides its
 #: own (``IAccessible`` and friends, which map straight onto the platform API) is
-#: read that way. Resolved defensively so the module still imports offline.
-try:
-	from NVDAObjects import NVDAObject as _NVDAObject
-except Exception:
-	_NVDAObject = None
-_BASE_GET_CHILD = getattr(_NVDAObject, "getChild", None)
-_BASE_CHILD_COUNT = getattr(_NVDAObject, "_get_childCount", None)
+#: read that way.
+_BASE_GET_CHILD = NVDAObject.getChild
+_BASE_CHILD_COUNT = NVDAObject._get_childCount
 
 
 def _hasFastChildAccess(obj):
 	"""Whether ``obj`` can hand back one child without building all of them."""
-	if _BASE_GET_CHILD is None:
-		return False
 	cls = type(obj)
 	return (
 		getattr(cls, "getChild", None) is not _BASE_GET_CHILD
@@ -225,26 +185,19 @@ def _childrenOf(obj, limit):
 	if limit <= 0:
 		return [], 0
 	if _hasFastChildAccess(obj):
-		try:
-			count = int(obj.childCount)
-		except Exception:
-			count = -1
+		count = safeCall(lambda: int(obj.childCount), -1)
 		if count > limit:
 			children = []
 			for index in range(count - 1, count - limit - 1, -1):
-				try:
-					child = obj.getChild(index)
-				except Exception:
-					child = None
+				child = safeCall(lambda i=index: obj.getChild(i))
 				if child is None:
 					break  # the tail is shorter than advertised; keep what we have
 				children.append(child)
 			if children:
 				children.reverse()
 				return children, count - len(children)
-	try:
-		children = list(obj.children or [])
-	except Exception:
+	children = safeCall(lambda: list(obj.children or []))
+	if children is None:
 		return [], 0
 	if len(children) > limit:
 		return children[-limit:], len(children) - limit
@@ -262,8 +215,8 @@ def _cleanText(text):
 	if not text:
 		return ""
 	if _OBJECT_REPLACEMENT in text:
-		text = text.replace(_OBJECT_REPLACEMENT, u"")
-	return u" ".join(text.split())
+		text = text.replace(_OBJECT_REPLACEMENT, "")
+	return " ".join(text.split())
 
 
 def _readableText(raw):
@@ -284,15 +237,10 @@ def _readableText(raw):
 def _isProgressBar(obj):
 	"""Whether the object is a progress bar control.
 
-	Tolerant of a missing role or an unavailable ``controlTypes``: a progress bar
-	we cannot recognise is simply read like any other control.
+	Tolerant of a missing role: a progress bar that cannot be recognised is simply
+	read like any other control.
 	"""
-	if _PROGRESSBAR_ROLE is None:
-		return False
-	try:
-		return obj.role == _PROGRESSBAR_ROLE
-	except Exception:
-		return False
+	return safeCall(lambda: obj.role == Role.PROGRESSBAR, False) is True
 
 
 def _isPresented(obj):
@@ -314,12 +262,9 @@ def _isPresented(obj):
 	wrong costs a little noise, and here it would cost the change the user is
 	waiting for.
 	"""
-	if obj is None or not _HIDDEN_STATES:
+	if obj is None:
 		return True
-	try:
-		states = obj.states
-	except Exception:
-		return True
+	states = safeCall(lambda: obj.states)
 	if not states:
 		return True
 	return not (states & _HIDDEN_STATES)
@@ -331,10 +276,34 @@ def _focusObject():
 	Safe to read from the monitor thread: this is a plain attribute of NVDA's
 	``api`` module, rebound by the main thread and never mutated in place.
 	"""
-	try:
-		return api.getFocusObject()
-	except Exception:
-		return None
+	return safeCall(api.getFocusObject)
+
+
+def _focusMayBeInside(obj, focusObj):
+	"""Whether ``focusObj`` could be somewhere inside ``obj``'s window.
+
+	Asked once, before a sweep, so that the far more expensive question — "are
+	you the focused control?", put to node after node and answered by the
+	application — is skipped entirely where the answer cannot be yes. The focus
+	being in the target's *application* is not enough to expect it in the target:
+	it is routinely in another window of that application, a second document or a
+	dialog, and every node of the target would then be compared against it for
+	nothing.
+
+	Three local window-manager calls at most, and no cross-process traffic. A
+	window owned by the target counts as inside it: a menu, an autocomplete list
+	or a dialog the target window owns is no child of it, yet what it shows can
+	still appear within the target's accessible subtree. A handle that cannot be
+	read answers True, so an unanswerable question costs the sweep the old work
+	rather than costing the user the suppression.
+	"""
+	hwnd = safeCall(lambda: obj.windowHandle)
+	focusHwnd = safeCall(lambda: focusObj.windowHandle)
+	if not hwnd or not focusHwnd:
+		return True
+	if hwnd == focusHwnd or winUser.isDescendantWindow(hwnd, focusHwnd):
+		return True
+	return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == hwnd
 
 
 def _sameObject(a, b):
@@ -347,10 +316,7 @@ def _sameObject(a, b):
 	"""
 	if a is None or b is None:
 		return False
-	try:
-		return bool(a == b)
-	except Exception:
-		return False
+	return safeCall(lambda: a == b, False) is True
 
 
 def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
@@ -446,10 +412,10 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 			if budget[0] <= 0:
 				whole[0] = False
 				break
-			childKey = u"%s/%d" % (key, firstIndex + offset)
+			childKey = f"{key}/{firstIndex + offset}"
 			if visit(children[offset], depth + 1, childKey, False):
 				gotText = True
-		text = u""
+		text = ""
 		# The own-text fallback is only honest when the subtree really came back
 		# mute: a childless node always qualifies, and a node with children only if
 		# nothing was clipped and the budget survived them. Otherwise "mute" just
@@ -466,7 +432,7 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 		nodes[key] = obj
 		return True
 
-	visit(root, 0, u"", True)
+	visit(root, 0, "", True)
 	entries.reverse()
 	return entries, whole[0], focusKey[0], nodes
 
@@ -484,15 +450,18 @@ def _isDarkSweep(entries, cache):
 
 
 #: A maximal run of digits, optionally with separators *between* digits — the
-#: "." of a decimal, the "," or space/NBSP of grouped thousands (Czech writes
-#: "1 234"), the ":" of a clock. This is the volatile part of a counter, timer,
-#: clock, percentage or byte readout. Nothing here matches a letter, word, app
-#: name or language: it recognises *numbers* only, so counters in any language
-#: normalise identically.
-_NUMBER_RUN = re.compile(u"\d(?:[\d.,:  ]*\d)?")
+#: "." of a decimal, the "," or space of grouped thousands, the no-break space
+#: Czech writes them with ("1\u00a0234"), the ":" of a clock. This is the
+#: volatile part of a counter, timer, clock, percentage or byte readout.
+#: Nothing here matches a letter, word, app name or language: it recognises
+#: *numbers* only, so counters in any language normalise identically. The
+#: separators are spelt as escapes rather than written out, so that a space
+#: and a no-break space are told apart by reading the source, not measuring it.
+_NUMBER_RUN = re.compile(r"\d(?:[\d.,:\u00a0\u0020]*\d)?")
 #: The sentinel a numeric run collapses to. A private-use character, so it can
-#: never collide with anything in real content.
-_NUMBER_SENTINEL = u""
+#: never collide with anything in real content. Spelt as an escape for the same
+#: reason as the separators above.
+_NUMBER_SENTINEL = "\uf8ff"
 
 
 def _templateOf(text):
@@ -529,16 +498,16 @@ def _joinSurfaced(surfaced):
 	kept = []
 	chain = []
 	for key, text in surfaced:
-		while chain and not key.startswith(chain[-1][0] + u"/"):
+		while chain and not key.startswith(chain[-1][0] + "/"):
 			chain.pop()
 		if any(text in ancestorText for _, ancestorText in chain):
 			continue  # an ancestor already says this; do not read it twice
 		chain.append((key, text))
 		kept.append(text)
-	return u"\n".join(kept).strip()
+	return "\n".join(kept).strip()
 
 
-class Monitor(object):
+class Monitor:
 	"""Owns the polling thread and the per-target content caches.
 
 	The sweep runs on its own daemon thread, never on NVDA's main thread. Reading
@@ -560,9 +529,12 @@ class Monitor(object):
 	  between targets.
 	"""
 
-	def __init__(self, registry, notifier):
+	def __init__(self, registry, notifier, onListChanged=None):
 		self.registry = registry
 		self.notifier = notifier
+		#: Called, on the main thread, after this monitor changes anything the
+		#: owner persists. See :meth:`_notifyListChanged`.
+		self._onListChanged = onListChanged
 		self._thread = None
 		self._stop = threading.Event()
 		self._lastRelocate = 0.0
@@ -608,12 +580,54 @@ class Monitor(object):
 		if self._stop.is_set():
 			return
 		immediate = kwargs.pop("immediate", False)
-		queueHandler.queueFunction(
-			queueHandler.eventQueue, func, *args, _immediate=immediate, **kwargs
-		)
+		queueHandler.queueFunction(queueHandler.eventQueue, func, *args, _immediate=immediate, **kwargs)
+
+	def _notifyListChanged(self):
+		"""Tell the owner that what it persists about the targets has moved.
+
+		The monitor manages the target list on its own account: a target that
+		disappears is dropped from it, and one that reappears is taken up again
+		under a freshly read identity. Both are things the saved list records, and
+		without this it would not follow them — a target dropped here would still
+		be in the stored list and would come back at the next NVDA start, and a
+		target that moved would go on being looked for where it used to be.
+
+		Queued onto the main thread like everything else this thread hands over,
+		and therefore behind whatever was queued before it, so the list is already
+		in the state that is about to be written out.
+		"""
+		if self._onListChanged is not None:
+			self._callOnMainThread(self._onListChanged)
+
+	def _refreshIdentity(self, target, obj):
+		"""Re-take ``target``'s identity from the object it has been found at.
+
+		Returns whether the identity actually moved, so that the caller can have
+		the saved list written out again only when there is something new in it
+		to write.
+		"""
+		newIdentity = targetsMod.objectIdentity(obj)
+		if not newIdentity or newIdentity == target.identity:
+			return False
+		target.identity = newIdentity
+		return True
 
 	def onAdded(self, target):
-		obj = target.obj
+		"""Take a target up, or take it up again, with nothing known about it yet.
+
+		The baseline is deliberately not taken here. A sweep costs tens to hundreds
+		of milliseconds, and this runs on NVDA's main thread as well as on the
+		monitor's — the overlay's tracking commands and the target menu both reach
+		it — where a sweep would stall speech, braille and keyboard handling for
+		exactly that long. Nor is the target's own application any guide: the mouse
+		and the navigator object can both be pointed at a window in the background,
+		and it is a background window that costs a full sweep rather than nothing.
+
+		The cache is marked stale instead, which is this add-on's existing way of
+		saying that it predates a spell nobody read: the next poll folds its sweep
+		in silently, on the monitor's own thread, so the baseline is taken there and
+		nothing that arrived before the target was watched is announced afterwards.
+		"""
 		settings = addonConfig.snapshot()
 		target.lastChangeTime = None
 		target.announcedRun = 0
@@ -621,26 +635,11 @@ class Monitor(object):
 		target.seenContent = OrderedDict()
 		target.seenChars = 0
 		target.prevTexts = frozenset()
-		target.wasInForeground = isInForegroundApp(obj)
+		target.wasInForeground = isInForegroundApp(target.obj)
 		# The title a whole-window target is held to, so that a window which later
 		# renames itself can be told from the one that was actually added.
 		target.captureTrackedTitle(settings)
-		# Only take a baseline now if the target is already in the background.
-		# Otherwise it is left to the first poll that actually reads the target:
-		# when the user switches away from it, or on the very next poll if it is
-		# tracked in the foreground as well. Either way, the sweep of the
-		# application the user is working in stays off the main thread, which is
-		# where this runs.
-		if target.wasInForeground:
-			target.staleCache = True
-			return
-		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and target.kind == "window"
-		# No focus to keep quiet about: this runs only for a target that is already
-		# in the background, and the focus is always in the foreground application.
-		entries, whole, _focusKey, _nodes = _sweepEntries(obj, ignorePB)
-		self._absorb(target, entries, whole, False)
-		target.prevTexts = frozenset(text for _, text in entries)
-		target.staleCache = False
+		target.staleCache = True
 
 	# --- polling -------------------------------------------------------------
 	def _run(self):
@@ -677,22 +676,24 @@ class Monitor(object):
 					continue
 				sinceLast = 0.0
 				self._checkAllTargets(settings, announce)
+			# The last line of defence for the whole add-on: whatever one poll ran
+			# into, the thread has to survive it and try again on the next tick.
 			except Exception:
-				log.error("Error in Background Content Tracker poll", exc_info=True)
+				log.exception("Error in Background Content Tracker poll")
 
 	def _checkAllTargets(self, settings, announce=True):
-		attached = ()
 		remembered = [
-			target for target in self.registry.detachedTargets()
+			target
+			for target in self.registry.detachedTargets()
 			if target.setting("rememberTargets", settings)
 		]
 		if remembered:
 			now = time.time()
 			if now - self._lastRelocate >= RELOCATE_INTERVAL:
 				self._lastRelocate = now
-				attached = frozenset(self._relocatePass(remembered, settings, now))
+				attached = self._relocatePass(remembered, settings, now)
 				if not self._startupDone:
-					self._noteStartupPass(len(remembered), len(attached))
+					self._noteStartupPass(len(remembered), attached)
 		elif not self._startupDone:
 			# Nothing is left to look for. Either the restoration has found
 			# everything it was going to, and should say so now rather than wait
@@ -706,15 +707,8 @@ class Monitor(object):
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
-			if target in attached:
-				# Attached moments ago, in this very poll: ``onAdded`` has just
-				# swept it for its baseline, and sweeping it again here would only
-				# diff it against a cache milliseconds old — at the price of a
-				# second full sweep, and of announcing whatever happened to land in
-				# between as though it were news.
-				continue
 			if not target.isAlive() or not self._keptItsTitle(target, target.obj, settings):
-				self._handleDisappeared(target, target.setting("forgetOnDisappear", settings))
+				self._handleDisappeared(target, target.isForgottenWhenGone(settings))
 				continue
 			self._checkTargetContent(target, settings, announce)
 
@@ -741,13 +735,9 @@ class Monitor(object):
 	def _finishStartup(self):
 		"""Report what the restoration found, and let later targets speak for themselves."""
 		self._startupDone = True
-		self._callOnMainThread(
-			self.notifier.announceRestored, self._startupFound, self._startupTotal
-		)
+		self._callOnMainThread(self.notifier.announceRestored, self._startupFound, self._startupTotal)
 
-	def _checkTargetContent(self, target, settings=None, announce=True):
-		if settings is None:
-			settings = addonConfig.snapshot()
+	def _checkTargetContent(self, target, settings, announce):
 		obj = target.obj
 		if obj is None:
 			return
@@ -776,12 +766,13 @@ class Monitor(object):
 			return
 		# The focused control is only worth naming while the user is actually in
 		# this application; anywhere else the focus is in another one, and no node
-		# of this target could be it.
-		focusObj = (
-			_focusObject()
-			if inForeground and isWindow and target.setting("ignoreFocusedControl", settings)
-			else None
-		)
+		# of this target could be it. Nor is being in the application enough on its
+		# own — see :func:`_focusMayBeInside`.
+		focusObj = None
+		if inForeground and isWindow and target.setting("ignoreFocusedControl", settings):
+			focusObj = _focusObject()
+			if focusObj is not None and not _focusMayBeInside(obj, focusObj):
+				focusObj = None
 		entries, whole, focusKey, nodes = _sweepEntries(obj, ignorePB, focusObj)
 		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
@@ -878,7 +869,7 @@ class Monitor(object):
 			if seen > known:
 				outstanding[text] = seen - known
 		if not outstanding:
-			return u""
+			return ""
 		# The last copies of a repeated text are the new ones, so the pick runs
 		# backwards and the result is turned back into document order.
 		picked = []
@@ -889,16 +880,13 @@ class Monitor(object):
 				picked.append((key, text))
 		picked.reverse()
 		if focusKey is not None:
-			prefix = focusKey + u"/"
-			picked = [
-				(key, text) for key, text in picked
-				if key != focusKey and not key.startswith(prefix)
-			]
+			prefix = focusKey + "/"
+			picked = [(key, text) for key, text in picked if key != focusKey and not key.startswith(prefix)]
 			if not picked:
-				return u""
+				return ""
 		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
 		if not picked:
-			return u""
+			return ""
 		if not (isWindow and target.setting("ignoreCounters", settings)):
 			return _joinSurfaced(picked)
 
@@ -1007,13 +995,17 @@ class Monitor(object):
 	def _handleDisappeared(self, target, forget):
 		target.obj = None
 		# The user is always told a target is gone, however the list is managed.
-		# With "Forget targets when they disappear" on, the entry is also dropped
-		# from the list so old entries do not accumulate; with it off, the entry is
-		# kept as a detached target that may re-attach when it reappears (see the
-		# relocation pass above, which runs while "Remember targets" is on).
+		# ``forget`` is :meth:`.TrackedTarget.isForgottenWhenGone`, which is where
+		# the rule is stated: the entry is dropped unless the target is remembered
+		# and asked to be kept, in which case it stays as a detached target for the
+		# relocation pass above to take up again when it reappears.
 		if forget:
 			self._callOnMainThread(self.registry.remove, target)
 		self._callOnMainThread(self.notifier.announceStopped, target)
+		if forget:
+			# Queued after the removal, so what is written out is the list without
+			# this target rather than the one it is still in.
+			self._notifyListChanged()
 
 	# --- relocation of remembered / stale targets ---------------------------
 	def relocate(self, target):
@@ -1032,9 +1024,8 @@ class Monitor(object):
 		if obj is None:
 			return False
 		target.obj = obj
-		newIdentity = targetsMod.objectIdentity(obj)
-		if newIdentity:
-			target.identity = newIdentity
+		if self._refreshIdentity(target, obj):
+			self._notifyListChanged()
 		return True
 
 	def relocateAsync(self, target, callback):
@@ -1047,14 +1038,18 @@ class Monitor(object):
 		therefore runs on a short-lived daemon thread and only its result —
 		``callback(target, found)`` — is queued onto NVDA's main thread.
 		"""
+
 		def run():
 			try:
 				found = self.relocate(target)
-			except Exception:
+			# A lookup that failed is a target that was not found; the user is waiting
+			# on an answer either way.
+			except Exception:  # noqa: BLE001
 				log.debugWarning("Could not relocate target", exc_info=True)
 				found = False
 			# The user pressed a key and is waiting on this one.
 			self._callOnMainThread(callback, target, found, immediate=True)
+
 		threading.Thread(
 			name="BackgroundContentTracker._relocateThread",
 			target=run,
@@ -1070,16 +1065,17 @@ class Monitor(object):
 		seconds, for as long as NVDA runs — is ten times the cross-process traffic
 		for one answer.
 
-		Returns the targets it attached, which the caller skips when it sweeps the
-		live targets: :meth:`_attach` has just baselined each of them.
+		Returns how many targets it attached. Each of them is picked up by the
+		content sweep of this very pass: :meth:`_attach` leaves its cache stale, so
+		that sweep is what baselines it, on this thread and at no extra cost.
 		"""
 		due = [target for target in targets if target.nextRelocate <= now]
 		if not due:
-			return []
+			return 0
 		windows = self._desktopWindows()
 		if not windows:
-			return []
-		attached = []
+			return 0
+		attached = 0
 		for target in due:
 			if self._stop.is_set():
 				# NVDA is going down. Relocation is the one thing here that can run
@@ -1106,7 +1102,7 @@ class Monitor(object):
 			# During the start-up restoration the targets are reported together,
 			# so an attaching one does not speak for itself; afterwards it does.
 			self._attach(target, obj, announce=self._startupDone)
-			attached.append(target)
+			attached += 1
 		return attached
 
 	def _deferRelocate(self, target, now, searched):
@@ -1123,9 +1119,7 @@ class Monitor(object):
 		attaches (see :meth:`_attach`).
 		"""
 		if searched:
-			target.relocateDelay = min(
-				max(target.relocateDelay * 2, RELOCATE_INTERVAL), RELOCATE_BACKOFF_MAX
-			)
+			target.relocateDelay = min(max(target.relocateDelay * 2, RELOCATE_INTERVAL), RELOCATE_BACKOFF_MAX)
 		else:
 			target.relocateDelay = 0.0
 		target.nextRelocate = now + target.relocateDelay
@@ -1138,9 +1132,8 @@ class Monitor(object):
 		application: one read against the six a full identity descriptor costs,
 		and shared by the whole pass instead of taken again for each target.
 		"""
-		try:
-			topWindows = list(api.getDesktopObject().children)
-		except Exception:
+		topWindows = safeCall(lambda: list(api.getDesktopObject().children))
+		if not topWindows:
 			return []
 		return [(targetsMod.appNameOf(window), window) for window in topWindows]
 
@@ -1154,10 +1147,7 @@ class Monitor(object):
 		if not identity:
 			return []
 		wantedApp = identity.get("appName")
-		return [
-			window for appName, window in windows
-			if not wantedApp or appName == wantedApp
-		]
+		return [window for appName, window in windows if not wantedApp or appName == wantedApp]
 
 	def _locateAmong(self, candidates, identity, kind=None):
 		"""The object matching ``identity`` among ``candidates`` or below them.
@@ -1199,28 +1189,23 @@ class Monitor(object):
 		roleFilter = None
 		if not identity.get("automationID"):
 			roleFilter = identity.get("role")
-		queue = [root]
+		# A deque, because this is a breadth-first walk and a list would pay for
+		# every remaining node each time the front of it is taken off.
+		queue = deque((root,))
 		examined = 0
 		while queue and examined < maxNodes:
-			node = queue.pop(0)
+			node = queue.popleft()
 			examined += 1
 			skip = False
 			if roleFilter is not None:
-				try:
-					role = int(node.role)
-				except Exception:
-					role = None
+				role = safeCall(lambda n=node: int(n.role))
 				skip = role is not None and role != roleFilter
-			if not skip:
-				try:
-					if targetsMod.identitiesMatch(identity, targetsMod.objectIdentity(node)):
-						return node
-				except Exception:
-					pass
-			try:
-				children = node.children
-			except Exception:
-				children = None
+			if not skip and safeCall(
+				lambda n=node: targetsMod.identitiesMatch(identity, targetsMod.objectIdentity(n)),
+				False,
+			):
+				return node
+			children = safeCall(lambda n=node: n.children)
 			if children:
 				queue.extend(children)
 		return None
@@ -1232,9 +1217,7 @@ class Monitor(object):
 		reported together rather than one by one (see :meth:`_noteStartupPass`).
 		"""
 		target.obj = obj
-		newIdentity = targetsMod.objectIdentity(obj)
-		if newIdentity:
-			target.identity = newIdentity
+		moved = self._refreshIdentity(target, obj)
 		# It is here now, so any wait accumulated while it was not has done its
 		# job: should it disappear again, it is looked for at the pass interval.
 		target.relocateDelay = 0.0
@@ -1242,3 +1225,5 @@ class Monitor(object):
 		self.onAdded(target)
 		if announce:
 			self._callOnMainThread(self.notifier.announceTracking, target)
+		if moved:
+			self._notifyListChanged()

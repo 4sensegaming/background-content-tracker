@@ -29,15 +29,24 @@ from . import addonConfig
 _SW_RESTORE = 9
 
 
-def _safe(func, default=None):
+#: Handed to :func:`safeCall` as the default where a property that legitimately
+#: answers ``None`` has to be told from one that could not be read at all.
+_UNREADABLE = object()
+
+
+def safeCall(func, default=None):
 	"""Call ``func`` and return its result, or ``default`` on any exception.
 
 	Reading properties of a dead or cross-process accessible object frequently
-	raises (``COMError`` and friends), so almost every access goes through this.
+	raises, so almost every access in this add-on goes through this. The catch is
+	deliberately as wide as it is: the accessibility APIs raise ``COMError``,
+	``OSError``, ``AttributeError`` and more besides, and a property that cannot be
+	read is never worth taking the add-on down for. This is the one place that
+	blanket catch is written, which is why it is the one place it is excused.
 	"""
 	try:
 		return func()
-	except Exception:
+	except Exception:  # noqa: BLE001
 		return default
 
 
@@ -48,7 +57,7 @@ def appNameOf(obj):
 	to rule a whole window out with: one cross-process read against the six a full
 	descriptor costs.
 	"""
-	return _safe(lambda: obj.appModule.appName) or ""
+	return safeCall(lambda: obj.appModule.appName) or ""
 
 
 def titleOf(obj):
@@ -58,7 +67,7 @@ def titleOf(obj):
 	which records the title the target was *added* with: telling those two apart
 	is the whole point of "Consider changed title a disappeared target".
 	"""
-	return _safe(lambda: obj.name) or ""
+	return safeCall(lambda: obj.name) or ""
 
 
 def objectIdentity(obj):
@@ -67,14 +76,14 @@ def objectIdentity(obj):
 	Used both to recognise the same target again after it disappears and
 	reappears, and to persist remembered targets across NVDA restarts.
 	"""
-	role = _safe(lambda: obj.role)
+	role = safeCall(lambda: obj.role)
 	return {
 		"appName": appNameOf(obj),
-		"windowClassName": _safe(lambda: obj.windowClassName) or "",
-		"windowControlID": _safe(lambda: obj.windowControlID) or 0,
+		"windowClassName": safeCall(lambda: obj.windowClassName) or "",
+		"windowControlID": safeCall(lambda: obj.windowControlID) or 0,
 		"role": int(role) if role is not None else 0,
-		"name": _safe(lambda: obj.name) or "",
-		"automationID": _safe(lambda: obj.UIAAutomationId) or "",
+		"name": safeCall(lambda: obj.name) or "",
+		"automationID": safeCall(lambda: obj.UIAAutomationId) or "",
 	}
 
 
@@ -116,10 +125,7 @@ def isInForegroundApp(obj):
 	"""
 	if obj is None:
 		return False
-	try:
-		hwnd = obj.windowHandle
-	except Exception:
-		return False
+	hwnd = safeCall(lambda: obj.windowHandle)
 	if not hwnd:
 		return False
 	try:
@@ -129,13 +135,12 @@ def isInForegroundApp(obj):
 		rootOwner = winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)
 		if rootOwner == winUser.getAncestor(foreground, winUser.GA_ROOTOWNER):
 			return True
-		if (
-			winUser.isDescendantWindow(foreground, hwnd)
-			or winUser.isDescendantWindow(foreground, rootOwner)
-		):
+		if winUser.isDescendantWindow(foreground, hwnd) or winUser.isDescendantWindow(foreground, rootOwner):
 			return True
 		return _isInActiveStoreApp(hwnd)
-	except Exception:
+	# A window that cannot be placed is background: see the note above on which
+	# way round it is safe to be wrong.
+	except Exception:  # noqa: BLE001
 		return False
 
 
@@ -158,7 +163,7 @@ def _isInActiveStoreApp(hwnd):
 	return bool(active and winUser.isDescendantWindow(active, hwnd))
 
 
-class TrackedTarget(object):
+class TrackedTarget:
 	"""One tracked window or control, plus its change-detection state."""
 
 	def __init__(self, uid, obj, kind, overrides=None):
@@ -217,11 +222,17 @@ class TrackedTarget(object):
 		#: on whether the target is tracked in the foreground as well.
 		self.wasInForeground = False
 		#: Whether the cache predates a spell the monitor did not read — because
-		#: the user was in the target's application, or because the target was
-		#: added while they were there. Such a sweep is folded into the cache
-		#: silently instead of being diffed, so that nothing which happened while
-		#: nobody was looking is announced afterwards.
-		self.staleCache = False
+		#: the user was in the target's application, or because the target has not
+		#: been baselined yet. Such a sweep is folded into the cache silently
+		#: instead of being diffed, so that nothing which happened while nobody was
+		#: looking is announced afterwards.
+		#:
+		#: True from the outset, because a target is in the registry — and so in
+		#: front of the monitor thread — from the moment it is constructed, a moment
+		#: before :meth:`.Monitor.onAdded` is reached. A poll landing in between
+		#: would otherwise diff a whole window against an empty cache and read all
+		#: of it out as new content.
+		self.staleCache = True
 		#: The window title this target was added with, or ``None``. Only ever
 		#: set for a target that :meth:`isHeldToItsTitle` — that is, a whole
 		#: window, while "Consider changed title a disappeared target" is on; a
@@ -295,6 +306,27 @@ class TrackedTarget(object):
 		"""
 		return self.kind == "window" and bool(self.setting("titleChangeDisappears", settings))
 
+	def isForgottenWhenGone(self, settings=None):
+		"""Whether this target is dropped from the list once it disappears.
+
+		"Forget remembered targets when they disappear" only ever qualifies
+		"Remember targets". Keeping a target that is gone is worth something only
+		while something is going to look for it again, and looking for it again is
+		exactly what "Remember targets" asks for: a target that is not remembered
+		would sit in the list reading "not found" for the rest of the session with
+		nothing on its way to find it. It is therefore always dropped, whatever
+		the forgetting option says — which is also why that option is offered,
+		here and in the settings panel, only while "Remember targets" is on.
+
+		Both options are read per target, so one target may be kept where the
+		global settings would drop it, and the other way round.
+
+		``settings`` is a configuration snapshot, as for :meth:`setting`.
+		"""
+		if not self.setting("rememberTargets", settings):
+			return True
+		return bool(self.setting("forgetOnDisappear", settings))
+
 	def captureTrackedTitle(self, settings=None):
 		"""Take, or drop, the title this target is held to, as things stand now.
 
@@ -313,21 +345,19 @@ class TrackedTarget(object):
 		``settings`` is a configuration snapshot, as for :meth:`setting`.
 		"""
 		self.trackedTitle = (
-			titleOf(self.obj)
-			if self.obj is not None and self.isHeldToItsTitle(settings)
-			else None
+			titleOf(self.obj) if self.obj is not None and self.isHeldToItsTitle(settings) else None
 		)
 
 	@property
 	def name(self):
 		"""The target's display name, falling back to the remembered name."""
-		current = _safe(lambda: self.obj.name) if self.obj is not None else None
+		current = safeCall(lambda: self.obj.name) if self.obj is not None else None
 		return current or self.identity.get("name") or ""
 
 	@property
 	def role(self):
 		if self.obj is not None:
-			return _safe(lambda: self.obj.role)
+			return safeCall(lambda: self.obj.role)
 		return None
 
 	def roleText(self):
@@ -335,22 +365,19 @@ class TrackedTarget(object):
 		role = self.role
 		if role is None:
 			return ""
-		return _safe(lambda: role.displayString) or ""
+		return safeCall(lambda: role.displayString) or ""
 
 	def isAlive(self):
 		"""Whether the underlying object still exists and is reachable."""
 		obj = self.obj
 		if obj is None:
 			return False
-		hwnd = _safe(lambda: obj.windowHandle)
+		hwnd = safeCall(lambda: obj.windowHandle)
 		if hwnd and not winUser.isWindow(hwnd):
 			return False
-		# Touch a cheap property to detect a dead COM object.
-		try:
-			obj.name
-		except Exception:
-			return False
-		return True
+		# Touch a cheap property to detect a dead COM object. The sentinel is what
+		# tells a name that is legitimately ``None`` from one that could not be read.
+		return safeCall(lambda: obj.name, _UNREADABLE) is not _UNREADABLE
 
 	def isInForeground(self):
 		"""Whether this target is currently in the foreground application."""
@@ -381,18 +408,18 @@ class TrackedTarget(object):
 		separately and a window that cannot be restored is still worth raising.
 		Under one guard, a failure of the first silently cost the second as well.
 		"""
-		hwnd = _safe(lambda: obj.windowHandle)
+		hwnd = safeCall(lambda: obj.windowHandle)
 		if not hwnd or not winUser.isWindow(hwnd):
 			return
-		topHwnd = _safe(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)) or hwnd
+		topHwnd = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)) or hwnd
 		try:
 			if user32.dll.IsIconic(topHwnd):
 				user32.ShowWindow(topHwnd, _SW_RESTORE)
-		except Exception:
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not restore target window", exc_info=True)
 		try:
 			winUser.setForegroundWindow(topHwnd)
-		except Exception:
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not bring target window to the foreground", exc_info=True)
 
 	def setFocus(self, onFailure=None):
@@ -415,7 +442,7 @@ class TrackedTarget(object):
 		obj = self.obj
 		if obj is None:
 			return False
-		hwnd = _safe(lambda: obj.windowHandle)
+		hwnd = safeCall(lambda: obj.windowHandle)
 		if hwnd and not winUser.isWindow(hwnd):
 			return False
 		self._reactivateWindow(obj)
@@ -426,13 +453,13 @@ class TrackedTarget(object):
 		"""Issue the deferred focus call for a control target. Main thread only."""
 		try:
 			obj.setFocus()
-		except Exception:
+		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not set focus to target", exc_info=True)
 			if onFailure is not None:
 				onFailure()
 
 
-class TargetRegistry(object):
+class TargetRegistry:
 	"""The ordered collection of targets, with slot and sort handling.
 
 	Read from two threads: the main thread adds and removes targets, while the
@@ -484,9 +511,7 @@ class TargetRegistry(object):
 
 	def clear(self):
 		with self._lock:
-			removed = list(self._targets)
 			self._targets = []
-			return removed
 
 	def findByObject(self, obj):
 		if obj is None:
@@ -494,7 +519,7 @@ class TargetRegistry(object):
 		with self._lock:
 			candidates = list(self._targets)
 		for target in candidates:
-			if target.obj is not None and _safe(lambda t=target: t.obj == obj, False):
+			if target.obj is not None and safeCall(lambda t=target: t.obj == obj, False):
 				return target
 		return None
 
