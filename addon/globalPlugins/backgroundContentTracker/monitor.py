@@ -196,16 +196,16 @@ def _childrenOf(obj: NVDAObject, limit: int) -> tuple[list[NVDAObject], int]:
 	if _hasFastChildAccess(obj):
 		count = safeCall(lambda: int(obj.childCount), -1)
 		if count > limit:
-			children: list[NVDAObject] = []
+			tail: list[NVDAObject] = []
 			for index in range(count - 1, count - limit - 1, -1):
 				child = safeCall(lambda i=index: obj.getChild(i))
 				if child is None:
 					break  # the tail is shorter than advertised; keep what we have
-				children.append(child)
-			if children:
-				children.reverse()
-				return children, count - len(children)
-	children = safeCall(lambda: list(obj.children or []))
+				tail.append(child)
+			if tail:
+				tail.reverse()
+				return tail, count - len(tail)
+	children: list[NVDAObject] | None = safeCall(lambda: list(obj.children or []))
 	if children is None:
 		return [], 0
 	if len(children) > limit:

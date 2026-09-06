@@ -369,13 +369,18 @@ class TrackedTarget:
 	@property
 	def name(self) -> str:
 		"""The target's display name, falling back to the remembered name."""
-		current = safeCall(lambda: self.obj.name) if self.obj is not None else None
+		# Read once into a local, as everything here that reaches for the object
+		# does: the monitor thread detaches a target that has gone by setting this
+		# to ``None``, so a second read need not find what the first one did.
+		obj = self.obj
+		current = safeCall(lambda: obj.name) if obj is not None else None
 		return current or self.identity.get("name") or ""
 
 	@property
 	def role(self) -> Role | None:
-		if self.obj is not None:
-			return safeCall(lambda: self.obj.role)
+		obj = self.obj
+		if obj is not None:
+			return safeCall(lambda: obj.role)
 		return None
 
 	def roleText(self) -> str:

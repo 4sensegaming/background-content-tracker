@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 0.9.0\n"
-"POT-Creation-Date: 2026-09-06 22:35+0200\n"
+"POT-Creation-Date: 2026-09-06 22:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -229,7 +229,7 @@ msgstr ""
 #. to be shown on installation and add-on information found in add-on store
 #: addon\globalPlugins\backgroundContentTracker\settings.py:40
 #: addon\globalPlugins\backgroundContentTracker\__init__.py:137
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:425 buildVars.py:21
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:424 buildVars.py:21
 msgid "Background Content Tracker"
 msgstr ""
 
@@ -372,84 +372,84 @@ msgid ""
 msgstr ""
 
 #. Translators: heading of the overlay help.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:381
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:380
 msgid "Background Content Tracker commands"
 msgstr ""
 
 #. Translators: overlay help line for the H key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:384
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:383
 msgid "H: this help"
 msgstr ""
 
 #. Translators: overlay help line for the W key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:386
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:385
 msgid "W: start or stop tracking the current window"
 msgstr ""
 
 #. Translators: overlay help line for the F key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:388
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:387
 msgid "F: start or stop tracking the focused control"
 msgstr ""
 
 #. Translators: overlay help line for the M key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:390
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:389
 msgid "M: start or stop tracking the control under the mouse pointer"
 msgstr ""
 
 #. Translators: overlay help line for the N key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:392
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:391
 msgid "N: start or stop tracking the navigator object"
 msgstr ""
 
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:395
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:394
 msgid ""
 "Add shift to any of W, F, M or N to remember that one target, control to "
 "read it even in the foreground, or both"
 msgstr ""
 
 #. Translators: overlay help line for the T key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:398
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:397
 msgid "T: open the target menu"
 msgstr ""
 
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:401
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:400
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "move focus to it"
 msgstr ""
 
 #. Translators: overlay help line for Space and Enter.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:404
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:403
 msgid "Space or Enter: the most recently added target"
 msgstr ""
 
 #. Translators: overlay help line for Control plus a number.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:406
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:405
 msgid "Control plus a number: stop tracking the target in that slot"
 msgstr ""
 
 #. Translators: overlay help line for Backspace.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:408
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:407
 msgid "Backspace: stop tracking the most recently added target"
 msgstr ""
 
 #. Translators: overlay help line for Delete.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:410
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:409
 msgid "Delete: stop tracking all targets"
 msgstr ""
 
 #. Translators: overlay help line for the P key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:412
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:411
 msgid "P: pause or resume all tracking"
 msgstr ""
 
 #. Translators: overlay help line for the S key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:414
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:413
 msgid "S: open the add-on settings"
 msgstr ""
 
 #. Translators: overlay help line for the I key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:416
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:415
 msgid "I: open the add-on input gestures"
 msgstr ""
 

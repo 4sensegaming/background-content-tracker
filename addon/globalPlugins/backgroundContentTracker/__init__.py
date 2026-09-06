@@ -319,8 +319,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	@script(
 		# Translators: the description of the main command, shown in Input Gestures.
 		description=_(
-			"Opens the Background Content Tracker command overlay: press and "
-			"release it, then press a command key (H for help)"
+			"Opens the Background Content Tracker command overlay: press and release it, then press a command key (H for help)"
 		),
 		gestures=["kb:NVDA+;"],
 	)
