@@ -13,7 +13,9 @@ implements every overlay command.
 import contextlib
 import json
 import time
+from collections.abc import Callable, Mapping, Sequence
 from html import escape
+from typing import TYPE_CHECKING, Any
 
 import addonHandler
 import api
@@ -25,15 +27,24 @@ from gui import blockAction
 from gui.inputGestures import InputGesturesDialog
 from gui.settingsDialogs import NVDASettingsDialog
 from logHandler import log
+from NVDAObjects import NVDAObject
 from scriptHandler import script
 
 from . import addonConfig
 from . import menu as menuModule
 from . import settings as settingsModule
+from .addonConfig import ChangedKeys
 from .monitor import Monitor
 from .notifier import Notifier
 from .overlay import Overlay
-from .targets import TargetRegistry, objectIdentity, safeCall
+from .targets import TargetRegistry, TrackedTarget, objectIdentity, safeCall
+
+if TYPE_CHECKING:
+	# NVDA puts the translation lookup into this module's namespace at run time,
+	# which a type checker reading the source has no way of knowing. This says
+	# what it will be; nothing is imported when the add-on is actually running,
+	# which is what the suppression below records.
+	from gettext import gettext as _  # noqa: TC004
 
 addonHandler.initTranslation()
 
@@ -42,15 +53,20 @@ addonHandler.initTranslation()
 #: same four sources: the overlay's W, F, M and N keys, the target menu's
 #: start-tracking items, and the ``kind`` every target carries for the rest of
 #: its life. The order is the order the menu offers them in.
-_SOURCES = {
+_SOURCES: dict[str, Callable[[], NVDAObject | None]] = {
 	"window": api.getForegroundObject,
 	"focus": api.getFocusObject,
 	"mouse": api.getMouseObject,
 	"navigator": api.getNavigatorObject,
 }
 
+#: What a press still waiting to be repeated was: the command, and which
+#: target it named where it named one. Matched whole, so that a press on one
+#: slot followed by a press on another is two first presses, not a repeat.
+PendingKind = tuple[str, int | None]
 
-def _helpDocument(heading, commands):
+
+def _helpDocument(heading: str, commands: Sequence[str]) -> str:
 	"""The overlay help as HTML: a heading, then the commands as a list.
 
 	A fragment rather than a whole document, because that is what
@@ -88,12 +104,12 @@ class _InputGesturesAtCategory(InputGesturesDialog):
 	instead of hiding every other category behind a filter.
 	"""
 
-	def __init__(self, parent, category="", *args, **kwargs):
+	def __init__(self, parent: wx.Window, category: str = "", *args: Any, **kwargs: Any):
 		super().__init__(parent, *args, **kwargs)
 		if category:
 			self._selectCategory(category)
 
-	def _selectCategory(self, category):
+	def _selectCategory(self, category: str):
 		"""Expand and select the category named ``category``, if it is there.
 
 		Best-effort by design: the gesture tree is not a supported interface, so a
@@ -130,8 +146,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self.monitor = Monitor(self.registry, self.notifier, self._saveRememberedTargets)
 		self.overlay = Overlay(self)
 		# State for the "press a number again to move focus" behaviour.
-		self._pendingKind = None
-		self._pendingUid = None
+		self._pendingKind: PendingKind | None = None
+		self._pendingUid: int | None = None
 		self._pendingTime = 0.0
 		NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
 		# Some global settings need something done to the targets that already
@@ -158,7 +174,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		super().terminate()
 
 	# --- reacting to a change of the global settings ------------------------
-	def _onSettingsChanged(self, changed):
+	def _onSettingsChanged(self, changed: ChangedKeys):
 		"""Bring the existing targets into line with a global setting that moved.
 
 		Registered with :func:`addonConfig.registerChangeHook`, so it hears about
@@ -250,7 +266,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		next change.
 		"""
 		settings = addonConfig.snapshot()
-		data = []
+		data: list[dict[str, Any]] = []
 		for target in self.registry:
 			if not target.setting("rememberTargets", settings):
 				continue
@@ -259,7 +275,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				identity = objectIdentity(target.obj)
 			if not identity:
 				continue
-			entry = {"identity": identity, "kind": target.kind}
+			entry: dict[str, Any] = {"identity": identity, "kind": target.kind}
 			if target.overrides:
 				entry["overrides"] = dict(target.overrides)
 			data.append(entry)
@@ -321,15 +337,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	# press is captured there rather than reaching the app; what the pending press
 	# decides is only whether it counts as a repeat. It is matched on the command
 	# *and* its target, so 2 followed by 3 is two first presses, not a repeat.
-	def _isSecondPress(self, pendingKind, uid):
+	def _isSecondPress(self, pendingKind: PendingKind, uid: int | None) -> bool:
 		"""True if this press repeats the one still pending, within the timeout."""
 		return (
 			self._pendingKind == pendingKind
 			and self._pendingUid == uid
-			and (time.time() - self._pendingTime) <= addonConfig.get("overlayTimeout")
+			and (time.time() - self._pendingTime) <= int(addonConfig.get("overlayTimeout"))
 		)
 
-	def _awaitSecondPress(self, pendingKind, uid):
+	def _awaitSecondPress(self, pendingKind: PendingKind, uid: int | None):
 		"""Record this press, so an identical one right after it counts as the second."""
 		self._pendingKind = pendingKind
 		self._pendingUid = uid
@@ -413,7 +429,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message("\n".join([heading] + commands))
 			self._awaitSecondPress(("help", None), None)
 
-	def toggleSource(self, kind, overrides=None):
+	def toggleSource(self, kind: str, overrides: Mapping[str, bool] | None = None):
 		"""Start, or stop, tracking whatever one of :data:`_SOURCES` names now.
 
 		``kind`` is the source's key, which is also the kind the target keeps.
@@ -431,7 +447,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self.startTracking(obj, kind, overrides)
 
-	def slotInfo(self, index):
+	def slotInfo(self, index: int):
 		target = self.registry.slot(index)
 		if target is None:
 			self._pendingKind = None
@@ -447,7 +463,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		self._infoOrFocus(("newest", None), target)
 
-	def _infoOrFocus(self, pendingKind, target):
+	def _infoOrFocus(self, pendingKind: PendingKind, target: TrackedTarget):
 		if self._isSecondPress(pendingKind, target.uid):
 			# Second identical press within the window: move the focus.
 			self._pendingKind = None
@@ -456,7 +472,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self.notifier.speakInfo(target)
 			self._awaitSecondPress(pendingKind, target.uid)
 
-	def _focus(self, target):
+	def _focus(self, target: TrackedTarget):
 		"""Move focus to a target, re-resolving a stale control object first.
 
 		A control's cached object goes stale when its app reshapes the tree (the
@@ -479,7 +495,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		self.monitor.relocateAsync(target, self._focusResolved)
 
-	def _focusResolved(self, target, found):
+	def _focusResolved(self, target: TrackedTarget, found: bool):
 		"""Focus a target once its object is known to be current. Main thread only."""
 		if not found:
 			self.notifier.focusFailed()
@@ -487,7 +503,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if not target.setFocus(self.notifier.focusFailed):
 			self.notifier.focusFailed()
 
-	def stopSlot(self, index):
+	def stopSlot(self, index: int):
 		self._pendingKind = None
 		target = self.registry.slot(index)
 		if target is None:
@@ -520,7 +536,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self.notifier.paused()
 
-	def _anythingToTrack(self):
+	def _anythingToTrack(self) -> bool:
 		"""Whether anything is tracked, or is still waiting to be found.
 
 		A remembered target that is not there yet counts: the monitor looks for it
@@ -576,9 +592,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		sources = self._captureSources()
 		wx.CallAfter(menuModule.showTargetMenu, self, sources)
 
-	def _captureSources(self):
-		sources = []
-		seen = []
+	def _captureSources(self) -> list[menuModule.Source]:
+		sources: list[menuModule.Source] = []
+		seen: list[NVDAObject] = []
 		for kind, getter in _SOURCES.items():
 			obj = getter()
 			if obj is None or self.registry.findByObject(obj) is not None:
@@ -590,7 +606,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		return sources
 
 	# --- actions invoked from the menu --------------------------------------
-	def startTracking(self, obj, kind, overrides=None):
+	def startTracking(
+		self,
+		obj: NVDAObject | None,
+		kind: str,
+		overrides: Mapping[str, bool] | None = None,
+	):
 		"""Start tracking ``obj``, optionally with local settings of its own.
 
 		``overrides`` maps keys of :data:`addonConfig.LOCAL_KEYS` to this
@@ -606,15 +627,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self.notifier.announceTracking(target)
 		self._saveRememberedTargets()
 
-	def stopTracking(self, target):
+	def stopTracking(self, target: TrackedTarget):
 		if self.registry.remove(target):
 			self.notifier.announceStopped(target)
 			self._saveRememberedTargets()
 
-	def setFocusToTarget(self, target):
+	def setFocusToTarget(self, target: TrackedTarget):
 		self._focus(target)
 
-	def setTargetOverride(self, target, key, value):
+	def setTargetOverride(self, target: TrackedTarget, key: str, value: bool):
 		"""Give one target its own value for a local setting. Main thread only.
 
 		Invoked from the check items in a target's Target settings submenu, so the

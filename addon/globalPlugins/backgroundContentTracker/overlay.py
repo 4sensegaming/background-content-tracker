@@ -47,19 +47,38 @@ stopped on the main thread only.
 """
 
 import contextlib
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 import addonHandler
 import core
 import inputCore
 import queueHandler
 import ui
+import wx
 from keyboardHandler import KeyboardInputGesture
 from logHandler import log
 from speech.priorities import Spri
 
 from . import addonConfig
 
+if TYPE_CHECKING:
+	# NVDA puts the translation lookup into this module's namespace at run time,
+	# which a type checker reading the source has no way of knowing. This says
+	# what it will be; nothing is imported when the add-on is actually running,
+	# which is what the suppression below records.
+	from gettext import gettext as _  # noqa: TC004
+
+	# The plugin the commands are run against. Imported for the annotation
+	# alone: it is the package this module lives in, so importing it for real
+	# would be a cycle.
+	from . import GlobalPlugin
+
 addonHandler.initTranslation()
+
+#: What NVDA hands the capture hook, and what the hook hands back: True lets
+#: the gesture through, False swallows it.
+CaptureFunc = Callable[[inputCore.InputGesture], bool]
 
 #: Maps a number-row/number-pad digit key name to a 0-based slot index.
 _DIGIT_KEYS = {"1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9}
@@ -86,12 +105,12 @@ _HANDOFF_ANNOUNCE_DELAY_MS = 400
 class Overlay:
 	"""Owns the open/close/timeout mechanics and routes each captured key."""
 
-	def __init__(self, controller):
+	def __init__(self, controller: "GlobalPlugin"):
 		#: The object implementing the command methods (the GlobalPlugin).
 		self.controller = controller
 		self._armed = False
-		self._timer = None
-		self._prevCapture = None
+		self._timer: wx.CallLater | None = None
+		self._prevCapture: CaptureFunc | None = None
 		#: Bumped by every open and every close, so that a timer or a queued key
 		#: press belonging to a previous overlay session is ignored.
 		self._session = 0
@@ -134,7 +153,7 @@ class Overlay:
 		"""
 		self._end(_HANDOFF_ANNOUNCE_DELAY_MS)
 
-	def _end(self, announceDelayMs):
+	def _end(self, announceDelayMs: int):
 		"""Close an open overlay and announce it. Silent if it is not open."""
 		if not self._armed:
 			return
@@ -164,7 +183,7 @@ class Overlay:
 				self._timer.Stop()
 			self._timer = None
 
-	def _onTimeout(self, session):
+	def _onTimeout(self, session: int):
 		self._timer = None
 		if session != self._session:
 			return  # a later session owns the overlay now
@@ -181,7 +200,7 @@ class Overlay:
 		self._prevCapture = None
 
 	# --- KEYBOARD HOOK THREAD: must be fast and non-blocking ------------------
-	def _capture(self, gesture):
+	def _capture(self, gesture: inputCore.InputGesture) -> bool:
 		"""Capture one command key. See the threading contract above: absolutely
 		no wx, speech or NVDAObject/COM access may happen here.
 
@@ -218,7 +237,7 @@ class Overlay:
 		return False  # swallow the key
 
 	# --- main thread: running the command ------------------------------------
-	def _handleKey(self, key, mods, session):
+	def _handleKey(self, key: str, mods: tuple[str, ...], session: int):
 		"""Run one captured command. Queued onto the main thread by _capture()."""
 		if session != self._session:
 			return  # belongs to a previous overlay session
@@ -244,7 +263,7 @@ class Overlay:
 			# Still open, so keep it open: the command did not hand the focus on.
 			self._restartTimer()
 
-	def _dispatch(self, key, mods):
+	def _dispatch(self, key: str, mods: tuple[str, ...]) -> bool:
 		"""Route a captured key to a command.
 
 		Returns True if it was a recognised command, False for anything else,
@@ -257,13 +276,13 @@ class Overlay:
 				key = suffix
 			elif suffix == "enter":
 				key = "enter"
-		mods = set(mods)
+		held = set(mods)
 		c = self.controller
 
-		if mods == {"control"} and key in _DIGIT_KEYS:
+		if held == {"control"} and key in _DIGIT_KEYS:
 			c.stopSlot(_DIGIT_KEYS[key])
 			return True
-		if key in _TOGGLE_KEYS and not mods - {"control", "shift"}:
+		if key in _TOGGLE_KEYS and not held - {"control", "shift"}:
 			# Held with one of these, the command still does exactly what it does
 			# on its own; the modifiers only say what the target it adds is to be
 			# given. Shift asks for this one target to be remembered, control for
@@ -272,14 +291,14 @@ class Overlay:
 			# is added rather than afterwards in the target menu. A press that
 			# stops tracking has no target to give anything to, and the modifiers
 			# are simply spent: they never reach an existing target.
-			overrides = {}
-			if "shift" in mods:
+			overrides: dict[str, bool] = {}
+			if "shift" in held:
 				overrides["rememberTargets"] = True
-			if "control" in mods:
+			if "control" in held:
 				overrides["trackForegroundTargets"] = True
 			c.toggleSource(_TOGGLE_KEYS[key], overrides)
 			return True
-		if mods:
+		if held:
 			return False  # any other modifier combination is not a command
 
 		if key == "h":

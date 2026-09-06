@@ -15,6 +15,7 @@ this panel, and changing a global here never disturbs a target that has one.
 """
 
 import contextlib
+from typing import TYPE_CHECKING
 
 import addonHandler
 import tones
@@ -24,6 +25,13 @@ from gui.settingsDialogs import SettingsPanel
 
 from . import addonConfig
 
+if TYPE_CHECKING:
+	# NVDA puts the translation lookup into this module's namespace at run time,
+	# which a type checker reading the source has no way of knowing. This says
+	# what it will be; nothing is imported when the add-on is actually running,
+	# which is what the suppression below records.
+	from gettext import gettext as _  # noqa: TC004
+
 addonHandler.initTranslation()
 
 
@@ -31,7 +39,36 @@ class BCTSettingsPanel(SettingsPanel):
 	# Translators: the title of the add-on's category in NVDA's Settings dialog.
 	title = _("Background Content Tracker")
 
-	def makeSettings(self, settingsSizer):
+	#: The master switch, and what a detected change does.
+	enabledCb: wx.CheckBox
+	beepCb: wx.CheckBox
+	announceCb: wx.CheckBox
+	intervalCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	changesAtOnceCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	#: What a whole-window target is not to report.
+	ignoreProgressCb: wx.CheckBox
+	ignoreCountersCb: wx.CheckBox
+	titleChangeCb: wx.CheckBox
+	ignoreFocusedCb: wx.CheckBox
+	#: The beep, and the button that plays one with these two values.
+	durationCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	pitchCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	testButton: wx.Button
+	#: What a change announcement carries, and what a menu description does.
+	annTypeCb: wx.CheckBox
+	annContentCb: wx.CheckBox
+	menuTypeCb: wx.CheckBox
+	menuTimeCb: wx.CheckBox
+	menuContentCb: wx.CheckBox
+	#: The overlay, the order the targets are listed in, and the three options
+	#: a single target is most often given on its own account.
+	overlayTimeoutCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	sortRadio: wx.RadioBox
+	trackForegroundCb: wx.CheckBox
+	rememberCb: wx.CheckBox
+	forgetCb: wx.CheckBox
+
+	def makeSettings(self, settingsSizer: wx.Sizer):
 		sHelper = guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
 
 		# Translators: master switch; enables or disables all tracking.
@@ -194,7 +231,7 @@ class BCTSettingsPanel(SettingsPanel):
 
 		self._updateDependentControls()
 
-	def _onDependencyChanged(self, evt):
+	def _onDependencyChanged(self, evt: wx.CommandEvent):
 		self._updateDependentControls()
 
 	def _updateDependentControls(self):
@@ -215,7 +252,7 @@ class BCTSettingsPanel(SettingsPanel):
 		# either way, so turning remembering back on finds it as it was left.
 		self.forgetCb.Enable(self.rememberCb.IsChecked())
 
-	def _onTest(self, evt):
+	def _onTest(self, evt: wx.CommandEvent):
 		# The same best-effort tone as a change announcement plays, and silent for
 		# the same reason: a tone that will not play says so by not playing.
 		with contextlib.suppress(Exception):

@@ -8,6 +8,8 @@
 """
 
 import time
+from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import addonHandler
 import tones
@@ -16,11 +18,25 @@ from logHandler import log
 from speech.priorities import Spri
 
 from . import addonConfig
+from .targets import TrackedTarget
+
+if TYPE_CHECKING:
+	# NVDA puts the translation lookups into this module's namespace at run time,
+	# which a type checker reading the source has no way of knowing. This says what
+	# they will be; nothing is imported when the add-on is actually running, which
+	# is what the suppression below records.
+	from gettext import gettext as _  # noqa: TC004
+	from gettext import ngettext  # noqa: TC004
 
 addonHandler.initTranslation()
 
+#: The trailing pieces that go after a target's name in a description. A piece
+#: that came to nothing is passed as it was worked out and dropped here, so
+#: that a caller never has to decide whether it has anything to add.
+Extras = Sequence[str | None]
 
-def _describe(roleText, name, includeType, extras):
+
+def _describe(roleText: str, name: str, includeType: bool, extras: Extras) -> str:
 	"""Build a target description such as "window: Claude, 3 minutes ago".
 
 	``extras`` is a list of already-formatted trailing pieces (time, content);
@@ -35,7 +51,7 @@ def _describe(roleText, name, includeType, extras):
 	return ", ".join(parts)
 
 
-def _notFound():
+def _notFound() -> str:
 	"""The trailing piece describing a target that is not there.
 
 	A function rather than a constant so that it is translated when it is used,
@@ -46,7 +62,7 @@ def _notFound():
 	return _("not found")
 
 
-def relativeTime(when):
+def relativeTime(when: float | None) -> str:
 	"""A human, translatable "x ago" string for the target menu."""
 	if not when:
 		# Translators: shown in the target menu when a target has not changed yet.
@@ -71,7 +87,12 @@ def relativeTime(when):
 class Notifier:
 	"""Turns registry/monitor events into speech and beeps, per the settings."""
 
-	def _describeTarget(self, target, extras=(), typeSetting="announceTargetType"):
+	def _describeTarget(
+		self,
+		target: TrackedTarget,
+		extras: Extras = (),
+		typeSetting: str = "announceTargetType",
+	) -> str:
 		"""``target`` described for the user, per the settings that shape it.
 
 		Every message this class produces is the same three questions — what the
@@ -80,9 +101,9 @@ class Notifier:
 		setting decides the control type is the only thing that varies: the spoken
 		messages follow "Target type", the target menu follows its own.
 		"""
-		return _describe(target.roleText(), target.name, addonConfig.get(typeSetting), extras)
+		return _describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
 
-	def announceTracking(self, target):
+	def announceTracking(self, target: TrackedTarget):
 		desc = self._describeTarget(target)
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
 		# Queued rather than interrupting: an application coming back can bring
@@ -90,7 +111,7 @@ class Notifier:
 		# leave only the last of them audible.
 		ui.message(_("Tracking {target}").format(target=desc), speechPriority=Spri.NEXT)
 
-	def announceRestored(self, found, total):
+	def announceRestored(self, found: int, total: int):
 		"""Report the remembered targets restored at start-up, in one message.
 
 		They are counted rather than named: ten of them named one after another,
@@ -114,12 +135,12 @@ class Notifier:
 		text = _("Tracking {found} of {total} remembered targets")
 		ui.message(text.format(found=found, total=total), speechPriority=Spri.NEXT)
 
-	def announceStopped(self, target):
+	def announceStopped(self, target: TrackedTarget):
 		desc = self._describeTarget(target)
 		# Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 		ui.message(_("Stopped tracking {target}").format(target=desc))
 
-	def announceChange(self, target, delta):
+	def announceChange(self, target: TrackedTarget, delta: str):
 		"""A change was detected in ``target``; ``delta`` is the new content."""
 		if addonConfig.get("changeBeep"):
 			self.beep()
@@ -130,7 +151,7 @@ class Notifier:
 		if desc:
 			ui.message(desc)
 
-	def speakInfo(self, target):
+	def speakInfo(self, target: TrackedTarget):
 		"""On-demand information about a target (the number/space/enter keys).
 
 		A target that is not there at all is reported as not found. This is the
@@ -154,7 +175,7 @@ class Notifier:
 		if desc:
 			ui.message(desc)
 
-	def menuDescription(self, target):
+	def menuDescription(self, target: TrackedTarget) -> str:
 		"""The text of a target's item in the target menu.
 
 		A target that is not there is shown as not found, in place of both the time
@@ -169,7 +190,7 @@ class Notifier:
 		if not target.isAlive():
 			return self._describeTarget(target, [_notFound()], "menuTargetType")
 		reportable = target.hasReportableChange()
-		extras = []
+		extras: list[str] = []
 		if addonConfig.get("menuTimeSinceChange"):
 			extras.append(relativeTime(target.lastChangeTime if reportable else None))
 		if addonConfig.get("menuChangedContent") and reportable and target.lastDelta:
@@ -184,7 +205,7 @@ class Notifier:
 		except Exception:  # noqa: BLE001
 			log.debugWarning("Beep failed", exc_info=True)
 
-	def noTargetInSlot(self, slotNumber):
+	def noTargetInSlot(self, slotNumber: int):
 		# Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
 		ui.message(_("No target in slot {slot}").format(slot=slotNumber))
 

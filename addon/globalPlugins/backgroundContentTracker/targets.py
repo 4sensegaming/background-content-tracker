@@ -14,13 +14,25 @@ that is the monitor's job. This keeps the model easy to reason about and test.
 import threading
 import time
 from collections import OrderedDict
+from collections.abc import Callable, Iterator, Mapping
+from typing import Any
 
 import core
 import winUser
+from controlTypes import Role
 from logHandler import log
+from NVDAObjects import NVDAObject
 from winBindings import user32
 
 from . import addonConfig
+from .addonConfig import ConfigValue, Settings
+
+#: What a target is, in the few fields that survive it going away: enough to
+#: recognise it again when it comes back, and JSON-serialisable so that it can
+#: be written to the configuration. The values are strings and numbers, but
+#: one read back from the saved list is only whatever was in the file, so
+#: nothing here promises which a given field holds.
+Identity = dict[str, Any]
 
 #: ``ShowWindow``'s "restore" command: show the window, and put it back to its
 #: previous size and position if it is minimised. Stated here because NVDA's
@@ -34,7 +46,7 @@ _SW_RESTORE = 9
 _UNREADABLE = object()
 
 
-def safeCall(func, default=None):
+def safeCall(func: Callable[[], Any], default: Any = None) -> Any:
 	"""Call ``func`` and return its result, or ``default`` on any exception.
 
 	Reading properties of a dead or cross-process accessible object frequently
@@ -50,7 +62,7 @@ def safeCall(func, default=None):
 		return default
 
 
-def appNameOf(obj):
+def appNameOf(obj: NVDAObject) -> str:
 	"""The object's application name, or "".
 
 	Split out of :func:`objectIdentity` because it is the one field cheap enough
@@ -60,7 +72,7 @@ def appNameOf(obj):
 	return safeCall(lambda: obj.appModule.appName) or ""
 
 
-def titleOf(obj):
+def titleOf(obj: NVDAObject) -> str:
 	"""The object's current title (its name), or "".
 
 	Read live from the object rather than taken from the identity descriptor,
@@ -70,7 +82,7 @@ def titleOf(obj):
 	return safeCall(lambda: obj.name) or ""
 
 
-def objectIdentity(obj):
+def objectIdentity(obj: NVDAObject) -> Identity:
 	"""Return a JSON-serialisable identity descriptor for an NVDAObject.
 
 	Used both to recognise the same target again after it disappears and
@@ -87,7 +99,7 @@ def objectIdentity(obj):
 	}
 
 
-def identitiesMatch(a, b):
+def identitiesMatch(a: Identity, b: Identity) -> bool:
 	"""Heuristic equality between two identity descriptors."""
 	if not a or not b:
 		return False
@@ -102,7 +114,7 @@ def identitiesMatch(a, b):
 	return True
 
 
-def isInForegroundApp(obj):
+def isInForegroundApp(obj: NVDAObject | None) -> bool:
 	"""Whether the object's window belongs to the foreground application.
 
 	Such targets are neither read nor announced by the monitor: the whole point of
@@ -144,7 +156,7 @@ def isInForegroundApp(obj):
 		return False
 
 
-def _isInActiveStoreApp(hwnd):
+def _isInActiveStoreApp(hwnd: int) -> bool:
 	"""Whether ``hwnd`` belongs to the Store app the user is working in.
 
 	A UWP or WinUI window is not a descendant of the foreground window and does
@@ -166,7 +178,13 @@ def _isInActiveStoreApp(hwnd):
 class TrackedTarget:
 	"""One tracked window or control, plus its change-detection state."""
 
-	def __init__(self, uid, obj, kind, overrides=None):
+	def __init__(
+		self,
+		uid: int,
+		obj: NVDAObject | None,
+		kind: str,
+		overrides: Mapping[str, bool] | None = None,
+	):
 		#: Unique, monotonically increasing id. Also encodes insertion order.
 		self.uid = uid
 		#: The live NVDAObject, or ``None`` when the target is detached (gone).
@@ -179,9 +197,9 @@ class TrackedTarget:
 		#: configuration, so one the user changes later still moves this target.
 		#: Rebound wholesale by :meth:`setOverride`, never mutated in place,
 		#: because it is written on the main thread and read on the monitor one.
-		self.overrides = dict(overrides) if overrides else {}
+		self.overrides: dict[str, bool] = dict(overrides) if overrides else {}
 		#: Identity descriptor captured at creation, for re-location/persistence.
-		self.identity = objectIdentity(obj) if obj is not None else {}
+		self.identity: Identity = objectIdentity(obj) if obj is not None else {}
 		self.createdTime = time.time()
 		#: Every text this target is known to hold, mapped to how many copies of
 		#: it are known: the multiset the monitor's change detection asks its one
@@ -191,7 +209,7 @@ class TrackedTarget:
 		#: new. Ordered least recently seen first, which is the order the size
 		#: caps evict in. Mutated in place by the monitor thread, which is the
 		#: only thread that ever touches it.
-		self.seenContent = OrderedDict()
+		self.seenContent: OrderedDict[str, int] = OrderedDict()
 		#: Total length of the keys of ``seenContent``, kept alongside it so the
 		#: cache can be capped by weight without measuring it every poll.
 		self.seenChars = 0
@@ -200,14 +218,14 @@ class TrackedTarget:
 		#: timers" can tell a control that replaced itself (its old text is gone
 		#: this sweep) from a log that appended a line (its old lines are all
 		#: still there).
-		self.prevTexts = frozenset()
+		self.prevTexts: frozenset[str] = frozenset()
 		#: Templates (text with numeric runs collapsed) of the controls this
 		#: target has been caught counting: ones that changed in nothing but their
 		#: numbers. They are silenced from the moment they are recognised until
 		#: the target is re-baselined or the option that recognises them moves.
 		#: Rebound wholesale, never added to in place: the monitor thread writes
 		#: it as it learns, and the main thread empties it when the option moves.
-		self.ignoredTemplates = frozenset()
+		self.ignoredTemplates: frozenset[str] = frozenset()
 		#: Number of consecutive changes already announced for this target since
 		#: it was last refocused. Capped by the "Changes to announce at once"
 		#: setting; reset on re-baseline.
@@ -216,7 +234,7 @@ class TrackedTarget:
 		#: node(s) that changed, not the bare diff (used by speak-info and the menu).
 		self.lastDelta = ""
 		#: ``time.time()`` of the last detected change, or ``None``.
-		self.lastChangeTime = None
+		self.lastChangeTime: float | None = None
 		#: Whether the target's application was in the foreground at the previous
 		#: check. Only the previous state: what the monitor does about it depends
 		#: on whether the target is tracked in the foreground as well.
@@ -239,7 +257,7 @@ class TrackedTarget:
 		#: window that no longer carries it is then treated as gone rather than as
 		#: merely changed. ``None`` for the entire life of anything else, a single
 		#: control included: a title is not part of what such a target is.
-		self.trackedTitle = None
+		self.trackedTitle: str | None = None
 		#: When this target may next be looked for while it is detached, as a
 		#: ``time.time()``, and how long the wait after another failure. Zero for
 		#: both means "at the next relocation pass", which is where every target
@@ -249,7 +267,7 @@ class TrackedTarget:
 		self.nextRelocate = 0.0
 		self.relocateDelay = 0.0
 
-	def setting(self, key, settings=None):
+	def setting(self, key: str, settings: Settings | None = None) -> ConfigValue:
 		"""The effective value of a local setting: this target's, or the global.
 
 		``settings`` is a configuration snapshot. The monitor thread always has
@@ -262,7 +280,7 @@ class TrackedTarget:
 			settings = addonConfig.snapshot()
 		return settings[key]
 
-	def setOverride(self, key, value):
+	def setOverride(self, key: str, value: bool | None):
 		"""Give this target its own value for a setting, or drop the override.
 
 		A ``value`` of ``None`` removes the override, so the target inherits the
@@ -288,7 +306,7 @@ class TrackedTarget:
 		"""
 		self.ignoredTemplates = frozenset()
 
-	def isHeldToItsTitle(self, settings=None):
+	def isHeldToItsTitle(self, settings: Settings | None = None) -> bool:
 		"""Whether this target is held to the window title it was added with.
 
 		True only for a whole window with "Consider changed title a disappeared
@@ -306,7 +324,7 @@ class TrackedTarget:
 		"""
 		return self.kind == "window" and bool(self.setting("titleChangeDisappears", settings))
 
-	def isForgottenWhenGone(self, settings=None):
+	def isForgottenWhenGone(self, settings: Settings | None = None) -> bool:
 		"""Whether this target is dropped from the list once it disappears.
 
 		"Forget remembered targets when they disappear" only ever qualifies
@@ -327,7 +345,7 @@ class TrackedTarget:
 			return True
 		return bool(self.setting("forgetOnDisappear", settings))
 
-	def captureTrackedTitle(self, settings=None):
+	def captureTrackedTitle(self, settings: Settings | None = None):
 		"""Take, or drop, the title this target is held to, as things stand now.
 
 		Called wherever the answer may have just moved: when the target is added
@@ -349,25 +367,25 @@ class TrackedTarget:
 		)
 
 	@property
-	def name(self):
+	def name(self) -> str:
 		"""The target's display name, falling back to the remembered name."""
 		current = safeCall(lambda: self.obj.name) if self.obj is not None else None
 		return current or self.identity.get("name") or ""
 
 	@property
-	def role(self):
+	def role(self) -> Role | None:
 		if self.obj is not None:
 			return safeCall(lambda: self.obj.role)
 		return None
 
-	def roleText(self):
+	def roleText(self) -> str:
 		"""NVDA's own localised name for the control type, e.g. "window"."""
 		role = self.role
 		if role is None:
 			return ""
 		return safeCall(lambda: role.displayString) or ""
 
-	def isAlive(self):
+	def isAlive(self) -> bool:
 		"""Whether the underlying object still exists and is reachable."""
 		obj = self.obj
 		if obj is None:
@@ -379,11 +397,11 @@ class TrackedTarget:
 		# tells a name that is legitimately ``None`` from one that could not be read.
 		return safeCall(lambda: obj.name, _UNREADABLE) is not _UNREADABLE
 
-	def isInForeground(self):
+	def isInForeground(self) -> bool:
 		"""Whether this target is currently in the foreground application."""
 		return isInForegroundApp(self.obj)
 
-	def hasReportableChange(self):
+	def hasReportableChange(self) -> bool:
 		"""Whether a manual query should surface a cached change for this target.
 
 		False before the target has changed at all since it was baselined, and —
@@ -396,9 +414,9 @@ class TrackedTarget:
 		"""
 		if self.lastChangeTime is None:
 			return False
-		return self.setting("trackForegroundTargets") or not self.isInForeground()
+		return bool(self.setting("trackForegroundTargets")) or not self.isInForeground()
 
-	def _reactivateWindow(self, obj):
+	def _reactivateWindow(self, obj: NVDAObject):
 		"""Un-minimise and bring the target's top-level window to the foreground.
 
 		Best-effort: the OS may reject foregrounding from a background process, so
@@ -422,7 +440,7 @@ class TrackedTarget:
 		except Exception:  # noqa: BLE001
 			log.debugWarning("Could not bring target window to the foreground", exc_info=True)
 
-	def setFocus(self, onFailure=None):
+	def setFocus(self, onFailure: Callable[[], None] | None = None) -> bool:
 		"""Move the system focus to this target.
 
 		The top-level window is reactivated first (restored if minimised and
@@ -449,7 +467,7 @@ class TrackedTarget:
 		core.callLater(250, self._doSetFocus, obj, onFailure)
 		return True
 
-	def _doSetFocus(self, obj, onFailure=None):
+	def _doSetFocus(self, obj: NVDAObject, onFailure: Callable[[], None] | None = None):
 		"""Issue the deferred focus call for a control target. Main thread only."""
 		try:
 			obj.setFocus()
@@ -472,37 +490,47 @@ class TargetRegistry:
 	MAX_SLOTS = 10
 
 	def __init__(self):
-		self._targets = []
+		self._targets: list[TrackedTarget] = []
 		self._nextUid = 1
 		self._lock = threading.RLock()
 
-	def __len__(self):
+	def __len__(self) -> int:
 		with self._lock:
 			return len(self._targets)
 
-	def __iter__(self):
+	def __iter__(self) -> Iterator[TrackedTarget]:
 		with self._lock:
 			return iter(list(self._targets))
 
-	def _newUid(self):
+	def _newUid(self) -> int:
 		uid = self._nextUid
 		self._nextUid += 1
 		return uid
 
-	def add(self, obj, kind, overrides=None):
+	def add(
+		self,
+		obj: NVDAObject,
+		kind: str,
+		overrides: Mapping[str, bool] | None = None,
+	) -> TrackedTarget:
 		with self._lock:
 			target = TrackedTarget(self._newUid(), obj, kind, overrides)
 			self._targets.append(target)
 			return target
 
-	def addDetached(self, identity, kind, overrides=None):
+	def addDetached(
+		self,
+		identity: Identity,
+		kind: str,
+		overrides: Mapping[str, bool] | None = None,
+	) -> TrackedTarget:
 		with self._lock:
 			target = TrackedTarget(self._newUid(), None, kind, overrides)
 			target.identity = identity or {}
 			self._targets.append(target)
 			return target
 
-	def remove(self, target):
+	def remove(self, target: TrackedTarget) -> bool:
 		with self._lock:
 			if target in self._targets:
 				self._targets.remove(target)
@@ -513,7 +541,7 @@ class TargetRegistry:
 		with self._lock:
 			self._targets = []
 
-	def findByObject(self, obj):
+	def findByObject(self, obj: NVDAObject | None) -> TrackedTarget | None:
 		if obj is None:
 			return None
 		with self._lock:
@@ -523,7 +551,7 @@ class TargetRegistry:
 				return target
 		return None
 
-	def sortedTargets(self):
+	def sortedTargets(self) -> list[TrackedTarget]:
 		"""Targets in the order dictated by the Target sorting setting."""
 		with self._lock:
 			ordered = list(self._targets)
@@ -531,28 +559,28 @@ class TargetRegistry:
 			ordered.reverse()
 		return ordered
 
-	def slots(self):
+	def slots(self) -> list[TrackedTarget]:
 		"""The (at most ten) targets addressable by the number keys."""
 		return self.sortedTargets()[: self.MAX_SLOTS]
 
-	def slot(self, index):
+	def slot(self, index: int) -> TrackedTarget | None:
 		"""The target in slot ``index`` (0-based), or ``None`` if empty."""
 		slots = self.slots()
 		if 0 <= index < len(slots):
 			return slots[index]
 		return None
 
-	def newest(self):
+	def newest(self) -> TrackedTarget | None:
 		"""The most recently added target, regardless of sort order."""
 		with self._lock:
 			if not self._targets:
 				return None
 			return max(self._targets, key=lambda t: t.uid)
 
-	def liveTargets(self):
+	def liveTargets(self) -> list[TrackedTarget]:
 		with self._lock:
 			return [t for t in self._targets if t.obj is not None]
 
-	def detachedTargets(self):
+	def detachedTargets(self) -> list[TrackedTarget]:
 		with self._lock:
 			return [t for t in self._targets if t.obj is None]

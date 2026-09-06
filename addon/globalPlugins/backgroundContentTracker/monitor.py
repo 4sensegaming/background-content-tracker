@@ -64,6 +64,8 @@ import re
 import threading
 import time
 from collections import Counter, OrderedDict, deque
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 import api
 import queueHandler
@@ -75,7 +77,14 @@ from NVDAObjects import NVDAObject, NVDAObjectTextInfo
 
 from . import addonConfig
 from . import targets as targetsMod
-from .targets import isInForegroundApp, safeCall
+from .addonConfig import Settings
+from .notifier import Notifier
+from .targets import Identity, TargetRegistry, TrackedTarget, isInForegroundApp, safeCall
+
+#: One control's contribution to a sweep: the key naming where in the tree it
+#: sits, and the text it holds. The key is for nesting alone; every question
+#: asked of a sweep's content is asked of the text.
+Entry = tuple[str, str]
 
 #: The states that mean a control is not actually being shown to anyone: hidden,
 #: or scrolled out of view. They are what NVDA's own ProgressBar behaviour
@@ -132,7 +141,7 @@ MAX_CACHE_CHARS = 20 * 1000 * 1000
 _OBJECT_REPLACEMENT = "￼"
 
 
-def _hasOwnText(obj):
+def _hasOwnText(obj: NVDAObject) -> bool:
 	"""Whether the object exposes real text of its own.
 
 	``NVDAObjectTextInfo`` is NVDA's generic fallback: it only ever reports the
@@ -144,11 +153,11 @@ def _hasOwnText(obj):
 	return safeCall(lambda: obj.TextInfo is not NVDAObjectTextInfo, False) is True
 
 
-def _ownText(obj):
+def _ownText(obj: NVDAObject) -> str:
 	return safeCall(lambda: obj.makeTextInfo(textInfos.POSITION_ALL).text, "") or ""
 
 
-def _labelOf(obj):
+def _labelOf(obj: NVDAObject) -> str:
 	values = (safeCall(lambda: obj.name), safeCall(lambda: obj.value))
 	return " ".join(value for value in values if isinstance(value, str) and value and not value.isspace())
 
@@ -162,7 +171,7 @@ _BASE_GET_CHILD = NVDAObject.getChild
 _BASE_CHILD_COUNT = NVDAObject._get_childCount
 
 
-def _hasFastChildAccess(obj):
+def _hasFastChildAccess(obj: NVDAObject) -> bool:
 	"""Whether ``obj`` can hand back one child without building all of them."""
 	cls = type(obj)
 	return (
@@ -171,7 +180,7 @@ def _hasFastChildAccess(obj):
 	)
 
 
-def _childrenOf(obj, limit):
+def _childrenOf(obj: NVDAObject, limit: int) -> tuple[list[NVDAObject], int]:
 	"""At most ``limit`` of ``obj``'s children, and the real child index of the first.
 
 	The children are taken from the END, because that is where the sweep spends
@@ -187,7 +196,7 @@ def _childrenOf(obj, limit):
 	if _hasFastChildAccess(obj):
 		count = safeCall(lambda: int(obj.childCount), -1)
 		if count > limit:
-			children = []
+			children: list[NVDAObject] = []
 			for index in range(count - 1, count - limit - 1, -1):
 				child = safeCall(lambda i=index: obj.getChild(i))
 				if child is None:
@@ -204,7 +213,7 @@ def _childrenOf(obj, limit):
 	return children, 0
 
 
-def _cleanText(text):
+def _cleanText(text: str) -> str:
 	"""Reduce an object's raw text to the words a user could actually read.
 
 	Embedded-object placeholders stand in for child objects rather than for
@@ -219,7 +228,7 @@ def _cleanText(text):
 	return " ".join(text.split())
 
 
-def _readableText(raw):
+def _readableText(raw: str) -> str:
 	"""``raw`` normalised and capped to :data:`MAX_TEXT_CHARS`, keeping its end.
 
 	The raw string is sliced before it is normalised: an object's own text can be
@@ -234,7 +243,7 @@ def _readableText(raw):
 	return text[-MAX_TEXT_CHARS:] if len(text) > MAX_TEXT_CHARS else text
 
 
-def _isProgressBar(obj):
+def _isProgressBar(obj: NVDAObject) -> bool:
 	"""Whether the object is a progress bar control.
 
 	Tolerant of a missing role: a progress bar that cannot be recognised is simply
@@ -243,7 +252,7 @@ def _isProgressBar(obj):
 	return safeCall(lambda: obj.role == Role.PROGRESSBAR, False) is True
 
 
-def _isPresented(obj):
+def _isPresented(obj: NVDAObject | None) -> bool:
 	"""Whether the control is actually being shown, rather than merely present.
 
 	NVDA asks exactly this of a progress bar before it says anything about it —
@@ -270,7 +279,7 @@ def _isPresented(obj):
 	return not (states & _HIDDEN_STATES)
 
 
-def _focusObject():
+def _focusObject() -> NVDAObject | None:
 	"""NVDA's focus object, or ``None`` if it cannot be had.
 
 	Safe to read from the monitor thread: this is a plain attribute of NVDA's
@@ -279,7 +288,7 @@ def _focusObject():
 	return safeCall(api.getFocusObject)
 
 
-def _focusMayBeInside(obj, focusObj):
+def _focusMayBeInside(obj: NVDAObject, focusObj: NVDAObject) -> bool:
 	"""Whether ``focusObj`` could be somewhere inside ``obj``'s window.
 
 	Asked once, before a sweep, so that the far more expensive question — "are
@@ -306,7 +315,7 @@ def _focusMayBeInside(obj, focusObj):
 	return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == hwnd
 
 
-def _sameObject(a, b):
+def _sameObject(a: NVDAObject | None, b: NVDAObject | None) -> bool:
 	"""Whether two objects stand for the same control.
 
 	NVDAObject equality is what knows how to answer this across the accessibility
@@ -319,7 +328,11 @@ def _sameObject(a, b):
 	return safeCall(lambda: a == b, False) is True
 
 
-def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
+def _sweepEntries(
+	root: NVDAObject,
+	ignoreProgressBars: bool = False,
+	focusObj: NVDAObject | None = None,
+) -> tuple[list[Entry], bool, str | None, dict[str, NVDAObject]]:
 	"""The target's accessible subtree, as ``(entries, whole, focusKey, nodes)``.
 
 	``entries`` is a list of ``(key, text)`` pairs — one per control that has
@@ -377,8 +390,8 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	so the cache still learns what was typed and never has to announce it later.
 	The root is again never named, for the same reason it is never skipped.
 	"""
-	entries = []
-	nodes = {}
+	entries: list[Entry] = []
+	nodes: dict[str, NVDAObject] = {}
 	budget = [MAX_NODES]
 	#: Cleared as soon as any part of the subtree goes unread — the node budget
 	#: ran out, a container was clipped to its tail, or the depth cap stopped the
@@ -388,9 +401,9 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	whole = [True]
 	#: The key of the focused node, once the sweep has met it. Held in a list for
 	#: the same reason as the rest of this state: ``visit`` is a closure.
-	focusKey = [None]
+	focusKey: list[str | None] = [None]
 
-	def visit(obj, depth, key, isRoot):
+	def visit(obj: NVDAObject, depth: int, key: str, isRoot: bool) -> bool:
 		if budget[0] <= 0:
 			whole[0] = False
 			return False
@@ -437,7 +450,7 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	return entries, whole[0], focusKey[0], nodes
 
 
-def _isDarkSweep(entries, cache):
+def _isDarkSweep(entries: Sequence[Entry], cache: Mapping[str, int]) -> bool:
 	"""Whether a sweep found nothing where the target is known to hold content.
 
 	A collapsed accessible tree still answers: the sweep comes back with the
@@ -464,7 +477,7 @@ _NUMBER_RUN = re.compile(r"\d(?:[\d.,:\u00a0\u0020]*\d)?")
 _NUMBER_SENTINEL = "\uf8ff"
 
 
-def _templateOf(text):
+def _templateOf(text: str) -> str:
 	"""``text`` with every numeric run collapsed to a single sentinel.
 
 	This is the stable identity of a repeatedly-changing control. "Thought for 4
@@ -481,7 +494,7 @@ def _templateOf(text):
 	return _NUMBER_RUN.sub(_NUMBER_SENTINEL, text)
 
 
-def _joinSurfaced(surfaced):
+def _joinSurfaced(surfaced: Sequence[Entry]) -> str:
 	"""The announcement text for the ``(key, text)`` pairs judged new.
 
 	Document order, one node per line, with one guard: a node whose text is
@@ -495,8 +508,8 @@ def _joinSurfaced(surfaced):
 	would be quadratic, which on a poll where a whole window repainted means half
 	a million string comparisons.
 	"""
-	kept = []
-	chain = []
+	kept: list[str] = []
+	chain: list[Entry] = []
 	for key, text in surfaced:
 		while chain and not key.startswith(chain[-1][0] + "/"):
 			chain.pop()
@@ -529,13 +542,18 @@ class Monitor:
 	  between targets.
 	"""
 
-	def __init__(self, registry, notifier, onListChanged=None):
+	def __init__(
+		self,
+		registry: TargetRegistry,
+		notifier: Notifier,
+		onListChanged: Callable[[], None] | None = None,
+	):
 		self.registry = registry
 		self.notifier = notifier
 		#: Called, on the main thread, after this monitor changes anything the
 		#: owner persists. See :meth:`_notifyListChanged`.
 		self._onListChanged = onListChanged
-		self._thread = None
+		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
 		self._lastRelocate = 0.0
 		#: Whether the remembered targets restored at start-up have been reported.
@@ -565,7 +583,7 @@ class Monitor:
 		self._stop.set()
 		self._thread = None
 
-	def _callOnMainThread(self, func, *args, **kwargs):
+	def _callOnMainThread(self, func: Callable[..., object], *args: Any, **kwargs: Any):
 		"""Hand work back to NVDA's main thread.
 
 		Everything that speaks, beeps or mutates the registry goes through here.
@@ -599,7 +617,7 @@ class Monitor:
 		if self._onListChanged is not None:
 			self._callOnMainThread(self._onListChanged)
 
-	def _refreshIdentity(self, target, obj):
+	def _refreshIdentity(self, target: TrackedTarget, obj: NVDAObject) -> bool:
 		"""Re-take ``target``'s identity from the object it has been found at.
 
 		Returns whether the identity actually moved, so that the caller can have
@@ -612,7 +630,7 @@ class Monitor:
 		target.identity = newIdentity
 		return True
 
-	def onAdded(self, target):
+	def onAdded(self, target: TrackedTarget):
 		"""Take a target up, or take it up again, with nothing known about it yet.
 
 		The baseline is deliberately not taken here. A sweep costs tens to hundreds
@@ -668,7 +686,7 @@ class Monitor:
 				settings = addonConfig.snapshot()
 				if not settings["enabled"]:
 					continue
-				interval = settings["trackingInterval"]
+				interval = int(settings["trackingInterval"])
 				announce = interval != 0
 				effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
 				sinceLast += elapsed
@@ -681,7 +699,7 @@ class Monitor:
 			except Exception:
 				log.exception("Error in Background Content Tracker poll")
 
-	def _checkAllTargets(self, settings, announce=True):
+	def _checkAllTargets(self, settings: Settings, announce: bool = True):
 		remembered = [
 			target
 			for target in self.registry.detachedTargets()
@@ -713,7 +731,7 @@ class Monitor:
 			self._checkTargetContent(target, settings, announce)
 
 	# --- the one message the start-up restoration makes ---------------------
-	def _noteStartupPass(self, pending, found):
+	def _noteStartupPass(self, pending: int, found: int):
 		"""Fold one relocation pass into the report the restoration will make.
 
 		Ten remembered targets used to mean ten "Tracking …" announcements in a
@@ -737,7 +755,7 @@ class Monitor:
 		self._startupDone = True
 		self._callOnMainThread(self.notifier.announceRestored, self._startupFound, self._startupTotal)
 
-	def _checkTargetContent(self, target, settings, announce):
+	def _checkTargetContent(self, target: TrackedTarget, settings: Settings, announce: bool):
 		obj = target.obj
 		if obj is None:
 			return
@@ -793,13 +811,21 @@ class Monitor:
 		target.lastChangeTime = time.time()
 		if not announce:
 			return  # tracking interval 0: the menu is updated, nothing is spoken
-		cap = settings["changesAtOnce"]
+		cap = int(settings["changesAtOnce"])
 		if cap and target.announcedRun >= cap:
 			return  # reached the consecutive-announcement cap; wait for a refocus
 		target.announcedRun += 1
 		self._callOnMainThread(self.notifier.announceChange, target, delta, immediate=True)
 
-	def _collectDelta(self, target, entries, nodes, isWindow, settings, focusKey=None):
+	def _collectDelta(
+		self,
+		target: TrackedTarget,
+		entries: Sequence[Entry],
+		nodes: Mapping[str, NVDAObject],
+		isWindow: bool,
+		settings: Settings,
+		focusKey: str | None = None,
+	) -> str:
 		"""The new content worth surfacing since the last poll.
 
 		The cache is a multiset: every text the target is known to hold, mapped to
@@ -863,7 +889,7 @@ class Monitor:
 		"""
 		cache = target.seenContent
 		counts = Counter(text for _, text in entries)
-		outstanding = {}
+		outstanding: dict[str, int] = {}
 		for text, seen in counts.items():
 			known = cache.get(text, 0)
 			if seen > known:
@@ -872,7 +898,7 @@ class Monitor:
 			return ""
 		# The last copies of a repeated text are the new ones, so the pick runs
 		# backwards and the result is turned back into document order.
-		picked = []
+		picked: list[Entry] = []
 		for key, text in reversed(entries):
 			left = outstanding.get(text)
 			if left:
@@ -895,13 +921,13 @@ class Monitor:
 		# took something's place, which is a control changing rather than content
 		# arriving. Nothing surfaced can itself have vanished, so a text is never
 		# judged a replacement for itself.
-		vanished = set()
+		vanished: set[str] = set()
 		for text in target.prevTexts:
 			if text not in counts:
 				vanished.add(_templateOf(text))
 
-		surfaced = []
-		learned = set()
+		surfaced: list[Entry] = []
+		learned: set[str] = set()
 		for key, text in picked:
 			template = _templateOf(text)
 			if template == text:
@@ -922,7 +948,7 @@ class Monitor:
 			target.ignoredTemplates = ignored | learned
 		return _joinSurfaced(surfaced)
 
-	def _absorb(self, target, entries, whole, dark):
+	def _absorb(self, target: TrackedTarget, entries: Sequence[Entry], whole: bool, dark: bool):
 		"""Fold a sweep into the target's content cache.
 
 		Counts only ever rise, except where the sweep is in a position to testify
@@ -970,7 +996,7 @@ class Monitor:
 			evicted, _count = cache.popitem(last=False)
 			target.seenChars -= len(evicted)
 
-	def _keptItsTitle(self, target, obj, settings):
+	def _keptItsTitle(self, target: TrackedTarget, obj: NVDAObject, settings: Settings) -> bool:
 		"""Whether ``obj`` still carries the title ``target`` was added with.
 
 		The test behind "Consider changed title a disappeared target": a window
@@ -992,7 +1018,7 @@ class Monitor:
 			return True
 		return targetsMod.titleOf(obj) == target.trackedTitle
 
-	def _handleDisappeared(self, target, forget):
+	def _handleDisappeared(self, target: TrackedTarget, forget: bool):
 		target.obj = None
 		# The user is always told a target is gone, however the list is managed.
 		# ``forget`` is :meth:`.TrackedTarget.isForgottenWhenGone`, which is where
@@ -1008,7 +1034,7 @@ class Monitor:
 			self._notifyListChanged()
 
 	# --- relocation of remembered / stale targets ---------------------------
-	def relocate(self, target):
+	def relocate(self, target: TrackedTarget) -> bool:
 		"""Re-resolve ``target.obj`` from its identity against the live desktop.
 
 		A cached control object goes stale when its application reshapes the
@@ -1028,7 +1054,7 @@ class Monitor:
 			self._notifyListChanged()
 		return True
 
-	def relocateAsync(self, target, callback):
+	def relocateAsync(self, target: TrackedTarget, callback: Callable[[TrackedTarget, bool], None]):
 		"""Run :meth:`relocate` off the main thread and hand the outcome back.
 
 		The lookup scans every top-level window and then descends the matching
@@ -1056,7 +1082,7 @@ class Monitor:
 			daemon=True,
 		).start()
 
-	def _relocatePass(self, targets, settings, now):
+	def _relocatePass(self, targets: Sequence[TrackedTarget], settings: Settings, now: float) -> int:
 		"""Look for every detached target that is due, over one view of the desktop.
 
 		The desktop is enumerated once for the whole pass rather than once per
@@ -1105,7 +1131,7 @@ class Monitor:
 			attached += 1
 		return attached
 
-	def _deferRelocate(self, target, now, searched):
+	def _deferRelocate(self, target: TrackedTarget, now: float, searched: bool):
 		"""Put off the next attempt at ``target``, backing off if this one cost anything.
 
 		A target whose application is not running is ruled out by the shared
@@ -1124,7 +1150,7 @@ class Monitor:
 			target.relocateDelay = 0.0
 		target.nextRelocate = now + target.relocateDelay
 
-	def _desktopWindows(self):
+	def _desktopWindows(self) -> list[tuple[str, NVDAObject]]:
 		"""Every top-level window as ``(application name, object)``, or ``[]``.
 
 		The application name is read here, once per window per pass, because it is
@@ -1137,7 +1163,11 @@ class Monitor:
 			return []
 		return [(targetsMod.appNameOf(window), window) for window in topWindows]
 
-	def _candidateWindows(self, windows, identity):
+	def _candidateWindows(
+		self,
+		windows: Sequence[tuple[str, NVDAObject]],
+		identity: Identity,
+	) -> list[NVDAObject]:
 		"""The top-level windows from ``windows`` worth examining for ``identity``.
 
 		Empty when the wanted application is not running at all, which is both the
@@ -1149,7 +1179,12 @@ class Monitor:
 		wantedApp = identity.get("appName")
 		return [window for appName, window in windows if not wantedApp or appName == wantedApp]
 
-	def _locateAmong(self, candidates, identity, kind=None):
+	def _locateAmong(
+		self,
+		candidates: Sequence[NVDAObject],
+		identity: Identity,
+		kind: str | None = None,
+	) -> NVDAObject | None:
 		"""The object matching ``identity`` among ``candidates`` or below them.
 
 		Every candidate is compared as a whole window first, and only then are
@@ -1170,7 +1205,7 @@ class Monitor:
 				return match
 		return None
 
-	def _locate(self, identity, kind=None):
+	def _locate(self, identity: Identity, kind: str | None = None) -> NVDAObject | None:
 		"""The live NVDAObject whose identity matches ``identity``, or ``None``.
 
 		Enumerates the desktop for this one lookup; a relocation pass shares one
@@ -1181,7 +1216,12 @@ class Monitor:
 		windows = self._desktopWindows()
 		return self._locateAmong(self._candidateWindows(windows, identity), identity, kind)
 
-	def _findMatchingDescendant(self, root, identity, maxNodes=150):
+	def _findMatchingDescendant(
+		self,
+		root: NVDAObject,
+		identity: Identity,
+		maxNodes: int = 150,
+	) -> NVDAObject | None:
 		# Cheap pre-filter: with no automation id, identitiesMatch can only succeed
 		# when the roles are equal, so a single role read rules a node out for one
 		# cross-process access instead of the six a full identity descriptor costs.
@@ -1210,7 +1250,7 @@ class Monitor:
 				queue.extend(children)
 		return None
 
-	def _attach(self, target, obj, announce=True):
+	def _attach(self, target: TrackedTarget, obj: NVDAObject, announce: bool = True):
 		"""Take up a target that has been found again, and baseline it.
 
 		``announce`` is false only for the targets restored at start-up, which are

@@ -12,18 +12,40 @@ to the menu.
 """
 
 import contextlib
+from collections.abc import Callable, Sequence
+from typing import TYPE_CHECKING
 
 import addonHandler
 import gui
 import wx
 from logHandler import log
+from NVDAObjects import NVDAObject
 
-from .targets import safeCall
+from .targets import TrackedTarget, safeCall
+
+if TYPE_CHECKING:
+	# NVDA puts the translation lookup into this module's namespace at run time,
+	# which a type checker reading the source has no way of knowing. This says
+	# what it will be; nothing is imported when the add-on is actually running,
+	# which is what the suppression below records.
+	from gettext import gettext as _  # noqa: TC004
+
+	# The plugin the menu acts on. Imported for the annotations alone: it is the
+	# package this module lives in, so importing it for real would be a cycle.
+	from . import GlobalPlugin
 
 addonHandler.initTranslation()
 
+#: A place a target can be started from, as the plugin captured it before the
+#: menu took the focus: the source's key, and whatever was there at the time.
+Source = tuple[str, NVDAObject]
 
-def showTargetMenu(plugin, sources):
+#: How a menu item is tied to what it does. The menu unbinds every item it
+#: bound once the menu is gone, so binding is the one place that records them.
+Bind = Callable[[wx.MenuItem, Callable[[], None]], None]
+
+
+def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source]):
 	"""Entry point, invoked (via ``wx.CallAfter``) on the main thread."""
 	try:
 		_buildAndShow(plugin, sources)
@@ -31,7 +53,7 @@ def showTargetMenu(plugin, sources):
 		log.exception("Error showing the target menu")
 
 
-def _startLabel(kind, obj):
+def _startLabel(kind: str, obj: NVDAObject) -> str:
 	name = safeCall(lambda: obj.name) or safeCall(lambda: obj.role.displayString) or ""
 	kindLabels = {
 		# Translators: the "window" source in the target menu's start-tracking items.
@@ -48,7 +70,7 @@ def _startLabel(kind, obj):
 	return _("Track {source}: {name}").format(source=kindLabel, name=name)
 
 
-def _localSettingItems(target):
+def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 	"""This target's local settings, as (key, menu label), in display order.
 
 	One entry per key of :data:`addonConfig.LOCAL_KEYS`, ordered as in the
@@ -69,7 +91,7 @@ def _localSettingItems(target):
 	labels are translated at the moment they are built and the user can change
 	NVDA's language without restarting the add-on.
 	"""
-	items = []
+	items: list[tuple[str, str]] = []
 	if target.kind == "window":
 		items.extend(
 			(
@@ -99,7 +121,12 @@ def _localSettingItems(target):
 	return items
 
 
-def _appendSettingsSubmenu(submenu, plugin, target, bind):
+def _appendSettingsSubmenu(
+	submenu: wx.Menu,
+	plugin: "GlobalPlugin",
+	target: TrackedTarget,
+	bind: Bind,
+):
 	"""Append this target's own copy of the local settings, as check items.
 
 	Each box shows the setting's *effective* value — the target's own where it has
@@ -123,13 +150,13 @@ def _appendSettingsSubmenu(submenu, plugin, target, bind):
 	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
 
 
-def _buildAndShow(plugin, sources):
+def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source]):
 	registry = plugin.registry
 	notifier = plugin.notifier
 	menu = wx.Menu()
-	boundIds = []
+	boundIds: list[int] = []
 
-	def bind(item, func):
+	def bind(item: wx.MenuItem, func: Callable[[], None]):
 		gui.mainFrame.Bind(wx.EVT_MENU, lambda evt: func(), item)
 		boundIds.append(item.GetId())
 
