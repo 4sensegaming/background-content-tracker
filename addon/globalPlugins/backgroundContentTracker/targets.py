@@ -99,7 +99,13 @@ def isInForegroundApp(obj):
 	A simple "is it the foreground window" comparison is not enough: an owned
 	dialog, a popup, or a child window such as the Office ribbon is not the
 	foreground window itself, yet it belongs to the foreground application and
-	shares its root owner.
+	shares its root owner. A Store app is not caught by any of that at all, and is
+	asked about separately; see :func:`_isInActiveStoreApp`.
+
+	A wrong answer here is not symmetrical. Calling a background target foreground
+	costs an announcement that waits until the user leaves; calling a foreground
+	one background makes the add-on read out the very application the user is
+	working in, which is the one thing it promises never to do.
 	"""
 	if obj is None:
 		return False
@@ -116,12 +122,33 @@ def isInForegroundApp(obj):
 		rootOwner = winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)
 		if rootOwner == winUser.getAncestor(foreground, winUser.GA_ROOTOWNER):
 			return True
-		return bool(
+		if (
 			winUser.isDescendantWindow(foreground, hwnd)
 			or winUser.isDescendantWindow(foreground, rootOwner)
-		)
+		):
+			return True
+		return _isInActiveStoreApp(hwnd)
 	except Exception:
 		return False
+
+
+def _isInActiveStoreApp(hwnd):
+	"""Whether ``hwnd`` belongs to the Store app the user is working in.
+
+	A UWP or WinUI window is not a descendant of the foreground window and does
+	not share its root owner, so every test above calls it background while the
+	user is typing in it. NVDA meets the same problem in ``shouldAcceptEvent``
+	and settles it the same way (its #6713): such a window is always the active
+	window of the input thread, or a descendant of it.
+
+	Asked only once the cheap tests have all said no, because that is the whole
+	of its cost — two local window-manager calls, no cross-process traffic — and
+	because it can only ever turn a "no" into a "yes".
+	"""
+	if not winUser.getClassName(hwnd).startswith("Windows.UI.Core"):
+		return False
+	active = winUser.getGUIThreadInfo(0).hwndActive
+	return bool(active and winUser.isDescendantWindow(active, hwnd))
 
 
 class TrackedTarget(object):

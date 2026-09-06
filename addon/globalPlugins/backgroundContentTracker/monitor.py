@@ -87,6 +87,23 @@ try:
 except Exception:
 	_PROGRESSBAR_ROLE = None
 
+#: The states that mean a control is not actually being shown to anyone: hidden,
+#: or scrolled out of view. They are what NVDA's own ProgressBar behaviour
+#: refuses to report a bar carrying, and they are worth asking of anything about
+#: to be announced. Resolved as defensively as the role above; where they cannot
+#: be resolved the set is empty, which turns the check off rather than muting
+#: everything.
+try:
+	_state = getattr(controlTypes, "State", None)
+	_HIDDEN_STATES = frozenset(
+		value for value in (
+			getattr(_state, "INVISIBLE", None),
+			getattr(_state, "OFFSCREEN", None),
+		) if value is not None
+	) if _state is not None else frozenset()
+except Exception:
+	_HIDDEN_STATES = frozenset()
+
 #: The monitor thread's base tick, in seconds. The configurable tracking
 #: interval is rounded up to a whole number of these, so it is also the finest
 #: polling resolution and the fastest the add-on will react. A sweep that takes
@@ -286,6 +303,36 @@ def _isProgressBar(obj):
 		return False
 
 
+def _isPresented(obj):
+	"""Whether the control is actually being shown, rather than merely present.
+
+	NVDA asks exactly this of a progress bar before it says anything about it —
+	``NVDAObjects.behaviors.ProgressBar`` returns at once for a bar that is
+	invisible or off screen — and it is worth asking of anything this add-on is
+	about to announce. A control that is hidden, collapsed, or scrolled out of
+	view has shown the user nothing: its text appearing in a sweep says only that
+	it exists, and reporting it turns a panel being uncovered into news.
+
+	Asked only of the handful of nodes a poll actually surfaces, never of a whole
+	sweep. It costs a cross-process read per node, and a thousand of those per
+	target per poll would cost far more than the noise it saves.
+
+	States that cannot be read answer True. A control the add-on is unable to
+	ask must be announced rather than silently dropped: everywhere else being
+	wrong costs a little noise, and here it would cost the change the user is
+	waiting for.
+	"""
+	if obj is None or not _HIDDEN_STATES:
+		return True
+	try:
+		states = obj.states
+	except Exception:
+		return True
+	if not states:
+		return True
+	return not (states & _HIDDEN_STATES)
+
+
 def _focusObject():
 	"""NVDA's focus object, or ``None`` if it cannot be had.
 
@@ -315,7 +362,7 @@ def _sameObject(a, b):
 
 
 def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
-	"""The target's accessible subtree, as ``(entries, whole)``.
+	"""The target's accessible subtree, as ``(entries, whole, focusKey, nodes)``.
 
 	``entries`` is a list of ``(key, text)`` pairs — one per control that has
 	anything to say, in document order, with no special case for windows: a
@@ -325,6 +372,13 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	stopped short of it at one of the caps below; only a whole sweep is allowed to
 	conclude that content it did not find is gone. ``focusKey`` is the key of the
 	node that is ``focusObj``, or ``None`` where the sweep never met it.
+
+	``nodes`` maps each entry's key to the control it came from, for the one
+	caller that has to ask a control something rather than read its text
+	(:func:`_isPresented`). It is deliberately kept out of ``entries``, which is
+	content and nothing else: the cache, the dark-sweep test and the change
+	detection all work on text alone, and none of them should be handed an object
+	they might be tempted to consult.
 
 	**The text of a node.** The children are swept first. If anything below the
 	node produced text, the node itself contributes only its *label* (name and
@@ -366,6 +420,7 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	The root is again never named, for the same reason it is never skipped.
 	"""
 	entries = []
+	nodes = {}
 	budget = [MAX_NODES]
 	#: Cleared as soon as any part of the subtree goes unread — the node budget
 	#: ran out, a container was clipped to its tail, or the depth cap stopped the
@@ -416,11 +471,12 @@ def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 		if not text:
 			return gotText
 		entries.append((key, text))
+		nodes[key] = obj
 		return True
 
 	visit(root, 0, u"", True)
 	entries.reverse()
-	return entries, whole[0], focusKey[0]
+	return entries, whole[0], focusKey[0], nodes
 
 
 def _isDarkSweep(entries, cache):
@@ -590,7 +646,7 @@ class Monitor(object):
 		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and target.kind == "window"
 		# No focus to keep quiet about: this runs only for a target that is already
 		# in the background, and the focus is always in the foreground application.
-		entries, whole, _focusKey = _sweepEntries(obj, ignorePB)
+		entries, whole, _focusKey, _nodes = _sweepEntries(obj, ignorePB)
 		self._absorb(target, entries, whole, False)
 		target.prevTexts = frozenset(text for _, text in entries)
 		target.staleCache = False
@@ -732,7 +788,7 @@ class Monitor(object):
 			if inForeground and isWindow and target.setting("ignoreFocusedControl", settings)
 			else None
 		)
-		entries, whole, focusKey = _sweepEntries(obj, ignorePB, focusObj)
+		entries, whole, focusKey, nodes = _sweepEntries(obj, ignorePB, focusObj)
 		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
 			# The cache predates a spell that was never read: the user was in the
@@ -748,7 +804,7 @@ class Monitor(object):
 		# that ages out repeatedly-changing controls keeps ticking while the
 		# window is idle, not only when something moves.
 		target.pollTick += 1
-		delta = self._collectDelta(target, entries, isWindow, settings, focusKey)
+		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusKey)
 		self._absorb(target, entries, whole, dark)
 		target.prevTexts = frozenset(text for _, text in entries)
 		if not delta:
@@ -763,7 +819,7 @@ class Monitor(object):
 		target.announcedRun += 1
 		self._callOnMainThread(self.notifier.announceChange, target, delta, immediate=True)
 
-	def _collectDelta(self, target, entries, isWindow, settings, focusKey=None):
+	def _collectDelta(self, target, entries, nodes, isWindow, settings, focusKey=None):
 		"""The new content worth surfacing since the last poll.
 
 		The cache is a multiset: every text the target is known to hold, mapped to
@@ -788,6 +844,12 @@ class Monitor(object):
 		mute itself. The template stays live while the control keeps changing and
 		is forgotten once it has been quiet for :data:`FORGET_REPEATED_POLLS`
 		polls, so a control that goes quiet and later resumes is announced afresh.
+
+		Whatever survives all of that is finally held to being on screen at all
+		(:func:`_isPresented`), which is asked here, of the few nodes about to be
+		announced, rather than of every node of the sweep. Content that is hidden,
+		collapsed or scrolled out of view is still absorbed into the cache like any
+		other, so uncovering it later cannot turn it into news either.
 
 		When "Ignore focused control" is on for a window, ``focusKey`` names the
 		control the user is typing in, and it and everything inside it are dropped
@@ -826,6 +888,9 @@ class Monitor(object):
 			]
 			if not picked:
 				return u""
+		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
+		if not picked:
+			return u""
 		if not (isWindow and target.setting("ignoreRepeatedControls", settings)):
 			return _joinSurfaced(picked)
 
