@@ -94,7 +94,6 @@ reportDuplicateImport = true
 reportFunctionMemberAccess = true
 reportGeneralTypeIssues = true
 reportImplicitStringConcatenation = true
-reportImportCycles = true
 reportIncompatibleMethodOverride = true
 reportIncompatibleVariableOverride = true
 reportIncompleteStub = true
@@ -182,6 +181,14 @@ reportUnusedCallResult = false
 reportImplicitOverride = false
 reportMissingSuperCall = false
 
-# The add-on reaches into the gesture map of NVDA's global commands object, which is
-# the only way to take a wrapper back off a built-in command. See sleepMode.py.
+# The add-on installs itself as NVDA's input capture function, which is a private
+# attribute of the input manager and the only way to capture a keystroke the way
+# Input Help does. See overlay.py.
 reportPrivateUsage = false
+
+# The target menu and the command overlay are handed the plugin they act on, and
+# the plugin is the package they live in, so naming its type is a cycle: they
+# import it under TYPE_CHECKING and nothing is imported at run time. The type is
+# worth more than the rule, since that parameter is what every command in either
+# file goes through.
+reportImportCycles = false
