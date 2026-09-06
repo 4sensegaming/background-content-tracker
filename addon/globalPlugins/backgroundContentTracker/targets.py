@@ -18,8 +18,15 @@ from collections import OrderedDict
 import core
 import winUser
 from logHandler import log
+from winBindings import user32
 
 from . import addonConfig
+
+#: ``ShowWindow``'s "restore" command: show the window, and put it back to its
+#: previous size and position if it is minimised. Stated here because NVDA's
+#: ``winUser`` names neither this constant nor a ``ShowWindow`` to pass it to;
+#: the call itself goes through ``winBindings``, which is where NVDA binds it.
+_SW_RESTORE = 9
 
 
 def _safe(func, default=None):
@@ -184,20 +191,18 @@ class TrackedTarget(object):
 		#: cache can be capped by weight without measuring it every poll.
 		self.seenChars = 0
 		#: The texts the previous sweep found. Not a cache and never consulted for
-		#: change detection: it exists so that "Ignore repeatedly changing
-		#: controls" can tell a control that replaced itself (its old text is gone
+		#: change detection: it exists so that "Ignore counters, steppers and
+		#: timers" can tell a control that replaced itself (its old text is gone
 		#: this sweep) from a log that appended a line (its old lines are all
 		#: still there).
 		self.prevTexts = frozenset()
-		#: Templates (text with numeric runs collapsed) of repeatedly-changing
-		#: controls already announced, mapped to the poll on which each last
-		#: changed. Used to suppress timers and countdowns, and to forget one that
-		#: has gone quiet. Reset on re-baseline.
-		self.announcedControls = {}
-		#: Count of background polls performed for this target. Drives the age-out
-		#: of quiet controls in ``announcedControls``; advances every poll, even
-		#: ones where nothing changed. Reset when the target is (re-)baselined.
-		self.pollTick = 0
+		#: Templates (text with numeric runs collapsed) of the controls this
+		#: target has been caught counting: ones that changed in nothing but their
+		#: numbers. They are silenced from the moment they are recognised until
+		#: the target is re-baselined or the option that recognises them moves.
+		#: Rebound wholesale, never added to in place: the monitor thread writes
+		#: it as it learns, and the main thread empties it when the option moves.
+		self.ignoredTemplates = frozenset()
 		#: Number of consecutive changes already announced for this target since
 		#: it was last refocused. Capped by the "Changes to announce at once"
 		#: setting; reset on re-baseline.
@@ -259,6 +264,18 @@ class TrackedTarget(object):
 		else:
 			overrides[key] = bool(value)
 		self.overrides = overrides
+
+	def forgetIgnoredControls(self):
+		"""Forget which of this target's controls were found to be counting.
+
+		Called wherever "Ignore counters, steppers and timers" moves for this
+		target — on the target itself, or globally for a target that inherits it.
+		What is silenced was decided by the option, so the option moving has to
+		un-decide it: switching off has to let those controls be heard again, and
+		switching on again has to start watching from what they do next rather
+		than from what they were caught doing before.
+		"""
+		self.ignoredTemplates = frozenset()
 
 	def isHeldToItsTitle(self, settings=None):
 		"""Whether this target is held to the window title it was added with.
@@ -359,17 +376,24 @@ class TrackedTarget(object):
 
 		Best-effort: the OS may reject foregrounding from a background process, so
 		failures here are logged and swallowed rather than treated as fatal.
+
+		The restore and the activation are guarded separately, because they fail
+		separately and a window that cannot be restored is still worth raising.
+		Under one guard, a failure of the first silently cost the second as well.
 		"""
 		hwnd = _safe(lambda: obj.windowHandle)
 		if not hwnd or not winUser.isWindow(hwnd):
 			return
 		topHwnd = _safe(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)) or hwnd
 		try:
-			if winUser.user32.IsIconic(topHwnd):
-				winUser.showWindow(topHwnd, winUser.SW_RESTORE)
-			winUser.user32.SetForegroundWindow(topHwnd)
+			if user32.dll.IsIconic(topHwnd):
+				user32.ShowWindow(topHwnd, _SW_RESTORE)
 		except Exception:
-			log.debugWarning("Could not reactivate target window", exc_info=True)
+			log.debugWarning("Could not restore target window", exc_info=True)
+		try:
+			winUser.setForegroundWindow(topHwnd)
+		except Exception:
+			log.debugWarning("Could not bring target window to the foreground", exc_info=True)
 
 	def setFocus(self, onFailure=None):
 		"""Move the system focus to this target.

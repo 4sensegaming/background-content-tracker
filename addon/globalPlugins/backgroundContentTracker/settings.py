@@ -69,9 +69,9 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: suppress announcements of progress bar controls in a window.
 		self.ignoreProgressCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore &progress bars")))
 		self.ignoreProgressCb.SetValue(addonConfig.get("ignoreProgressBars"))
-		# Translators: suppress repeated announcements of the same control (e.g. a timer).
-		self.ignoreRepeatedCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore &repeatedly changing controls")))
-		self.ignoreRepeatedCb.SetValue(addonConfig.get("ignoreRepeatedControls"))
+		# Translators: suppress a control that does nothing but count (e.g. a timer).
+		self.ignoreCountersCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore c&ounters, steppers and timers")))
+		self.ignoreCountersCb.SetValue(addonConfig.get("ignoreCounters"))
 		# Translators: treat a window that renames itself as a target that has disappeared.
 		self.titleChangeCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Consider c&hanged title a disappeared target")))
 		self.titleChangeCb.SetValue(addonConfig.get("titleChangeDisappears"))
@@ -184,7 +184,7 @@ class BCTSettingsPanel(SettingsPanel):
 			"trackingInterval": self.intervalCtrl.GetValue(),
 			"changesAtOnce": self.changesAtOnceCtrl.GetValue(),
 			"ignoreProgressBars": self.ignoreProgressCb.IsChecked(),
-			"ignoreRepeatedControls": self.ignoreRepeatedCb.IsChecked(),
+			"ignoreCounters": self.ignoreCountersCb.IsChecked(),
 			"titleChangeDisappears": self.titleChangeCb.IsChecked(),
 			"ignoreFocusedControl": self.ignoreFocusedCb.IsChecked(),
 			"beepDuration": self.durationCtrl.GetValue(),

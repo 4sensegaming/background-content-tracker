@@ -37,7 +37,7 @@ confspec = {
 	"trackingInterval": "integer(default=1,min=0,max=3600)",
 	"changesAtOnce": "integer(default=5,min=0,max=100)",
 	"ignoreProgressBars": "boolean(default=True)",
-	"ignoreRepeatedControls": "boolean(default=True)",
+	"ignoreCounters": "boolean(default=True)",
 	"titleChangeDisappears": "boolean(default=False)",
 	"ignoreFocusedControl": "boolean(default=True)",
 	"beepDuration": "integer(default=50,min=1,max=30000)",
@@ -64,7 +64,7 @@ DEFAULTS = {
 	"trackingInterval": 1,
 	"changesAtOnce": 5,
 	"ignoreProgressBars": True,
-	"ignoreRepeatedControls": True,
+	"ignoreCounters": True,
 	"titleChangeDisappears": False,
 	"ignoreFocusedControl": True,
 	"beepDuration": 50,
@@ -88,7 +88,7 @@ DEFAULTS = {
 #: never had an opinion about it.
 LOCAL_KEYS = (
 	"ignoreProgressBars",
-	"ignoreRepeatedControls",
+	"ignoreCounters",
 	"titleChangeDisappears",
 	"ignoreFocusedControl",
 	"rememberTargets",

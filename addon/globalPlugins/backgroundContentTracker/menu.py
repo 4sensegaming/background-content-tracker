@@ -76,8 +76,8 @@ def _localSettingItems(target):
 		items.extend((
 			# Translators: suppress announcements of progress bar controls in a window.
 			("ignoreProgressBars", _("Ignore &progress bars")),
-			# Translators: suppress repeated announcements of the same control (e.g. a timer).
-			("ignoreRepeatedControls", _("Ignore &repeatedly changing controls")),
+			# Translators: suppress a control that does nothing but count (e.g. a timer).
+			("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
 			# Translators: treat a window that renames itself as a target that has disappeared.
 			("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
 			# Translators: suppress announcements of the control the user is typing in.

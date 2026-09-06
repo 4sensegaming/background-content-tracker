@@ -127,14 +127,6 @@ RELOCATE_BACKOFF_MAX = 15.0
 #: yet. Four passes is about ten seconds, which is late enough to have the real
 #: answer and still be part of starting up.
 STARTUP_PASSES = 4
-#: A repeatedly-changing control is suppressed only while it keeps changing. Once
-#: its template (see :func:`_templateOf`) has gone this many background polls
-#: without changing, it is forgotten, so that if it starts moving again — a fresh
-#: response, a new countdown — its next change is announced once more. At the
-#: default one-second interval this is ~15 s: longer than the brief pauses inside
-#: a single busy run, shorter than the gap between separate ones. It counts polls
-#: rather than seconds, so it scales with the tracking interval.
-FORGET_REPEATED_POLLS = 15
 #: Caps on one sweep. MAX_NODES bounds the controls visited per target — a
 #: window, a list, a document, all the same budget — and MAX_TEXT_CHARS bounds
 #: one control's text. MAX_DEPTH is a guard against a pathological or cyclic
@@ -625,8 +617,7 @@ class Monitor(object):
 		settings = addonConfig.snapshot()
 		target.lastChangeTime = None
 		target.announcedRun = 0
-		target.announcedControls = {}
-		target.pollTick = 0
+		target.ignoredTemplates = frozenset()
 		target.seenContent = OrderedDict()
 		target.seenChars = 0
 		target.prevTexts = frozenset()
@@ -765,14 +756,17 @@ class Monitor(object):
 		inForeground = isInForegroundApp(obj)
 		if inForeground != target.wasInForeground:
 			# The user has just arrived at this target, or just left it; either
-			# way they have been at it, so both suppression counters start afresh.
-			# The "changes at once" cap and the repeatedly-changing-controls
-			# memory are there to hold back a target nobody has looked at. This
-			# turns on the foreground state alone, so it still happens for a
-			# target that is read right through the visit instead of being
-			# skipped, which is the only reset such a target ever gets.
+			# way they have been at it, so the run of announcements they have not
+			# heard starts afresh. This turns on the foreground state alone, so it
+			# still happens for a target that is read right through the visit
+			# instead of being skipped, which is the only reset such a target ever
+			# gets.
+			#
+			# What the target has learned about its counters is deliberately not
+			# reset here: a clock is still a clock after the user has looked at
+			# the window, and having to recognise it again on every visit is what
+			# would let it be heard again.
 			target.announcedRun = 0
-			target.announcedControls = {}
 		target.wasInForeground = inForeground
 		if inForeground and not target.setting("trackForegroundTargets", settings):
 			# The user is in this application. Nothing would be announced, so do
@@ -799,11 +793,6 @@ class Monitor(object):
 			self._absorb(target, entries, whole, dark)
 			target.prevTexts = frozenset(text for _, text in entries)
 			return
-		# A poll that counts. Advance the target's poll clock even when
-		# nothing changed, so the "how long has this control been quiet" measure
-		# that ages out repeatedly-changing controls keeps ticking while the
-		# window is idle, not only when something moves.
-		target.pollTick += 1
 		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusKey)
 		self._absorb(target, entries, whole, dark)
 		target.prevTexts = frozenset(text for _, text in entries)
@@ -835,15 +824,34 @@ class Monitor(object):
 		is what this add-on exists for: where a text really is repeated, the new
 		copies are the latest arrivals, not the oldest survivors.
 
-		When "Ignore repeatedly changing controls" is on for a window, a control
-		that *replaced itself* — a different text sharing its template
-		(:func:`_templateOf`) was in the previous sweep and is gone from this one —
-		is announced once and its template remembered, so its later ticks are
-		dropped. Replacement is exactly what a ticking timer does and an appending
-		log does not: a log's earlier lines are all still there, so it can never
-		mute itself. The template stays live while the control keeps changing and
-		is forgotten once it has been quiet for :data:`FORGET_REPEATED_POLLS`
-		polls, so a control that goes quiet and later resumes is announced afresh.
+		When "Ignore counters, steppers and timers" is on for a window, a control
+		that does nothing but count is recognised and silenced. Three things have
+		to be true of a surfaced text at once, and each rules out something the
+		option is not about:
+
+		* It **contains a number** — its template (:func:`_templateOf`) differs
+		  from the text itself. A control with no number in it cannot be a counter,
+		  whatever else it does, so nothing further is asked of it.
+		* A different text **sharing its template** was in the previous sweep and
+		  is gone from this one. Sharing a template is precisely "these differ in
+		  nothing but their numbers", and the disappearance is what makes it a
+		  *replacement*: the control took its own previous value's place. A log
+		  that appended a line still holds every earlier line, so it can never
+		  mute itself, and two separate messages that happen to differ by a number
+		  are both still there, so neither mutes the other.
+		* Its template is not silenced **already**, in which case there is nothing
+		  left to decide and the text is simply dropped.
+
+		Recognition and silence begin together: the change that identifies a
+		counter is the first one dropped, not the last one announced. Its arrival
+		was announced when the control first appeared, which is the part worth
+		hearing; from then on it is only counting.
+
+		The silence lasts as long as the target does. A clock does not stop being
+		a clock because it paused, because the user looked at the window, or
+		because a minute has gone by, so nothing here expires — only re-baselining
+		the target or moving the option itself clears what was learned (see
+		:meth:`.TrackedTarget.forgetIgnoredControls`).
 
 		Whatever survives all of that is finally held to being on screen at all
 		(:func:`_isPresented`), which is asked here, of the few nodes about to be
@@ -891,19 +899,10 @@ class Monitor(object):
 		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
 		if not picked:
 			return u""
-		if not (isWindow and target.setting("ignoreRepeatedControls", settings)):
+		if not (isWindow and target.setting("ignoreCounters", settings)):
 			return _joinSurfaced(picked)
 
-		announced = target.announcedControls
-		currentTick = target.pollTick
-		if announced:
-			# Forget controls that have gone quiet: a template not seen changing
-			# for FORGET_REPEATED_POLLS polls is no longer treated as a timer, so
-			# its next change is announced again.
-			stale = [tpl for tpl, tick in announced.items()
-			         if currentTick - tick > FORGET_REPEATED_POLLS]
-			for tpl in stale:
-				del announced[tpl]
+		ignored = target.ignoredTemplates
 		# The templates this sweep lost. A surfaced text whose template is in here
 		# took something's place, which is a control changing rather than content
 		# arriving. Nothing surfaced can itself have vanished, so a text is never
@@ -914,15 +913,25 @@ class Monitor(object):
 				vanished.add(_templateOf(text))
 
 		surfaced = []
+		learned = set()
 		for key, text in picked:
 			template = _templateOf(text)
-			if template in announced:
-				announced[template] = currentTick  # still churning; keep it live
-				continue  # this control was already announced; do not repeat it
+			if template == text:
+				# Not a single digit anywhere in it. Whatever this control is
+				# doing, it is not counting.
+				surfaced.append((key, text))
+				continue
+			if template in ignored:
+				continue  # a control already known to be counting
 			if template in vanished:
-				# A control replacing itself: announce it now, mute its ticks.
-				announced[template] = currentTick
+				learned.add(template)  # caught counting: silent from here on
+				continue
 			surfaced.append((key, text))
+		if learned:
+			# Rebound rather than added to, because the main thread may empty it
+			# from under this one when the option moves; the worst a collision
+			# can cost is recognising a counter again on the next poll.
+			target.ignoredTemplates = ignored | learned
 		return _joinSurfaced(surfaced)
 
 	def _absorb(self, target, entries, whole, dark):

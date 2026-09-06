@@ -155,6 +155,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""
 		if "titleChangeDisappears" in changed:
 			self._recaptureTrackedTitles()
+		if "ignoreCounters" in changed:
+			self._forgetIgnoredControls()
 		if "rememberTargets" in changed:
 			self._saveRememberedTargets()
 
@@ -178,6 +180,21 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			if "titleChangeDisappears" in target.overrides:
 				continue
 			target.captureTrackedTitle()
+
+	def _forgetIgnoredControls(self):
+		"""Let every inheriting target's counters be heard again after a global switch.
+
+		What a target has silenced was decided by "Ignore counters, steppers and
+		timers", so moving that option globally has to un-decide it: switching off
+		must let those controls be announced again, and switching on again must
+		start from what they do next. A target with its own value for the option
+		is left alone, exactly as for a changed title: the global has not moved
+		*it*.
+		"""
+		for target in self.registry:
+			if "ignoreCounters" in target.overrides:
+				continue
+			target.forgetIgnoredControls()
 
 	# --- persistence of remembered targets ----------------------------------
 	def _saveRememberedTargets(self):
@@ -597,4 +614,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# here has to take (or drop) it now, exactly as a change of the global
 			# does for every target that inherits it.
 			target.captureTrackedTitle()
+		elif key == "ignoreCounters":
+			# Likewise for what the target has learned about its counters: the
+			# option decided it, so moving the option has to un-decide it.
+			target.forgetIgnoredControls()
 		self._saveRememberedTargets()

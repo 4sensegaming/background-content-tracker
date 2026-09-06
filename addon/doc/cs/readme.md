@@ -122,9 +122,13 @@ Možnosti v této skupině jsou dostupné vždy. Upřesňují, jak má doplněk 
 
 Samotné NVDA umí ohlašovat nativní indikátory průběhu slovně anebo pípáním, i na pozadí, takže nemusí být vždy žádoucí, aby vás tento doplněk zahlcoval hlášením neustále se měnícího indikátoru průběhu v konkrétní aplikaci, když vás ve skutečnosti zajímá její skutečný textový výstup. Pokud je tato volba zaškrtnuta, potlačí oznamování indikátorů průběhu. Výchozí hodnota je zaškrtnuto.
 
-#### **Ignorovat opakovaně se měnící prvky** (zaškrtávací políčko)
+#### **Ignorovat počítadla, krokovače a časovače** (zaškrtávací políčko)
 
-Pokud je zaškrtnuto, doplněk nebude oznamovat po sobě jdoucí změny stejného prvku (části okna), který už byl jednou oznámen, například časovače nebo odpočtu měnícího se každou sekundu, jako třeba aplikace Claude počítající, jak dlouho modelu trvalo přemýšlení. Tyto prvky bývají často spíše na obtíž než k užitku, protože samy o sobě neposkytují žádnou skutečnou, užitečnou informaci. Proto si můžete nastavit, aby je doplněk neoznamoval jako změny, pokud vás ve skutečnosti zajímá samotný výstup. Výchozí hodnota je zaškrtnuto.
+Pokud je zaškrtnuto, doplněk sleduje, jestli se u některého prvku (části okna) nemění nic jiného než čísla – časovač nebo odpočet tikající každou sekundu, počítadlo kroků či položek, procenta, jako třeba aplikace Claude počítající, jak dlouho modelu trvalo přemýšlení. Tyto prvky bývají často spíše na obtíž než k užitku, protože samy o sobě neposkytují žádnou skutečnou, užitečnou informaci.
+
+Jakmile doplněk takový prvek přistihne, umlčí ho – včetně té změny, která ho prozradila – a mlčí o něm po celou dobu, kdy je cíl sledován. Když se prvek poprvé objeví, uslyšíte ho; to je na něm to jediné, co něco říká.
+
+Aby prvek vůbec přicházel v úvahu, musí obsahovat číslo a jeho text se kromě čísla nesmí nijak lišit. Cokoli, co se změní i jinak, zůstává nedotčeno, takže běžný obsah, v němž se náhodou vyskytují čísla, tato volba nikdy neovlivní. Vypnutím volby, nebo jejím vypnutím a opětovným zapnutím, ať už pro daný cíl nebo globálně, doplněk zapomene, co se naučil, a začne sledovat znovu od začátku. Výchozí hodnota je zaškrtnuto.
 
 #### **Považovat změnu názvu za zmizení cíle** (zaškrtávací políčko)
 

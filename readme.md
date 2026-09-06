@@ -122,9 +122,13 @@ The options in this group are always available. They refine how the add-on shoul
 
 NVDA itself can speak and/or beep native progress bar controls, even in the background, so you may not always want this add-on to spam you with reporting a constantly changing progress bar from an app when you are actually interested in its real text output. This option suppresses announcements of progress bar controls when enabled. The default value is enabled.
 
-#### **Ignore repeatedly changing controls** (checkbox)
+#### **Ignore counters, steppers and timers** (checkbox)
 
-When enabled, the add-on will not announce consecutive changes to the same control (part of the window) that has already been announced once, such as timers or countdowns changing every second, like the Claude app counting how long it took the model to think. These controls can often be more annoying than helpful, as they do not provide any real, useful information by themselves. Therefore, you can suppress them being announced as changes by this add-on if you are really interested in the actual output. The default value is enabled.
+When enabled, the add-on watches for a control (part of the window) that changes in nothing but its numbers — a timer or countdown ticking every second, a step or item counter, a percentage, like the Claude app counting how long it took the model to think. These controls can often be more annoying than helpful, as they do not provide any real, useful information by themselves.
+
+The moment such a control is caught doing that, it falls silent — including the change that gave it away — and stays silent for as long as the target is tracked. You still hear it when it first appears, which is the part that tells you anything.
+
+A control has to contain a number to qualify at all, and its wording has to stay exactly the same while the number moves. Anything whose text changes in some other way is left alone, so ordinary content that happens to contain numbers is never affected. Switching the option off, or off and on again, for the target or globally, makes the add-on forget what it has learned and start watching afresh. The default value is enabled.
 
 #### **Consider changed title a disappeared target** (checkbox)
 
