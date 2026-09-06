@@ -160,11 +160,12 @@ reportMissingTypeStubs = false
 # either is of an unknown type, and the idioms both of them are built on (binding an
 # event, calling the next handler in a chain, overriding a hook) trip the rest.
 # These are measured rather than reasoned: pyright is run over this add-on with
-# `reportMissingImports` off, which leaves NVDA and wx unresolved and everything
-# they hand back unknown, and each rule below is one that only ever fired on that.
+# `reportMissingImports` off, and each rule below is one that only ever fired on
+# what that leaves unresolved. That is NVDA alone; wxPython ships type stubs and
+# is checked like any other library, so nothing here is turned off on its account.
 
-# Everything NVDA or wx hands back is of an unknown type to a checker, the lambdas
-# this add-on wraps every one of those reads in included.
+# Everything NVDA hands back is of an unknown type to a checker, the lambdas this
+# add-on wraps every one of those reads in included.
 reportUnknownArgumentType = false
 reportUnknownMemberType = false
 reportUnknownParameterType = false
@@ -193,9 +194,10 @@ reportUntypedFunctionDecorator = false
 # Input Help does. See overlay.py.
 reportPrivateUsage = false
 
-# The target menu and the command overlay are handed the plugin they act on, and
-# the plugin is the package they live in, so naming its type is a cycle: they
-# import it under TYPE_CHECKING and nothing is imported at run time. The type is
-# worth more than the rule, since that parameter is what every command in either
-# file goes through.
+# Every module here reaches its siblings through the package it is in
+# (`from . import addonConfig`), which is how a package is ordinarily written and
+# which this rule counts as a cycle; that alone accounts for most of what it
+# reports. The target menu and the command overlay then name the plugin they act
+# on, which is that package, under TYPE_CHECKING, so nothing is imported at run
+# time and the parameter every command in either file goes through has a type.
 reportImportCycles = false
