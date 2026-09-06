@@ -503,16 +503,9 @@ class Monitor(object):
 		target.seenChars = 0
 		target.prevTexts = frozenset()
 		target.wasInForeground = isInForegroundApp(obj)
-		# The title a whole-window target is held to for the rest of its life, so
-		# that a window which later renames itself can be told from the one that
-		# was actually added. Captured only while the option is on: with it off
-		# there is nothing to hold the target to, and a title recorded now would
-		# be the wrong one by the time the option was switched on.
-		target.trackedTitle = (
-			targetsMod.titleOf(obj)
-			if target.kind == "window" and target.setting("titleChangeDisappears", settings)
-			else None
-		)
+		# The title a whole-window target is held to, so that a window which later
+		# renames itself can be told from the one that was actually added.
+		target.captureTrackedTitle(settings)
 		# Only take a baseline now if the target is already in the background.
 		# Otherwise it is left to the first poll that actually reads the target:
 		# when the user switches away from it, or on the very next poll if it is
@@ -796,11 +789,12 @@ class Monitor(object):
 		(so the list is managed exactly as for a window that closed) rather than
 		announcing the new title's content as a change.
 
-		Always true where the option cannot apply: for anything that is not a
-		whole window, while the option is off, and for a target added before it
-		was switched on, which has no remembered title to be held to.
+		Always true where the option cannot apply: for a target that is not held to
+		a title at all (anything that is not a whole window, and any window while
+		the option is off), and for a window added before the option was switched
+		on globally, which has no remembered title to be held to.
 		"""
-		if target.kind != "window" or not target.setting("titleChangeDisappears", settings):
+		if not target.isHeldToItsTitle(settings):
 			return True
 		if target.trackedTitle is None:
 			return True

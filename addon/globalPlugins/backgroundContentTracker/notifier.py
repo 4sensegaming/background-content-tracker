@@ -35,6 +35,17 @@ def _describe(roleText, name, includeType, extras):
 	return u", ".join(parts)
 
 
+def _notFound():
+	"""The trailing piece describing a target that is not there.
+
+	A function rather than a constant so that it is translated when it is used,
+	not once when this module is imported.
+	"""
+	# Translators: shown in the target menu, and spoken on demand, for a target
+	# that does not currently exist (e.g. a remembered target not yet reopened).
+	return _("not found")
+
+
 def relativeTime(when):
 	"""A human, translatable "x ago" string for the target menu."""
 	if not when:
@@ -87,10 +98,19 @@ class Notifier(object):
 	def speakInfo(self, target):
 		"""On-demand information about a target (the number/space/enter keys).
 
+		A target that is not there at all is reported as not found. This is the
+		usual state of a remembered target whose window has not been opened yet:
+		it holds the slot, but there is nothing behind it, and reporting it as
+		merely unchanged would suggest the opposite.
+
 		A target the user is looking at right now, or one that has not changed since
 		it was baselined, has nothing new to report, so we say so explicitly rather
 		than replay a delta cached during an earlier spell in the background.
 		"""
+		if not target.isAlive():
+			desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [_notFound()])
+			ui.message(desc)
+			return
 		if not target.hasReportableChange():
 			# Translators: on-demand target info when there is nothing new to report.
 			desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [_("no changes yet")])
@@ -104,9 +124,17 @@ class Notifier(object):
 	def menuDescription(self, target):
 		"""The text of a target's item in the target menu.
 
+		A target that is not there is shown as not found, in place of both the time
+		and the content: neither says anything about a target that does not exist,
+		and "no changes yet" would say the wrong thing about one. It is still listed,
+		because a target that is not there can still be stopped, have its own
+		settings changed, or simply be waited for.
+
 		A target the user is looking at right now shows "no changes yet": the delta
 		the monitor cached belongs to an earlier background spell, not to now.
 		"""
+		if not target.isAlive():
+			return _describe(target.roleText(), target.name, addonConfig.get("menuTargetType"), [_notFound()])
 		reportable = target.hasReportableChange()
 		extras = []
 		if addonConfig.get("menuTimeSinceChange"):

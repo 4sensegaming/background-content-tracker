@@ -117,9 +117,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self._pendingUid = None
 		self._pendingTime = 0.0
 		gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
-		# Which targets are persisted depends on "Remember targets", so the list
-		# is re-written whenever the settings panel changes it.
-		addonConfig.registerSaveHook(self._saveRememberedTargets)
+		# Some global settings need something done to the targets that already
+		# exist the moment they are switched; see ``_onSettingsChanged``.
+		addonConfig.registerChangeHook(self._onSettingsChanged)
 		self._loadRememberedTargets()
 		self.monitor.start()
 
@@ -136,9 +136,48 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			NVDASettingsDialog.categoryClasses.remove(settingsModule.BCTSettingsPanel)
 		except ValueError:
 			pass
-		addonConfig.unregisterSaveHook(self._saveRememberedTargets)
+		addonConfig.unregisterChangeHook(self._onSettingsChanged)
 		addonConfig.terminate()
 		super(GlobalPlugin, self).terminate()
+
+	# --- reacting to a change of the global settings ------------------------
+	def _onSettingsChanged(self, changed):
+		"""Bring the existing targets into line with a global setting that moved.
+
+		Registered with :func:`addonConfig.registerChangeHook`, so it hears about
+		a global changing however it changed — the settings panel being saved, or
+		a configuration profile being switched to — and only about the keys that
+		genuinely moved. Both of the things done here are the wrong thing to do to
+		a target on a save that changed nothing about it.
+
+		Everything not named here is read live, by the monitor or the notifier, and
+		so needs nothing done to it when it changes.
+		"""
+		if "titleChangeDisappears" in changed:
+			self._recaptureTrackedTitles()
+		if "rememberTargets" in changed:
+			self._saveRememberedTargets()
+
+	def _recaptureTrackedTitles(self):
+		"""Re-take every inheriting target's tracked title after a global switch.
+
+		The title a window is held to is taken once, when the target is added, so
+		switching "Consider changed title a disappeared target" on globally would
+		otherwise do nothing at all for the targets already being tracked: they
+		would carry no title to be held to, and would go on being reported as
+		merely changed for the rest of their lives. Switching it off leaves them
+		holding a title nothing consults. Either way the targets have to be taken
+		round again, which is what this does.
+
+		A target with its own value for the option is left alone: the global has
+		not moved *it*, and re-taking its title would quietly re-baseline a window
+		that has already renamed itself — the very thing it is being watched for.
+		Only the targets that inherit the option are the ones the global changed.
+		"""
+		for target in self.registry:
+			if "titleChangeDisappears" in target.overrides:
+				continue
+			target.captureTrackedTitle()
 
 	# --- persistence of remembered targets ----------------------------------
 	def _saveRememberedTargets(self):
@@ -153,9 +192,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 		Because the deciding is done here rather than on the loading side, the
 		list is also re-written whenever the settings panel changes "Remember
-		targets" (see the save hook registered in ``__init__``): ticking the box
-		stores the targets already being tracked there and then, instead of
-		waiting for the list to next change.
+		targets" (see ``_onSettingsChanged``): ticking the box stores the targets
+		already being tracked there and then, instead of waiting for the list to
+		next change.
 		"""
 		settings = addonConfig.snapshot()
 		data = []
@@ -172,8 +211,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				entry["overrides"] = dict(target.overrides)
 			data.append(entry)
 		try:
-			# notify=False: this write is itself what the save hooks do, and must
-			# not set them off again.
+			# notify=False: this write is itself what the change hooks do, and
+			# must not set them off again.
 			addonConfig.setMany({"savedTargets": json.dumps(data)}, notify=False)
 		except Exception:
 			log.debugWarning("Could not save remembered targets", exc_info=True)
@@ -526,3 +565,21 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def setFocusToTarget(self, target):
 		self._focus(target)
+
+	def setTargetOverride(self, target, key, value):
+		"""Give one target its own value for a local setting. Main thread only.
+
+		Invoked from the check items in a target's Target settings submenu, so the
+		change takes effect the moment it is made: the monitor reads a target's
+		settings on every poll, and the saved target list is re-written here rather
+		than waiting for the target list itself to next change — the target may
+		have just been told to be remembered, or told not to be.
+		"""
+		target.setOverride(key, value)
+		if key == "titleChangeDisappears":
+			# The one local setting that is not read live: the title a target is
+			# held to is taken when the target is added, so switching the option
+			# here has to take (or drop) it now, exactly as a change of the global
+			# does for every target that inherits it.
+			target.captureTrackedTitle()
+		self._saveRememberedTargets()

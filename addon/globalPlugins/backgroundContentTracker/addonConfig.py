@@ -107,9 +107,10 @@ def sanitizeOverrides(raw):
 	return {key: bool(raw[key]) for key in LOCAL_KEYS if key in raw}
 
 
-#: Callbacks run after a write that changes which targets are to be persisted.
-#: Registered by the global plugin, which is the one that owns the target list.
-_saveHooks = []
+#: Callbacks run after a write that actually changes a setting, each with the
+#: set of keys whose stored value moved. Registered by the global plugin, which
+#: owns the target list and is the one that has to act on such a change.
+_changeHooks = []
 
 
 #: A plain copy of every setting, safe to read from any thread. Rebound wholesale
@@ -121,6 +122,8 @@ _snapshot = dict(DEFAULTS)
 def initialize():
 	"""Register the configuration specification with NVDA. Main thread only."""
 	config.conf.spec[CONF_SECTION] = confspec
+	# The first read is not a change: nothing has had a chance to register a hook
+	# yet, and every setting having "moved" from its default is not news.
 	refresh()
 	action = getattr(config, "post_configProfileSwitch", None)
 	if action is not None:
@@ -137,16 +140,21 @@ def terminate():
 			pass
 
 
-def registerSaveHook(func):
-	"""Call ``func`` after a write that changes which targets are persisted."""
-	if func not in _saveHooks:
-		_saveHooks.append(func)
+def registerChangeHook(func):
+	"""Call ``func(changed)`` after a write that moves any setting.
+
+	``changed`` is the set of keys whose stored value is not what it was. Keys
+	written with the value they already held are not in it, so a hook can treat
+	being called about a key as the setting having genuinely just been switched.
+	"""
+	if func not in _changeHooks:
+		_changeHooks.append(func)
 
 
-def unregisterSaveHook(func):
-	"""Undo :func:`registerSaveHook`; harmless if ``func`` was never registered."""
+def unregisterChangeHook(func):
+	"""Undo :func:`registerChangeHook`; harmless if ``func`` was never registered."""
 	try:
-		_saveHooks.remove(func)
+		_changeHooks.remove(func)
 	except ValueError:
 		pass
 
@@ -154,13 +162,40 @@ def unregisterSaveHook(func):
 def _onProfileSwitch(*args, **kwargs):
 	# NVDA has notified this with differing keyword arguments over the years, so
 	# accept anything and ignore it.
-	refresh()
+	#
+	# A profile carries its own values for these settings, so switching to one is
+	# every bit as much a change of the globals as saving the settings panel is,
+	# and the hooks are told about it on the same terms.
+	notifyChanged(refresh())
 
 
 def refresh():
-	"""Re-read every setting into the thread-safe snapshot. Main thread only."""
+	"""Re-read every setting into the thread-safe snapshot. Main thread only.
+
+	Returns the set of keys whose value moved, which is what tells a change from
+	a re-read that found everything as it was. This is the one place the two
+	snapshots are compared, so every route by which the configuration can change —
+	a write here, a profile switch — reports a change on the same terms.
+	"""
 	global _snapshot
+	previous = _snapshot
 	_snapshot = {key: get(key) for key in DEFAULTS}
+	return {key for key in DEFAULTS if previous.get(key) != _snapshot[key]}
+
+
+def notifyChanged(changed):
+	"""Hand ``changed`` to every registered change hook. Main thread only.
+
+	A hook that raises is logged and stepped over: one of them failing must not
+	cost the others their notification, nor take down the write that caused it.
+	"""
+	if not changed:
+		return
+	for hook in list(_changeHooks):
+		try:
+			hook(changed)
+		except Exception:
+			log.debugWarning("Error in a configuration change hook", exc_info=True)
 
 
 def snapshot():
@@ -194,22 +229,22 @@ def setMany(values, notify=True):
 	:func:`refresh` re-reads every setting, so writing a whole settings panel one
 	key at a time costs a full re-read per key. Main thread only.
 
-	Writing ``rememberTargets`` changes which targets are to be persisted, so the
-	saved target list is re-written afterwards through the registered save hooks:
-	ticking the box in the settings panel stores the targets the user already has
-	instead of waiting for the list to next change. That re-write is itself a
-	configuration write and passes ``notify=False``, so it cannot call itself
-	back.
+	Some settings need something done to the existing targets the moment they
+	move — the saved target list re-written, a window's tracked title re-taken —
+	so the keys that actually changed are handed to the registered change hooks
+	afterwards. What decides that is whether the value moved, not merely which
+	keys were written: the settings panel writes every one of its settings on
+	every save, and a hook must be able to tell a setting that was just switched
+	from one that was only written down again.
+
+	A hook's own configuration writes pass ``notify=False``, so they cannot set
+	the hooks off again.
 	"""
 	if CONF_SECTION not in config.conf:
 		config.conf[CONF_SECTION] = {}
 	section = config.conf[CONF_SECTION]
 	for key, value in values.items():
 		section[key] = value
-	refresh()
-	if notify and "rememberTargets" in values:
-		for hook in list(_saveHooks):
-			try:
-				hook()
-			except Exception:
-				log.debugWarning("Error in a configuration save hook", exc_info=True)
+	changed = refresh()
+	if notify:
+		notifyChanged(changed)

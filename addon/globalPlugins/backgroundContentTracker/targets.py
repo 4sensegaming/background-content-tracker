@@ -191,10 +191,11 @@ class TrackedTarget(object):
 		#: nobody was looking is announced afterwards.
 		self.staleCache = False
 		#: The window title this target was added with, or ``None``. Only ever
-		#: set for a whole-window target added while "Consider changed title a
-		#: disappeared target" was on; a window that no longer carries it is then
-		#: treated as gone rather than as merely changed. Filled in by
-		#: ``Monitor.onAdded``, because the option is read there.
+		#: set for a target that :meth:`isHeldToItsTitle` — that is, a whole
+		#: window, while "Consider changed title a disappeared target" is on; a
+		#: window that no longer carries it is then treated as gone rather than as
+		#: merely changed. ``None`` for the entire life of anything else, a single
+		#: control included: a title is not part of what such a target is.
 		self.trackedTitle = None
 
 	def setting(self, key, settings=None):
@@ -223,6 +224,47 @@ class TrackedTarget(object):
 		else:
 			overrides[key] = bool(value)
 		self.overrides = overrides
+
+	def isHeldToItsTitle(self, settings=None):
+		"""Whether this target is held to the window title it was added with.
+
+		True only for a whole window with "Consider changed title a disappeared
+		target" in force — its own value for the option where it has one, the
+		global otherwise. A title says nothing about what a single control *is*,
+		so the option is neither offered for one in the target menu nor consulted
+		for one anywhere: this is the single statement of that rule, and the three
+		places that care about a tracked title all ask it rather than restating it.
+
+		Note this asks whether a title *should* be held to, not whether one has
+		been recorded: a window added before the option was switched on globally
+		answers True and still has no :attr:`trackedTitle` to be held to.
+
+		``settings`` is a configuration snapshot, as for :meth:`setting`.
+		"""
+		return self.kind == "window" and bool(self.setting("titleChangeDisappears", settings))
+
+	def captureTrackedTitle(self, settings=None):
+		"""Take, or drop, the title this target is held to, as things stand now.
+
+		Called wherever the answer may have just moved: when the target is added
+		or re-attached, and when "Consider changed title a disappeared target" is
+		switched for it, on the target itself or globally. A target that is not
+		held to a title keeps none, and neither does one with no object to read a
+		title from — a detached target takes its title when it re-attaches.
+
+		Switching the option off therefore drops the title, and switching it back
+		on takes the title the window carries *then*, not the one it carried
+		before: a rename that happened while the option was off is not one the
+		user asked to be told about, and holding the target to the older title
+		would report it as gone the moment the option came back on.
+
+		``settings`` is a configuration snapshot, as for :meth:`setting`.
+		"""
+		self.trackedTitle = (
+			titleOf(self.obj)
+			if self.obj is not None and self.isHeldToItsTitle(settings)
+			else None
+		)
 
 	@property
 	def name(self):
