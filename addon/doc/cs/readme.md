@@ -2,11 +2,11 @@
 
 * Autor: Lukáš Hosnedl
 * Minimální verze NVDA: 2026.1
-* Poslední testovaná verze NVDA: 2026.3
-
-## Popis
+* Poslední testovaná verze NVDA: 2027.1
 
 **Vytvořeno umělou inteligencí, navrženo a důkladně otestováno lidmi.**
+
+## Popis
 
 Doplněk Sledování obsahu na pozadí sleduje okno nebo jednotlivý prvek, na kterém právě **nemáte** fokus, a dá vám vědět, jakmile se v něm objeví nový obsah. Můžete tak dál pracovat v jednom okně, zatímco doplněk hlídá jiné a upozorní vás ve chvíli, kdy se tam něco změní.
 
@@ -205,4 +205,9 @@ Pokud často potřebujete vědět o aktualizacích z aplikace, kterou používá
 
 ## Spolupráce
 
-Pokud byste chtěli přispět k vývoji doplňku – ať už překladem, hlášením chyb nebo vytvořením pull requestu – můžete [tak učinit v jeho repozitáři na GitHubu](https://github.com/4sensegaming/background-content-tracker). Veškerou pomoc vítám a vážím si jí.
+Pokud byste chtěli přispět k vývoji doplňku – ať už překladem, hlášením chyb nebo vytvořením pull requestu – můžete tak učinit v jeho [repozitáři na GitHubu](https://github.com/4sensegaming/background-content-tracker). Veškerou pomoc vítám a vážím si jí.
+
+## Historie změn
+
+### Verze 1.0, 6. září 2026
+* První verze

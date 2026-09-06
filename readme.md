@@ -2,11 +2,11 @@
 
 * Author: Lukáš Hosnedl
 * Minimum NVDA version: 2026.1
-* Last tested NVDA version: 2026.3
-
-## Description
+* Last tested NVDA version: 2027.1
 
 **Created by AI, designed and thoroughly tested by humans.**
+
+## Description
 
 Background Content Tracker tracks a window or a single control that you are **not** currently focused on, and lets you know as soon as new content appears in it. You can carry on working in one window while the add-on keeps an eye on another, and tells you the moment something there changes.
 
@@ -206,3 +206,8 @@ If you need to know about frequent updates from an app that you use in the backg
 ## Contributing
 
 If you would like to contribute to the add-on's development by providing translations, reporting issues or opening a pull request, you can [do so in its GitHub repository](https://github.com/4sensegaming/background-content-tracker). All contributions are welcome and appreciated.
+
+## Changelog
+
+### Version 1.0, 2026/09/05
+* Initial release
