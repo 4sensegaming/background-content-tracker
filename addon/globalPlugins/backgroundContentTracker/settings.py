@@ -75,6 +75,9 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: treat a window that renames itself as a target that has disappeared.
 		self.titleChangeCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Consider c&hanged title a disappeared target")))
 		self.titleChangeCb.SetValue(addonConfig.get("titleChangeDisappears"))
+		# Translators: suppress announcements of the control the user is typing in.
+		self.ignoreFocusedCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore focu&sed control")))
+		self.ignoreFocusedCb.SetValue(addonConfig.get("ignoreFocusedControl"))
 
 		# Group: Beep parameters ---------------------------------------------
 		# Translators: group of options for the beep, available when Beep is on.
@@ -183,6 +186,7 @@ class BCTSettingsPanel(SettingsPanel):
 			"ignoreProgressBars": self.ignoreProgressCb.IsChecked(),
 			"ignoreRepeatedControls": self.ignoreRepeatedCb.IsChecked(),
 			"titleChangeDisappears": self.titleChangeCb.IsChecked(),
+			"ignoreFocusedControl": self.ignoreFocusedCb.IsChecked(),
 			"beepDuration": self.durationCtrl.GetValue(),
 			"beepPitch": self.pitchCtrl.GetValue(),
 			"announceTargetType": self.annTypeCb.IsChecked(),

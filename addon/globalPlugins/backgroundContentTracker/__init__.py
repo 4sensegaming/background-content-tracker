@@ -468,10 +468,25 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		addonConfig.set("enabled", newEnabled)
 		if newEnabled:
 			self.notifier.resumed()
-			if not self.registry.liveTargets():
+			if not self._anythingToTrack():
 				self.notifier.noTargets()
 		else:
 			self.notifier.paused()
+
+	def _anythingToTrack(self):
+		"""Whether anything is tracked, or is still waiting to be found.
+
+		A remembered target that is not there yet counts: the monitor looks for it
+		every few seconds and takes it up the moment it appears, so calling that
+		nothing to track would be wrong — which is what resuming shortly after
+		NVDA started used to do, before the first relocation pass had had its turn
+		and while every remembered target was therefore still detached.
+		"""
+		settings = addonConfig.snapshot()
+		return any(
+			target.obj is not None or target.setting("rememberTargets", settings)
+			for target in self.registry
+		)
 
 	def openSettings(self):
 		"""Open NVDA's Settings dialog on this add-on's category.

@@ -27,6 +27,10 @@ unread, there is nothing stale for it to swallow either. Each of these decisions
 is taken per target, through :meth:`.TrackedTarget.setting`, so one target can
 differ from the global configuration in any setting that has a local equivalent.
 
+A target read in the foreground says nothing about the control the user is
+typing in, unless "Ignore focused control" is off for it: every keystroke moves
+that control's text, and hearing your own typing back is not news.
+
 Reading a target means sweeping its **whole accessible subtree**
 (:func:`_sweepEntries`): one entry per control, carrying that control's own
 text. A window, a chat's message list and a lone edit field all go through
@@ -91,6 +95,21 @@ except Exception:
 POLL_INTERVAL = 1.0
 #: Minimum seconds between relocation sweeps for remembered targets.
 RELOCATE_INTERVAL = 3.0
+#: Ceiling on the wait between attempts at one remembered target that keeps not
+#: being found. Only a target whose application is actually running backs off at
+#: all (see :meth:`Monitor._deferRelocate`), so this bounds the one search that
+#: costs anything — a subtree walk for a control that may never come back —
+#: without making a target whose application simply is not running any slower to
+#: pick up than the pass itself.
+RELOCATE_BACKOFF_MAX = 15.0
+#: How many relocation passes the remembered targets restored at start-up are
+#: gathered over before they are reported, as a single message. It closes early
+#: the moment they are all back, so the wait is only ever paid where the answer
+#: would otherwise be wrong: applications are still launching while NVDA starts,
+#: and at one pass — a second in — most of them have not opened their windows
+#: yet. Four passes is about ten seconds, which is late enough to have the real
+#: answer and still be part of starting up.
+STARTUP_PASSES = 4
 #: A repeatedly-changing control is suppressed only while it keeps changing. Once
 #: its template (see :func:`_templateOf`) has gone this many background polls
 #: without changing, it is forgotten, so that if it starts moving again — a fresh
@@ -267,7 +286,35 @@ def _isProgressBar(obj):
 		return False
 
 
-def _sweepEntries(root, ignoreProgressBars=False):
+def _focusObject():
+	"""NVDA's focus object, or ``None`` if it cannot be had.
+
+	Safe to read from the monitor thread: this is a plain attribute of NVDA's
+	``api`` module, rebound by the main thread and never mutated in place.
+	"""
+	try:
+		return api.getFocusObject()
+	except Exception:
+		return None
+
+
+def _sameObject(a, b):
+	"""Whether two objects stand for the same control.
+
+	NVDAObject equality is what knows how to answer this across the accessibility
+	APIs, but it reaches into the application to do so, and is guarded here like
+	every other cross-process call. An object we cannot compare is simply not the
+	focus, and is read like any other.
+	"""
+	if a is None or b is None:
+		return False
+	try:
+		return bool(a == b)
+	except Exception:
+		return False
+
+
+def _sweepEntries(root, ignoreProgressBars=False, focusObj=None):
 	"""The target's accessible subtree, as ``(entries, whole)``.
 
 	``entries`` is a list of ``(key, text)`` pairs — one per control that has
@@ -276,7 +323,8 @@ def _sweepEntries(root, ignoreProgressBars=False):
 	list always yields its individual items and a document its individual
 	paragraphs. ``whole`` says whether the sweep reached the entire subtree or
 	stopped short of it at one of the caps below; only a whole sweep is allowed to
-	conclude that content it did not find is gone.
+	conclude that content it did not find is gone. ``focusKey`` is the key of the
+	node that is ``focusObj``, or ``None`` where the sweep never met it.
 
 	**The text of a node.** The children are swept first. If anything below the
 	node produced text, the node itself contributes only its *label* (name and
@@ -310,6 +358,12 @@ def _sweepEntries(root, ignoreProgressBars=False):
 	is skipped entirely, so its constant churn never registers as a change. The
 	root itself is never skipped: a target the user pointed straight at is always
 	read.
+
+	``focusObj`` is the control the user is typing in, where the caller wants it
+	kept quiet. It is swept like any other — naming it is all that happens here,
+	and it is :meth:`Monitor._collectDelta` that keeps quiet about what was named,
+	so the cache still learns what was typed and never has to announce it later.
+	The root is again never named, for the same reason it is never skipped.
 	"""
 	entries = []
 	budget = [MAX_NODES]
@@ -319,6 +373,9 @@ def _sweepEntries(root, ignoreProgressBars=False):
 	#: speak for what it never reached, which is why absence is only ever trusted
 	#: from a whole one.
 	whole = [True]
+	#: The key of the focused node, once the sweep has met it. Held in a list for
+	#: the same reason as the rest of this state: ``visit`` is a closure.
+	focusKey = [None]
 
 	def visit(obj, depth, key, isRoot):
 		if budget[0] <= 0:
@@ -327,6 +384,8 @@ def _sweepEntries(root, ignoreProgressBars=False):
 		budget[0] -= 1
 		if not isRoot and ignoreProgressBars and _isProgressBar(obj):
 			return False  # a progress bar NVDA already handles; not our churn to report
+		if focusObj is not None and focusKey[0] is None and not isRoot and _sameObject(obj, focusObj):
+			focusKey[0] = key
 		# Every child costs at least one node, so the remaining budget is exactly
 		# how much of a huge container is worth fetching in the first place.
 		looked = depth < MAX_DEPTH and budget[0] > 0
@@ -361,7 +420,7 @@ def _sweepEntries(root, ignoreProgressBars=False):
 
 	visit(root, 0, u"", True)
 	entries.reverse()
-	return entries, whole[0]
+	return entries, whole[0], focusKey[0]
 
 
 def _isDarkSweep(entries, cache):
@@ -459,10 +518,15 @@ class Monitor(object):
 		self._thread = None
 		self._stop = threading.Event()
 		self._lastRelocate = 0.0
-		#: Whether the one-shot "remembered targets are gone" check has run. It can
-		#: only be answered once a relocation sweep has actually had its turn, so it
-		#: is deferred to the first poll rather than guessed at from a start-up timer.
-		self._startupChecked = False
+		#: Whether the remembered targets restored at start-up have been reported.
+		#: Until they have, an attaching target is folded into that one message
+		#: instead of announcing itself; afterwards each announces as it appears.
+		self._startupDone = False
+		#: Relocation passes the restoration has had so far, how many targets it
+		#: was looking for, and how many of them it has found. Monitor thread only.
+		self._startupPasses = 0
+		self._startupTotal = 0
+		self._startupFound = 0
 
 	# --- lifecycle -----------------------------------------------------------
 	def start(self):
@@ -481,16 +545,24 @@ class Monitor(object):
 		self._stop.set()
 		self._thread = None
 
-	def _callOnMainThread(self, func, *args):
+	def _callOnMainThread(self, func, *args, **kwargs):
 		"""Hand work back to NVDA's main thread.
 
 		Everything that speaks, beeps or mutates the registry goes through here.
-		``_immediate`` places the call at the front of the queue, as NVDA's own
-		LiveText does when it reports newly appeared text.
+		``immediate=True`` places the call at the front of the event queue, as
+		NVDA's own LiveText does when it reports newly appeared text. It is for
+		the two things the user is waiting on — a change as it happens, and the
+		outcome of a keypress — and for nothing else: a message that jumps the
+		queue jumps it past NVDA's own pending events, which is precisely wrong
+		for the housekeeping the monitor does on its own initiative while NVDA is
+		still starting up.
 		"""
 		if self._stop.is_set():
 			return
-		queueHandler.queueFunction(queueHandler.eventQueue, func, *args, _immediate=True)
+		immediate = kwargs.pop("immediate", False)
+		queueHandler.queueFunction(
+			queueHandler.eventQueue, func, *args, _immediate=immediate, **kwargs
+		)
 
 	def onAdded(self, target):
 		obj = target.obj
@@ -516,7 +588,9 @@ class Monitor(object):
 			target.staleCache = True
 			return
 		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and target.kind == "window"
-		entries, whole = _sweepEntries(obj, ignorePB)
+		# No focus to keep quiet about: this runs only for a target that is already
+		# in the background, and the focus is always in the foreground application.
+		entries, whole, _focusKey = _sweepEntries(obj, ignorePB)
 		self._absorb(target, entries, whole, False)
 		target.prevTexts = frozenset(text for _, text in entries)
 		target.staleCache = False
@@ -560,6 +634,7 @@ class Monitor(object):
 				log.error("Error in Background Content Tracker poll", exc_info=True)
 
 	def _checkAllTargets(self, settings, announce=True):
+		attached = ()
 		remembered = [
 			target for target in self.registry.detachedTargets()
 			if target.setting("rememberTargets", settings)
@@ -568,28 +643,60 @@ class Monitor(object):
 			now = time.time()
 			if now - self._lastRelocate >= RELOCATE_INTERVAL:
 				self._lastRelocate = now
-				for target in remembered:
-					self._tryRelocate(target, settings)
-		if not self._startupChecked:
-			# The first poll has run, and (relocation being synchronous on this
-			# thread) any remembered target that could be found has been attached
-			# by now. Only at this point can we honestly say remembered targets are
-			# gone rather than merely not yet re-located — so this is where the
-			# "No targets to track" heads-up belongs, not on a start-up timer.
-			self._startupChecked = True
-			if (
-				len(self.registry)
-				and not self.registry.liveTargets()
-				and any(t.setting("rememberTargets", settings) for t in self.registry)
-			):
-				self._callOnMainThread(self.notifier.noTargets)
+				attached = frozenset(self._relocatePass(remembered, settings, now))
+				if not self._startupDone:
+					self._noteStartupPass(len(remembered), len(attached))
+		elif not self._startupDone:
+			# Nothing is left to look for. Either the restoration has found
+			# everything it was going to, and should say so now rather than wait
+			# out passes with nothing to do, or nothing was remembered in the first
+			# place and there is no restoration to report at all. Either way, the
+			# targets that attach from here on speak for themselves again.
+			if self._startupPasses:
+				self._finishStartup()
+			else:
+				self._startupDone = True
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
+			if target in attached:
+				# Attached moments ago, in this very poll: ``onAdded`` has just
+				# swept it for its baseline, and sweeping it again here would only
+				# diff it against a cache milliseconds old — at the price of a
+				# second full sweep, and of announcing whatever happened to land in
+				# between as though it were news.
+				continue
 			if not target.isAlive() or not self._keptItsTitle(target, target.obj, settings):
 				self._handleDisappeared(target, target.setting("forgetOnDisappear", settings))
 				continue
 			self._checkTargetContent(target, settings, announce)
+
+	# --- the one message the start-up restoration makes ---------------------
+	def _noteStartupPass(self, pending, found):
+		"""Fold one relocation pass into the report the restoration will make.
+
+		Ten remembered targets used to mean ten "Tracking …" announcements in a
+		quick loop, on top of NVDA's own start-up speech, and — decided on the
+		strength of a single pass one second in — a "No targets to track" that the
+		next few seconds routinely contradicted. So the passes that make up the
+		restoration are counted here instead, and report themselves once.
+
+		The window closes as soon as every remembered target is back, so the
+		common case of everything already being open is still reported at once.
+		"""
+		if not self._startupPasses:
+			self._startupTotal = pending
+		self._startupPasses += 1
+		self._startupFound += found
+		if self._startupFound >= self._startupTotal or self._startupPasses >= STARTUP_PASSES:
+			self._finishStartup()
+
+	def _finishStartup(self):
+		"""Report what the restoration found, and let later targets speak for themselves."""
+		self._startupDone = True
+		self._callOnMainThread(
+			self.notifier.announceRestored, self._startupFound, self._startupTotal
+		)
 
 	def _checkTargetContent(self, target, settings=None, announce=True):
 		if settings is None:
@@ -617,7 +724,15 @@ class Monitor(object):
 			# Whatever happens while we are not looking leaves the cache stale.
 			target.staleCache = True
 			return
-		entries, whole = _sweepEntries(obj, ignorePB)
+		# The focused control is only worth naming while the user is actually in
+		# this application; anywhere else the focus is in another one, and no node
+		# of this target could be it.
+		focusObj = (
+			_focusObject()
+			if inForeground and isWindow and target.setting("ignoreFocusedControl", settings)
+			else None
+		)
+		entries, whole, focusKey = _sweepEntries(obj, ignorePB, focusObj)
 		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
 			# The cache predates a spell that was never read: the user was in the
@@ -633,7 +748,7 @@ class Monitor(object):
 		# that ages out repeatedly-changing controls keeps ticking while the
 		# window is idle, not only when something moves.
 		target.pollTick += 1
-		delta = self._collectDelta(target, entries, isWindow, settings)
+		delta = self._collectDelta(target, entries, isWindow, settings, focusKey)
 		self._absorb(target, entries, whole, dark)
 		target.prevTexts = frozenset(text for _, text in entries)
 		if not delta:
@@ -646,9 +761,9 @@ class Monitor(object):
 		if cap and target.announcedRun >= cap:
 			return  # reached the consecutive-announcement cap; wait for a refocus
 		target.announcedRun += 1
-		self._callOnMainThread(self.notifier.announceChange, target, delta)
+		self._callOnMainThread(self.notifier.announceChange, target, delta, immediate=True)
 
-	def _collectDelta(self, target, entries, isWindow, settings):
+	def _collectDelta(self, target, entries, isWindow, settings, focusKey=None):
 		"""The new content worth surfacing since the last poll.
 
 		The cache is a multiset: every text the target is known to hold, mapped to
@@ -674,6 +789,13 @@ class Monitor(object):
 		is forgotten once it has been quiet for :data:`FORGET_REPEATED_POLLS`
 		polls, so a control that goes quiet and later resumes is announced afresh.
 
+		When "Ignore focused control" is on for a window, ``focusKey`` names the
+		control the user is typing in, and it and everything inside it are dropped
+		from what is surfaced. They are still absorbed into the cache, which is the
+		whole point of dropping them here rather than skipping them in the sweep:
+		what was typed is known to have been there, so moving the focus away later
+		cannot turn it into new content and read it all back.
+
 		What is surfaced is always the node's whole current text, never a
 		character-level diff: a bare fragment of added characters is meaningless
 		read aloud, so the listener always hears the complete line or message.
@@ -696,6 +818,14 @@ class Monitor(object):
 				outstanding[text] = left - 1
 				picked.append((key, text))
 		picked.reverse()
+		if focusKey is not None:
+			prefix = focusKey + u"/"
+			picked = [
+				(key, text) for key, text in picked
+				if key != focusKey and not key.startswith(prefix)
+			]
+			if not picked:
+				return u""
 		if not (isWindow and target.setting("ignoreRepeatedControls", settings)):
 			return _joinSurfaced(picked)
 
@@ -824,7 +954,7 @@ class Monitor(object):
 		target as gone rather than chase a stale location. Unlike the periodic
 		relocation below it neither re-baselines nor announces: it is a lookup.
 		"""
-		obj = self._locate(target.identity)
+		obj = self._locate(target.identity, target.kind)
 		if obj is None:
 			return False
 		target.obj = obj
@@ -849,50 +979,143 @@ class Monitor(object):
 			except Exception:
 				log.debugWarning("Could not relocate target", exc_info=True)
 				found = False
-			self._callOnMainThread(callback, target, found)
+			# The user pressed a key and is waiting on this one.
+			self._callOnMainThread(callback, target, found, immediate=True)
 		threading.Thread(
 			name="BackgroundContentTracker._relocateThread",
 			target=run,
 			daemon=True,
 		).start()
 
-	def _tryRelocate(self, target, settings=None):
-		if settings is None:
-			settings = addonConfig.snapshot()
-		obj = self._locate(target.identity)
-		if obj is None:
-			return
-		if not self._keptItsTitle(target, obj, settings):
-			# A window this target was taken down from because it renamed itself.
-			# The identity match can reach it through a stable automation id alone,
-			# so without this it would be re-attached (and its title re-cached) on
-			# the very next relocation pass, which is the opposite of what the
-			# option asks for. It re-attaches when the old title comes back.
-			return
-		self._attach(target, obj)
+	def _relocatePass(self, targets, settings, now):
+		"""Look for every detached target that is due, over one view of the desktop.
 
-	def _locate(self, identity):
-		"""The live NVDAObject whose identity matches ``identity``, or ``None``."""
-		if not identity:
-			return None
+		The desktop is enumerated once for the whole pass rather than once per
+		target: the list of top-level windows and their application names is the
+		same for all of them, and re-reading it ten times over — every three
+		seconds, for as long as NVDA runs — is ten times the cross-process traffic
+		for one answer.
+
+		Returns the targets it attached, which the caller skips when it sweeps the
+		live targets: :meth:`_attach` has just baselined each of them.
+		"""
+		due = [target for target in targets if target.nextRelocate <= now]
+		if not due:
+			return []
+		windows = self._desktopWindows()
+		if not windows:
+			return []
+		attached = []
+		for target in due:
+			if self._stop.is_set():
+				# NVDA is going down. Relocation is the one thing here that can run
+				# long — a hung application can hold a cross-process read for as
+				# long as the RPC layer allows — so it checks between targets just
+				# as the content sweep does.
+				break
+			candidates = self._candidateWindows(windows, target.identity)
+			obj = self._locateAmong(candidates, target.identity, target.kind)
+			if obj is not None and not self._keptItsTitle(target, obj, settings):
+				# A window this target was taken down from because it renamed
+				# itself. The identity match can reach it through a stable
+				# automation id alone, so without this it would be re-attached (and
+				# its title re-cached) on the very next relocation pass, which is
+				# the opposite of what the option asks for. It re-attaches when the
+				# old title comes back.
+				obj = None
+			if obj is None:
+				# Never back off during the start-up restoration: its passes are
+				# the ones where an application is most likely to be halfway
+				# through starting, and there are only a handful of them.
+				self._deferRelocate(target, now, bool(candidates) and self._startupDone)
+				continue
+			# During the start-up restoration the targets are reported together,
+			# so an attaching one does not speak for itself; afterwards it does.
+			self._attach(target, obj, announce=self._startupDone)
+			attached.append(target)
+		return attached
+
+	def _deferRelocate(self, target, now, searched):
+		"""Put off the next attempt at ``target``, backing off if this one cost anything.
+
+		A target whose application is not running is ruled out by the shared
+		window list before a single cross-process read, so it is retried at the
+		pass interval for as long as it takes and is picked up within one pass of
+		its application appearing. Backing off is for the target that really was
+		searched for — its application is running, but the control is not there —
+		because that is the search that walks a subtree per pass, and repeating it
+		every three seconds for a control that may never come back is the one case
+		worth slowing down. Either way the wait is dropped the moment the target
+		attaches (see :meth:`_attach`).
+		"""
+		if searched:
+			target.relocateDelay = min(
+				max(target.relocateDelay * 2, RELOCATE_INTERVAL), RELOCATE_BACKOFF_MAX
+			)
+		else:
+			target.relocateDelay = 0.0
+		target.nextRelocate = now + target.relocateDelay
+
+	def _desktopWindows(self):
+		"""Every top-level window as ``(application name, object)``, or ``[]``.
+
+		The application name is read here, once per window per pass, because it is
+		what rules a window out for every target that does not want that
+		application: one read against the six a full identity descriptor costs,
+		and shared by the whole pass instead of taken again for each target.
+		"""
 		try:
 			topWindows = list(api.getDesktopObject().children)
 		except Exception:
-			return None
+			return []
+		return [(targetsMod.appNameOf(window), window) for window in topWindows]
+
+	def _candidateWindows(self, windows, identity):
+		"""The top-level windows from ``windows`` worth examining for ``identity``.
+
+		Empty when the wanted application is not running at all, which is both the
+		commonest case for a remembered target and the cheapest: it is settled by
+		names already in hand, with nothing read from anywhere.
+		"""
+		if not identity:
+			return []
 		wantedApp = identity.get("appName")
-		for topWindow in topWindows:
-			# The application name alone rules a window out, and costs one read
-			# where a full identity descriptor costs six. With a dozen or more
-			# top-level windows on a desktop, that is the difference between a
-			# cheap pass and a needless one, every few seconds, forever.
-			if wantedApp and targetsMod.appNameOf(topWindow) != wantedApp:
-				continue  # different app; skip descending it
-			if targetsMod.identitiesMatch(identity, targetsMod.objectIdentity(topWindow)):
-				return topWindow
-			match = self._findMatchingDescendant(topWindow, identity)
+		return [
+			window for appName, window in windows
+			if not wantedApp or appName == wantedApp
+		]
+
+	def _locateAmong(self, candidates, identity, kind=None):
+		"""The object matching ``identity`` among ``candidates`` or below them.
+
+		Every candidate is compared as a whole window first, and only then are
+		they descended. A window target stops after the first phase: what it names
+		is a top-level window, so walking a hundred and fifty nodes underneath each
+		one — every pass, forever — could never find it. For a control target the
+		phases also settle a tie the right way round: an exact match on a window
+		beats a descendant match under an earlier one.
+		"""
+		for window in candidates:
+			if targetsMod.identitiesMatch(identity, targetsMod.objectIdentity(window)):
+				return window
+		if kind == "window":
+			return None
+		for window in candidates:
+			match = self._findMatchingDescendant(window, identity)
 			if match is not None:
 				return match
 		return None
+
+	def _locate(self, identity, kind=None):
+		"""The live NVDAObject whose identity matches ``identity``, or ``None``.
+
+		Enumerates the desktop for this one lookup; a relocation pass shares one
+		enumeration across its targets instead (see :meth:`_relocatePass`).
+		"""
+		if not identity:
+			return None
+		windows = self._desktopWindows()
+		return self._locateAmong(self._candidateWindows(windows, identity), identity, kind)
 
 	def _findMatchingDescendant(self, root, identity, maxNodes=150):
 		# Cheap pre-filter: with no automation id, identitiesMatch can only succeed
@@ -928,10 +1151,20 @@ class Monitor(object):
 				queue.extend(children)
 		return None
 
-	def _attach(self, target, obj):
+	def _attach(self, target, obj, announce=True):
+		"""Take up a target that has been found again, and baseline it.
+
+		``announce`` is false only for the targets restored at start-up, which are
+		reported together rather than one by one (see :meth:`_noteStartupPass`).
+		"""
 		target.obj = obj
 		newIdentity = targetsMod.objectIdentity(obj)
 		if newIdentity:
 			target.identity = newIdentity
+		# It is here now, so any wait accumulated while it was not has done its
+		# job: should it disappear again, it is looked for at the pass interval.
+		target.relocateDelay = 0.0
+		target.nextRelocate = 0.0
 		self.onAdded(target)
-		self._callOnMainThread(self.notifier.announceTracking, target)
+		if announce:
+			self._callOnMainThread(self.notifier.announceTracking, target)

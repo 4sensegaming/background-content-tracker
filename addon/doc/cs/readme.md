@@ -75,11 +75,12 @@ Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný c
 
 Doplněk za chodu oznamuje několik neměnných zpráv:
 
-- **Zahájení sledování nového cíle** – například „Sleduji okno: Claude“. Totéž uslyšíte pokaždé, když se zapamatovaný cíl znovu objeví nebo je stále přítomen při restartu NVDA.
+- **Zahájení sledování nového cíle** – například „Sleduji okno: Claude“. Totéž uslyšíte pokaždé, když se zapamatovaný cíl znovu objeví.
+- **Obnovení zapamatovaných cílů** – při spuštění NVDA doplněk zapamatované cíle několik sekund hledá a pak je oznámí najednou, například „Sleduji 3 zapamatované cíle“, nebo „Sleduji 3 z 10 zapamatovaných cílů“, pokud se zbývající zatím neobjevily. Ty, které se objeví později, se ohlásí jednotlivě.
 - **Ukončení sledování cíle** – například „Přestávám sledovat seznam: Seznam zpráv“. Totéž uslyšíte pokaždé, když cíl přestane existovat.
 - **Vymazání celého seznamu cílů** – „Všechny cíle vymazány“.
 - **Pozastavení sledování** (klávesa `p`) – „Sledování obsahu na pozadí vypnuto“.
-- **Obnovení** – „Sledování obsahu na pozadí zapnuto“. Při obnovení sledování a při každém spuštění NVDA navíc doplněk oznámí „Žádné cíle ke sledování“, pokud nezbývají žádné platné cíle.
+- **Obnovení** – „Sledování obsahu na pozadí zapnuto“. Při obnovení sledování a na konci hledání po spuštění NVDA doplněk místo toho oznámí „Žádné cíle ke sledování“, pokud nezbývá co sledovat.
 
 ## Nastavení
 
@@ -128,6 +129,10 @@ Pokud je zaškrtnuto, doplněk nebude oznamovat po sobě jdoucí změny stejnéh
 #### **Považovat změnu názvu za zmizení cíle** (zaškrtávací políčko)
 
 Pokud je zaškrtnuto a změní se název okna, které sledujete, doplněk ho začne považovat za jiné okno a tedy se zachová stejně, jako by původní cíl zmizel, přestože fyzické okno v systému je pořád stejné. Výchozí hodnota je nezaškrtnuto.
+
+#### **Ignorovat prvek pod fokusem** (zaškrtávací políčko)
+
+Tato volba se projeví pouze u okna, které se čte i ve chvíli, kdy v něm pracujete, což umožňuje nastavení sledování cílů i na popředí. Pokud je zaškrtnuta, prvek, na kterém máte fokus, ani nic uvnitř něj se nikdy neoznámí jako změna, takže se vám znaky, které píšete do editačního pole, nečtou zpátky jako nový obsah. Napsaný text se neoznámí ani ve chvíli, kdy prvek opustíte, oznámí se jen to, co mezitím přibylo jinde v okně. Výchozí hodnota je zaškrtnuto.
 
 ### **Parametry pípnutí** (skupina)
 

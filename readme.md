@@ -75,11 +75,12 @@ Anything you are already tracking appears first in the menu, so you can move to 
 
 The add-on announces a few fixed messages during its operation:
 
-- **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears, or is still present when NVDA restarts.
+- **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears.
+- **Restoring remembered targets** — when NVDA starts, the remembered targets are looked for over the first few seconds and reported together, as "Tracking 3 remembered targets", or as "Tracking 3 of 10 remembered targets" when the rest have not appeared yet. Any that turn up after that announce themselves individually.
 - **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You also hear this whenever a target no longer exists.
 - **Clearing the whole target list** — "All targets cleared".
 - **Pausing** (the `p` key) — "Background content tracking disabled".
-- **Resuming** — "Background content tracking enabled". When tracking resumes, and each time NVDA starts, the add-on also announces "No targets to track" if there are no valid targets left.
+- **Resuming** — "Background content tracking enabled". When tracking resumes, and at the end of the start-up search, the add-on announces "No targets to track" instead if there is nothing left to track.
 
 ## Settings
 
@@ -128,6 +129,10 @@ When enabled, the add-on will not announce consecutive changes to the same contr
 #### **Consider changed title a disappeared target** (checkbox)
 
 When enabled, if the title of a window being tracked changes, the add-on will consider it a different window and thus act as if the original target has disappeared, even though the physical window is still the same one in the system. The default value is disabled.
+
+#### **Ignore focused control** (checkbox)
+
+This only makes a difference for a window that is read while you are working in it, which is what the option to track even foreground targets allows. When enabled, the control you are focused on, and anything inside it, is never announced as a change, so the characters you type into an edit field are not read back at you as new content. What you typed is not announced when you leave the control either, only what arrived elsewhere in the window while you were writing. The default value is enabled.
 
 ### **Beep parameters** (group)
 

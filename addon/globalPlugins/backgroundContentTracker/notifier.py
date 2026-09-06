@@ -74,10 +74,34 @@ class Notifier(object):
 	def announceTracking(self, target):
 		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [])
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-		# Queued rather than interrupting: several remembered targets are
-		# re-attached in a quick loop at start-up, and an interrupting message
-		# would leave only the last one audible.
+		# Queued rather than interrupting: an application coming back can bring
+		# several remembered targets with it, and an interrupting message would
+		# leave only the last of them audible.
 		ui.message(_("Tracking {target}").format(target=desc), speechPriority=Spri.NEXT)
+
+	def announceRestored(self, found, total):
+		"""Report the remembered targets restored at start-up, in one message.
+
+		They are counted rather than named: ten of them named one after another,
+		over NVDA's own start-up speech, is a recital of things the user already
+		knows they asked to be remembered. What is worth hearing is whether they
+		are all back, and the numbers say that in a breath. Any that turn up later
+		announce themselves as usual.
+		"""
+		if not found:
+			self.noTargets()
+			return
+		if found >= total:
+			# Translators: announced at start-up when every remembered target has been
+			# found. {n} is how many there are.
+			text = ngettext("Tracking {n} remembered target", "Tracking {n} remembered targets", found)
+			ui.message(text.format(n=found), speechPriority=Spri.NEXT)
+			return
+		# Translators: announced at start-up when only some of the remembered targets
+		# have been found; the rest are still being looked for. {found} is how many
+		# are being tracked, {total} how many there are.
+		text = _("Tracking {found} of {total} remembered targets")
+		ui.message(text.format(found=found, total=total), speechPriority=Spri.NEXT)
 
 	def announceStopped(self, target):
 		desc = _describe(target.roleText(), target.name, addonConfig.get("announceTargetType"), [])

@@ -58,14 +58,14 @@ def _localSettingItems(target):
 
 	One entry per key of :data:`addonConfig.LOCAL_KEYS`, ordered as in the
 	settings panel rather than as in that tuple, so the two read alike — except
-	that the first three are offered for a whole-window target only. The monitor
-	ignores all three unless the target is a window, so on a control they would be
-	switches wired to nothing.
+	that the window tracking ones are offered for a whole-window target only. The
+	monitor ignores every one of them unless the target is a window, so on a
+	control they would be switches wired to nothing.
 
-	The window-only three are labelled with the settings panel's own words: they
-	read the same wherever they are set. The other three are worded for the one
-	target they act on here, rather than for every target at once as the panel's
-	wording has it.
+	Those are labelled with the settings panel's own words: they read the same
+	wherever they are set. The remaining three are worded for the one target they
+	act on here, rather than for every target at once as the panel's wording has
+	it.
 
 	Built on each call rather than held in a module-level constant, because the
 	labels are translated at the moment they are built and the user can change
@@ -80,6 +80,8 @@ def _localSettingItems(target):
 			("ignoreRepeatedControls", _("Ignore &repeatedly changing controls")),
 			# Translators: treat a window that renames itself as a target that has disappeared.
 			("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
+			# Translators: suppress announcements of the control the user is typing in.
+			("ignoreFocusedControl", _("Ignore focu&sed control")),
 		))
 	items.extend((
 		# Translators: submenu item; read this one target while its own application is in the foreground.
