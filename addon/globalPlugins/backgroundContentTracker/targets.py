@@ -13,6 +13,7 @@ that is the monitor's job. This keeps the model easy to reason about and test.
 
 import threading
 import time
+from collections import OrderedDict
 
 import core
 import winUser
@@ -143,13 +144,24 @@ class TrackedTarget(object):
 		#: Identity descriptor captured at creation, for re-location/persistence.
 		self.identity = objectIdentity(obj) if obj is not None else {}
 		self.createdTime = time.time()
-		#: Baseline snapshot of the target's whole accessible subtree: one entry
-		#: per control, mapping its structural key to its text. The keys tell the
-		#: diff which control a text belongs to, the texts tell it what was already
-		#: there, so a control that merely slides around the tree as content
-		#: arrives is not mistaken for new content. Rebound wholesale, never
-		#: mutated in place.
-		self.cachedNodes = {}
+		#: Every text this target is known to hold, mapped to how many copies of
+		#: it are known: the multiset the monitor's change detection asks its one
+		#: question of ("four copies now, three known, so one is new"). It records
+		#: content rather than structure, so a control that merely slides around
+		#: the tree as content arrives above it cannot be mistaken for something
+		#: new. Ordered least recently seen first, which is the order the size
+		#: caps evict in. Mutated in place by the monitor thread, which is the
+		#: only thread that ever touches it.
+		self.seenContent = OrderedDict()
+		#: Total length of the keys of ``seenContent``, kept alongside it so the
+		#: cache can be capped by weight without measuring it every poll.
+		self.seenChars = 0
+		#: The texts the previous sweep found. Not a cache and never consulted for
+		#: change detection: it exists so that "Ignore repeatedly changing
+		#: controls" can tell a control that replaced itself (its old text is gone
+		#: this sweep) from a log that appended a line (its old lines are all
+		#: still there).
+		self.prevTexts = frozenset()
 		#: Templates (text with numeric runs collapsed) of repeatedly-changing
 		#: controls already announced, mapped to the poll on which each last
 		#: changed. Used to suppress timers and countdowns, and to forget one that
@@ -172,11 +184,11 @@ class TrackedTarget(object):
 		#: check. Only the previous state: what the monitor does about it depends
 		#: on whether the target is tracked in the foreground as well.
 		self.wasInForeground = False
-		#: Whether the cached snapshot predates a spell the monitor did not read —
-		#: because the user was in the target's application, or because the target
-		#: was added while they were there. Such a snapshot is re-taken silently
-		#: instead of being diffed, so that nothing which happened while nobody
-		#: was looking is announced afterwards.
+		#: Whether the cache predates a spell the monitor did not read — because
+		#: the user was in the target's application, or because the target was
+		#: added while they were there. Such a sweep is folded into the cache
+		#: silently instead of being diffed, so that nothing which happened while
+		#: nobody was looking is announced afterwards.
 		self.staleCache = False
 		#: The window title this target was added with, or ``None``. Only ever
 		#: set for a whole-window target added while "Consider changed title a

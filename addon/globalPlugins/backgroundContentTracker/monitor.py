@@ -5,20 +5,21 @@
 
 """The heart of the add-on, and deliberately built from one mechanism only.
 
-Every tracked target is read on a timer, the result is diffed against a cached
-snapshot, and only genuinely new content is announced. There is no event path:
-NVDA suppresses accessibility events for windows that are not in the foreground
-anyway, so events could only ever have been a latency optimisation, and they were
-the source of far worse bugs than the ~1 s of latency they saved.
+Every tracked target is read on a timer, what it now holds is weighed against
+what it is known to have held, and only genuinely new content is announced.
+There is no event path: NVDA suppresses accessibility events for windows that
+are not in the foreground anyway, so events could only ever have been a latency
+optimisation, and they were the source of far worse bugs than the ~1 s of
+latency they saved.
 
 Two rules keep the behaviour honest:
 
 * A target is never read, let alone announced, while its application is in the
   foreground (:func:`isInForegroundApp`). The add-on reports what you are *not*
   looking at, so the app you are working in is left completely alone.
-* Whenever a snapshot predates a spell that was never read, it is re-taken
-  silently. Nothing that happened while you were sitting in the application can
-  therefore be announced at you when you switch away.
+* Whenever the cache predates a spell that was never read, the next sweep is
+  folded into it silently. Nothing that happened while you were sitting in the
+  application can therefore be announced at you when you switch away.
 
 Both rules bend for a target whose "Track even foreground targets" is set: it is
 read and announced wherever its application is, and since it is never left
@@ -26,21 +27,39 @@ unread, there is nothing stale for it to swallow either. Each of these decisions
 is taken per target, through :meth:`.TrackedTarget.setting`, so one target can
 differ from the global configuration in any setting that has a local equivalent.
 
-Reading a target means building a **keyed snapshot of its whole accessible
-subtree** (:func:`_sweepEntries`): one entry per control, keyed by its position
-in the tree and carrying that control's own text. A window, a chat's message
-list and a lone edit field all go through exactly the same sweep, so a list is
-always read as its individual items and a document as its individual paragraphs,
-never as one flat blob. The sweep is bounded by :data:`MAX_NODES`,
-:data:`MAX_TEXT_CHARS` and :data:`MAX_DEPTH`, and only runs for backgrounded
-targets. It costs tens to hundreds of milliseconds per window, which is why it
-runs on the monitor's own thread; see :class:`Monitor`.
+Reading a target means sweeping its **whole accessible subtree**
+(:func:`_sweepEntries`): one entry per control, carrying that control's own
+text. A window, a chat's message list and a lone edit field all go through
+exactly the same sweep, so a list is always read as its individual items and a
+document as its individual paragraphs, never as one flat blob. The sweep is
+bounded by :data:`MAX_NODES`, :data:`MAX_TEXT_CHARS` and :data:`MAX_DEPTH`, and
+only runs for backgrounded targets. It costs tens to hundreds of milliseconds
+per window, which is why it runs on the monitor's own thread; see
+:class:`Monitor`.
+
+What a sweep is weighed against is a **multiset of content**
+(``TrackedTarget.seenContent``): every text the target is known to hold, mapped
+to how many copies of it are known. New content is then an arithmetic question —
+four copies now where three were known means one is new — with no structure in
+it at all, which is what makes a control that merely slid down the tree as
+content arrived above it impossible to mistake for something new.
+
+The cache remembers rather than mirrors, and that is what makes the add-on
+robust where it used to be silently wrong. Copies are only ever taken *away* by
+a sweep in a position to testify that they are gone: one that read the target
+whole, and found real content while doing so. A sweep truncated at the node
+budget has not seen the top of a long chat log, and a sweep of a window whose
+accessibility provider has stopped publishing — minimizing a Chromium window is
+the reliable way to produce one — has not seen anything at all. Neither is
+allowed to take anything away, so neither can adopt its own blindness as the
+truth and then read the whole target back as new content afterwards. See
+:meth:`Monitor._absorb`.
 """
 
 import re
 import threading
 import time
-from collections import Counter
+from collections import Counter, OrderedDict
 
 import api
 import queueHandler
@@ -85,12 +104,22 @@ FORGET_REPEATED_POLLS = 15
 #: one control's text. MAX_DEPTH is a guard against a pathological or cyclic
 #: tree; MAX_NODES bounds the work on its own.
 MAX_NODES = 1000
-MAX_TEXT_CHARS = 1000
+MAX_TEXT_CHARS = 10000
 MAX_DEPTH = 50
 #: How much raw text is worth normalising to keep MAX_TEXT_CHARS of it. An
 #: object's own text can be a whole document; the slack covers what collapsing
 #: the whitespace removes.
 _RAW_TEXT_LIMIT = MAX_TEXT_CHARS * 4
+#: Caps on one target's content cache. The cache holds every text the target is
+#: known to have shown, not only what it shows now, so it has to be allowed to
+#: outgrow any one sweep — that is what stops content which scrolled past the
+#: node budget from being announced all over again when it comes back into view.
+#: It is bounded by count and by weight together, because a single entry may be
+#: MAX_TEXT_CHARS long and a count alone would leave the real cost unbounded.
+#: Least recently seen is evicted first: the content that drifted out of the
+#: target longest ago.
+MAX_CACHE_ENTRIES = 100000
+MAX_CACHE_CHARS = 20 * 1000 * 1000
 #: The character an accessibility API substitutes for an embedded child object.
 #: A container's "own text" is often nothing but a row of these.
 _OBJECT_REPLACEMENT = u"￼"
@@ -239,13 +268,15 @@ def _isProgressBar(obj):
 
 
 def _sweepEntries(root, ignoreProgressBars=False):
-	"""The target's whole accessible subtree as a list of ``(key, text)`` pairs.
+	"""The target's accessible subtree, as ``(entries, whole)``.
 
-	This is the single representation everything else works from. One entry per
-	control that has anything to say, in document order, with no special case for
-	windows: a window, a message list and a lone edit field are all swept the same
-	way, so a list always yields its individual items and a document its
-	individual paragraphs.
+	``entries`` is a list of ``(key, text)`` pairs — one per control that has
+	anything to say, in document order, with no special case for windows: a
+	window, a message list and a lone edit field are all swept the same way, so a
+	list always yields its individual items and a document its individual
+	paragraphs. ``whole`` says whether the sweep reached the entire subtree or
+	stopped short of it at one of the caps below; only a whole sweep is allowed to
+	conclude that content it did not find is gone.
 
 	**The text of a node.** The children are swept first. If anything below the
 	node produced text, the node itself contributes only its *label* (name and
@@ -260,13 +291,12 @@ def _sweepEntries(root, ignoreProgressBars=False):
 	already speaks; a root with no children is a control pointed straight at, so
 	its label is exactly what should be read.
 
-	**The key of a node.** Its path of child indices from the root. No content goes
-	into it, so a control keeps its key while its text changes, which is what lets
-	:meth:`Monitor._collectDelta` tell "this control now says something else" from
-	"a control that was not here before" without guessing from the text itself. An
-	index does drift when a sibling is inserted above it, and that is deliberately
-	tolerated: the delta's own multiset check is what guarantees a node that only
-	moved is never announced, so the key never has to carry that weight.
+	**The key of a node.** Its path of child indices from the root. Change
+	detection does not use it — that works on content alone
+	(:meth:`Monitor._collectDelta`) — so it carries no weight there and is free to
+	drift when a sibling is inserted above it. It is what tells
+	:func:`_joinSurfaced` which surfaced nodes are nested inside which, so that a
+	row named after the cells beneath it is not read out twice.
 
 	Bounded by MAX_NODES/MAX_TEXT_CHARS/MAX_DEPTH. The sweep walks children in
 	reverse and emits each node after its subtree, then reverses the result: the
@@ -283,9 +313,16 @@ def _sweepEntries(root, ignoreProgressBars=False):
 	"""
 	entries = []
 	budget = [MAX_NODES]
+	#: Cleared as soon as any part of the subtree goes unread — the node budget
+	#: ran out, a container was clipped to its tail, or the depth cap stopped the
+	#: descent. Such a sweep still reports everything it found, but it cannot
+	#: speak for what it never reached, which is why absence is only ever trusted
+	#: from a whole one.
+	whole = [True]
 
 	def visit(obj, depth, key, isRoot):
 		if budget[0] <= 0:
+			whole[0] = False
 			return False
 		budget[0] -= 1
 		if not isRoot and ignoreProgressBars and _isProgressBar(obj):
@@ -293,10 +330,15 @@ def _sweepEntries(root, ignoreProgressBars=False):
 		# Every child costs at least one node, so the remaining budget is exactly
 		# how much of a huge container is worth fetching in the first place.
 		looked = depth < MAX_DEPTH and budget[0] > 0
+		if not looked:
+			whole[0] = False
 		children, firstIndex = _childrenOf(obj, budget[0]) if looked else ([], 0)
+		if firstIndex:
+			whole[0] = False  # only the tail of this container was fetched
 		gotText = False
 		for offset in range(len(children) - 1, -1, -1):
 			if budget[0] <= 0:
+				whole[0] = False
 				break
 			childKey = u"%s/%d" % (key, firstIndex + offset)
 			if visit(children[offset], depth + 1, childKey, False):
@@ -319,7 +361,19 @@ def _sweepEntries(root, ignoreProgressBars=False):
 
 	visit(root, 0, u"", True)
 	entries.reverse()
-	return entries
+	return entries, whole[0]
+
+
+def _isDarkSweep(entries, cache):
+	"""Whether a sweep found nothing where the target is known to hold content.
+
+	A collapsed accessible tree still answers: the sweep comes back with the
+	target's own name and nothing beneath it, or with nothing at all. A target
+	that genuinely holds a single line looks exactly the same, so the cache has
+	to be holding more than such a sweep could ever produce before its emptiness
+	is read as a failure to report rather than as content.
+	"""
+	return len(entries) <= 1 < len(cache)
 
 
 #: A maximal run of digits, optionally with separators *between* digits — the
@@ -445,6 +499,9 @@ class Monitor(object):
 		target.announcedRun = 0
 		target.announcedControls = {}
 		target.pollTick = 0
+		target.seenContent = OrderedDict()
+		target.seenChars = 0
+		target.prevTexts = frozenset()
 		target.wasInForeground = isInForegroundApp(obj)
 		# The title a whole-window target is held to for the rest of its life, so
 		# that a window which later renames itself can be told from the one that
@@ -463,11 +520,12 @@ class Monitor(object):
 		# application the user is working in stays off the main thread, which is
 		# where this runs.
 		if target.wasInForeground:
-			target.cachedNodes = {}
 			target.staleCache = True
 			return
 		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and target.kind == "window"
-		target.cachedNodes = dict(_sweepEntries(obj, ignorePB))
+		entries, whole = _sweepEntries(obj, ignorePB)
+		self._absorb(target, entries, whole, False)
+		target.prevTexts = frozenset(text for _, text in entries)
 		target.staleCache = False
 
 	# --- polling -------------------------------------------------------------
@@ -566,14 +624,16 @@ class Monitor(object):
 			# Whatever happens while we are not looking leaves the cache stale.
 			target.staleCache = True
 			return
-		entries = _sweepEntries(obj, ignorePB)
+		entries, whole = _sweepEntries(obj, ignorePB)
+		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
 			# The cache predates a spell that was never read: the user was in the
-			# application, or the target was added while they were there. Re-take
-			# the snapshot silently, so that nothing which happened while nobody
-			# was looking is announced at them now.
+			# application, or the target was added while they were there. Fold the
+			# sweep in silently, so that nothing which happened while nobody was
+			# looking is announced at them now.
 			target.staleCache = False
-			target.cachedNodes = dict(entries)
+			self._absorb(target, entries, whole, dark)
+			target.prevTexts = frozenset(text for _, text in entries)
 			return
 		# A poll that counts. Advance the target's poll clock even when
 		# nothing changed, so the "how long has this control been quiet" measure
@@ -581,7 +641,8 @@ class Monitor(object):
 		# window is idle, not only when something moves.
 		target.pollTick += 1
 		delta = self._collectDelta(target, entries, isWindow, settings)
-		target.cachedNodes = dict(entries)
+		self._absorb(target, entries, whole, dark)
+		target.prevTexts = frozenset(text for _, text in entries)
 		if not delta:
 			return
 		target.lastDelta = delta
@@ -597,54 +658,57 @@ class Monitor(object):
 	def _collectDelta(self, target, entries, isWindow, settings):
 		"""The new content worth surfacing since the last poll.
 
-		Two passes over the fresh snapshot, and no guesswork in either.
+		The cache is a multiset: every text the target is known to hold, mapped to
+		how many copies of it are known. What this asks of a sweep is therefore
+		arithmetic rather than structural — the target now shows this text four
+		times and three were known, so one copy is new — and it needs no notion of
+		where in the tree anything sits. A control that merely slid down as content
+		arrived above it carries text the cache already holds, so it cannot be
+		mistaken for new content; telling that apart used to take a two-pass
+		comparison of structural keys, and is now not a case that can arise.
 
-		The first pass sets aside every node that is **unchanged in place** — same
-		key, same text — and books one occurrence of that text against the cached
-		snapshot. What is left over is every node that either says something new or
-		sits somewhere new.
-
-		The second pass asks of each of those: does this exact text still exist
-		somewhere in what is left of the cached snapshot? If it does, the node
-		merely *moved*, and an accessible tree reshapes constantly — appending one
-		chat message renumbers everything below it — so a node that only slid is
-		never mistaken for new content. If it does not, the text is genuinely new
-		and is surfaced. Whether its key was in the cache tells us which kind of
-		new it is: the same control now saying something else, or a control that
-		was not there at all.
+		New copies are surfaced from the END of the sweep, because appended content
+		is what this add-on exists for: where a text really is repeated, the new
+		copies are the latest arrivals, not the oldest survivors.
 
 		When "Ignore repeatedly changing controls" is on for a window, a control
-		that changed *in place* is announced once and its template
-		(:func:`_templateOf`) remembered, so its later ticks are dropped; the
-		template stays live while the control keeps changing and is forgotten once
-		it has been quiet for :data:`FORGET_REPEATED_POLLS` polls, so a control
-		that goes quiet and later resumes is announced afresh. A control that was
-		not in the cache at all never enters that memory, so genuinely new content
-		can never be muted by a template it happens to share — but it is still
-		suppressed if that template is *already* muted, which is what keeps a timer
-		quiet when a new message arrives above it and shifts its key.
+		that *replaced itself* — a different text sharing its template
+		(:func:`_templateOf`) was in the previous sweep and is gone from this one —
+		is announced once and its template remembered, so its later ticks are
+		dropped. Replacement is exactly what a ticking timer does and an appending
+		log does not: a log's earlier lines are all still there, so it can never
+		mute itself. The template stays live while the control keeps changing and
+		is forgotten once it has been quiet for :data:`FORGET_REPEATED_POLLS`
+		polls, so a control that goes quiet and later resumes is announced afresh.
 
 		What is surfaced is always the node's whole current text, never a
 		character-level diff: a bare fragment of added characters is meaningless
 		read aloud, so the listener always hears the complete line or message.
 		"""
-		old = target.cachedNodes or {}
-		oldCounts = Counter(old.values())
-		consumed = Counter()
-		pending = []
-		for key, text in entries:
-			if old.get(key) == text:
-				consumed[text] += 1  # this control is exactly as it was
-			else:
-				pending.append((key, text))
-		# What the cache held that no unchanged control has accounted for. A
-		# pending node whose text is still in here is one that only moved.
-		remaining = oldCounts - consumed
+		cache = target.seenContent
+		counts = Counter(text for _, text in entries)
+		outstanding = {}
+		for text, seen in counts.items():
+			known = cache.get(text, 0)
+			if seen > known:
+				outstanding[text] = seen - known
+		if not outstanding:
+			return u""
+		# The last copies of a repeated text are the new ones, so the pick runs
+		# backwards and the result is turned back into document order.
+		picked = []
+		for key, text in reversed(entries):
+			left = outstanding.get(text)
+			if left:
+				outstanding[text] = left - 1
+				picked.append((key, text))
+		picked.reverse()
+		if not (isWindow and target.setting("ignoreRepeatedControls", settings)):
+			return _joinSurfaced(picked)
 
-		ignoreRepeated = isWindow and bool(target.setting("ignoreRepeatedControls", settings))
 		announced = target.announcedControls
 		currentTick = target.pollTick
-		if ignoreRepeated and announced:
+		if announced:
 			# Forget controls that have gone quiet: a template not seen changing
 			# for FORGET_REPEATED_POLLS polls is no longer treated as a timer, so
 			# its next change is announced again.
@@ -652,22 +716,74 @@ class Monitor(object):
 			         if currentTick - tick > FORGET_REPEATED_POLLS]
 			for tpl in stale:
 				del announced[tpl]
+		# The templates this sweep lost. A surfaced text whose template is in here
+		# took something's place, which is a control changing rather than content
+		# arriving. Nothing surfaced can itself have vanished, so a text is never
+		# judged a replacement for itself.
+		vanished = set()
+		for text in target.prevTexts:
+			if text not in counts:
+				vanished.add(_templateOf(text))
 
 		surfaced = []
-		for key, text in pending:
-			if remaining[text] > 0:
-				remaining[text] -= 1
-				continue  # this exact text was already present; it only moved
-			if ignoreRepeated:
-				template = _templateOf(text)
-				if template in announced:
-					announced[template] = currentTick  # still churning; keep it live
-					continue  # this control was already announced; do not repeat it
-				if key in old:
-					# A control changing in place: announce it now, mute its ticks.
-					announced[template] = currentTick
+		for key, text in picked:
+			template = _templateOf(text)
+			if template in announced:
+				announced[template] = currentTick  # still churning; keep it live
+				continue  # this control was already announced; do not repeat it
+			if template in vanished:
+				# A control replacing itself: announce it now, mute its ticks.
+				announced[template] = currentTick
 			surfaced.append((key, text))
 		return _joinSurfaced(surfaced)
+
+	def _absorb(self, target, entries, whole, dark):
+		"""Fold a sweep into the target's content cache.
+
+		Counts only ever rise, except where the sweep is in a position to testify
+		that something has gone: a text missing from a sweep that read the target
+		*whole* really is missing, and its count comes down — to zero, which drops
+		it — so that content which returns later is announced again. Two kinds of
+		sweep are not in that position, and neither is allowed to take anything
+		away:
+
+		* A **truncated** sweep (``whole`` false) stopped at the node budget or the
+		  depth cap, so part of the target was never looked at. This is the
+		  ordinary case for a long chat log, and it is what lets the cache outgrow
+		  any one sweep: content that scrolled past the budget stays known, and is
+		  not announced all over again if it later comes back into view.
+		* A **dark** sweep found nothing where the cache holds real content. A
+		  window whose accessibility provider has stopped publishing — minimizing a
+		  Chromium window is the reliable way to see this — still answers, and
+		  answers "empty". Believing it would adopt that emptiness as the truth and
+		  then read the whole window back as new content the moment it returned.
+
+		Neither case needs a state of its own, an announcement or a recovery path:
+		a sweep that cannot testify simply changes nothing, and the next one that
+		can carries on from where the last one left off.
+		"""
+		cache = target.seenContent
+		counts = Counter(text for _, text in entries)
+		trustAbsence = whole and not dark
+		if trustAbsence:
+			for gone in [text for text in cache if text not in counts]:
+				target.seenChars -= len(gone)
+				del cache[gone]
+		for text, seen in counts.items():
+			known = cache.get(text)
+			if known is None:
+				cache[text] = seen
+				target.seenChars += len(text)
+				continue
+			if seen > known or trustAbsence:
+				cache[text] = seen
+			# The cache is ordered least-recently-seen first, so refreshing
+			# everything the target still holds leaves the front of it as what
+			# drifted out long ago — exactly what should go when the caps bite.
+			cache.move_to_end(text)
+		while cache and (len(cache) > MAX_CACHE_ENTRIES or target.seenChars > MAX_CACHE_CHARS):
+			evicted, _count = cache.popitem(last=False)
+			target.seenChars -= len(evicted)
 
 	def _keptItsTitle(self, target, obj, settings):
 		"""Whether ``obj`` still carries the title ``target`` was added with.
