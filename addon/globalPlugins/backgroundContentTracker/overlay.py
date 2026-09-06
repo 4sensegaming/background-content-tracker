@@ -62,6 +62,16 @@ addonHandler.initTranslation()
 #: Maps a number-row/number-pad digit key name to a 0-based slot index.
 _DIGIT_KEYS = {"1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9}
 
+#: The four commands that start or stop tracking something, and the controller
+#: method each one calls. They are the only commands that take modifiers of their
+#: own: shift and control each switch on one of the target's local settings.
+_TOGGLE_KEYS = {
+	"w": "toggleWindow",
+	"f": "toggleFocus",
+	"m": "toggleMouse",
+	"n": "toggleNavigator",
+}
+
 #: How long to hold back the closing announcement when a command has taken the
 #: focus elsewhere. Long enough for the window it opened to have claimed the
 #: focus and for NVDA to have begun announcing it, so that this queues behind
@@ -251,19 +261,27 @@ class Overlay(object):
 		if mods == {"control"} and key in _DIGIT_KEYS:
 			c.stopSlot(_DIGIT_KEYS[key])
 			return True
+		if key in _TOGGLE_KEYS and not mods - {"control", "shift"}:
+			# Held with one of these, the command still does exactly what it does
+			# on its own; the modifiers only say what the target it adds is to be
+			# given. Shift asks for this one target to be remembered, control for
+			# it to be read even while it is in the foreground — each the local
+			# form of the global setting of the same name, set on the target as it
+			# is added rather than afterwards in the target menu. A press that
+			# stops tracking has no target to give anything to, and the modifiers
+			# are simply spent: they never reach an existing target.
+			overrides = {}
+			if "shift" in mods:
+				overrides["rememberTargets"] = True
+			if "control" in mods:
+				overrides["trackForegroundTargets"] = True
+			getattr(c, _TOGGLE_KEYS[key])(overrides)
+			return True
 		if mods:
 			return False  # any other modifier combination is not a command
 
 		if key == "h":
 			c.help()
-		elif key == "w":
-			c.toggleWindow()
-		elif key == "f":
-			c.toggleFocus()
-		elif key == "m":
-			c.toggleMouse()
-		elif key == "n":
-			c.toggleNavigator()
 		elif key == "t":
 			c.openMenu()
 		elif key == "p":

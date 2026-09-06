@@ -280,6 +280,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("M: start or stop tracking the control under the mouse pointer"),
 			# Translators: overlay help line for the N key.
 			_("N: start or stop tracking the navigator object"),
+			# Translators: overlay help line for shift and control with W, F, M or N.
+			_("Add shift to any of W, F, M or N to remember that one target, control to read it even in the foreground, or both"),
 			# Translators: overlay help line for the T key.
 			_("T: open the target menu"),
 			# Translators: overlay help line for the number keys.
@@ -327,17 +329,17 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self.notifier.announceTracking(target)
 		self._saveRememberedTargets()
 
-	def toggleWindow(self):
-		self._toggle(api.getForegroundObject(), "window")
+	def toggleWindow(self, overrides=None):
+		self._toggle(api.getForegroundObject(), "window", overrides)
 
-	def toggleFocus(self):
-		self._toggle(api.getFocusObject(), "focus")
+	def toggleFocus(self, overrides=None):
+		self._toggle(api.getFocusObject(), "focus", overrides)
 
-	def toggleMouse(self):
-		self._toggle(api.getMouseObject(), "mouse")
+	def toggleMouse(self, overrides=None):
+		self._toggle(api.getMouseObject(), "mouse", overrides)
 
-	def toggleNavigator(self):
-		self._toggle(api.getNavigatorObject(), "navigator")
+	def toggleNavigator(self, overrides=None):
+		self._toggle(api.getNavigatorObject(), "navigator", overrides)
 
 	def slotInfo(self, index):
 		target = self.registry.slot(index)
