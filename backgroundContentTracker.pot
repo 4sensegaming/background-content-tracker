@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 0.9.0\n"
-"POT-Creation-Date: 2026-09-06 22:54+0200\n"
+"POT-Creation-Date: 2026-09-06 23:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -43,61 +43,61 @@ msgid "Track {source}: {name}"
 msgstr ""
 
 #. Translators: suppress announcements of progress bar controls in a window.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:99
+#: addon\globalPlugins\backgroundContentTracker\menu.py:104
 #: addon\globalPlugins\backgroundContentTracker\settings.py:118
 msgid "Ignore &progress bars"
 msgstr ""
 
 #. Translators: suppress a control that does nothing but count (e.g. a timer).
-#: addon\globalPlugins\backgroundContentTracker\menu.py:101
+#: addon\globalPlugins\backgroundContentTracker\menu.py:106
 #: addon\globalPlugins\backgroundContentTracker\settings.py:122
 msgid "Ignore c&ounters, steppers and timers"
 msgstr ""
 
 #. Translators: treat a window that renames itself as a target that has disappeared.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:103
+#: addon\globalPlugins\backgroundContentTracker\menu.py:108
 #: addon\globalPlugins\backgroundContentTracker\settings.py:127
 msgid "Consider c&hanged title a disappeared target"
 msgstr ""
 
 #. Translators: suppress announcements of the control the user is typing in.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:105
+#: addon\globalPlugins\backgroundContentTracker\menu.py:114
 #: addon\globalPlugins\backgroundContentTracker\settings.py:131
 msgid "Ignore focu&sed control"
 msgstr ""
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:111
+#: addon\globalPlugins\backgroundContentTracker\menu.py:119
 msgid "Read this target even when in foreground"
 msgstr ""
 
 #. Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:113
+#: addon\globalPlugins\backgroundContentTracker\menu.py:121
 msgid "Remember this target"
 msgstr ""
 
 #. Translators: submenu item; drop this one remembered target once it no longer exists.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:119
+#: addon\globalPlugins\backgroundContentTracker\menu.py:127
 msgid "Forget this target when it disappears"
 msgstr ""
 
 #. Translators: submenu of a target's menu, holding that target's own settings.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:150
+#: addon\globalPlugins\backgroundContentTracker\menu.py:158
 msgid "Target settings"
 msgstr ""
 
 #. Translators: submenu item that stops tracking a single target.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:169
+#: addon\globalPlugins\backgroundContentTracker\menu.py:177
 msgid "Stop tracking"
 msgstr ""
 
 #. Translators: submenu item that moves the focus to a target.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:172
+#: addon\globalPlugins\backgroundContentTracker\menu.py:180
 msgid "Set focus"
 msgstr ""
 
 #. Translators: menu item that stops tracking every target at once.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:189
+#: addon\globalPlugins\backgroundContentTracker\menu.py:197
 msgid "Stop tracking all targets"
 msgstr ""
 
@@ -356,12 +356,12 @@ msgid "Trac&k even foreground targets"
 msgstr ""
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:222
+#: addon\globalPlugins\backgroundContentTracker\settings.py:223
 msgid "&Remember targets"
 msgstr ""
 
 #. Translators: automatically drop remembered targets that no longer exist.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:228
+#: addon\globalPlugins\backgroundContentTracker\settings.py:229
 msgid "&Forget remembered targets when they disappear"
 msgstr ""
 

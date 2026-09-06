@@ -217,6 +217,7 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: also track a target while its own application is in the foreground.
 		self.trackForegroundCb = sHelper.addItem(wx.CheckBox(self, label=_("Trac&k even foreground targets")))
 		self.trackForegroundCb.SetValue(addonConfig.get("trackForegroundTargets"))
+		self.trackForegroundCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self.rememberCb = sHelper.addItem(wx.CheckBox(self, label=_("&Remember targets")))
@@ -251,6 +252,12 @@ class BCTSettingsPanel(SettingsPanel):
 		# other setting it belongs to. Its stored value is untouched and is saved
 		# either way, so turning remembering back on finds it as it was left.
 		self.forgetCb.Enable(self.rememberCb.IsChecked())
+		# The focused control is only ever passed over in a window that is read
+		# while the user is working in it, which is what tracking even foreground
+		# targets allows, so this one qualifies that switch the way forgetting
+		# qualifies remembering, and goes unavailable without it for the same
+		# reasons — the setting keeps its value and is saved either way.
+		self.ignoreFocusedCb.Enable(self.trackForegroundCb.IsChecked())
 
 	def _onTest(self, evt: wx.CommandEvent):
 		# The same best-effort tone as a change announcement plays, and silent for

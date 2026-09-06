@@ -83,9 +83,14 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 	wherever they are set. The rest are worded for the one target they act on
 	here, rather than for every target at once as the panel's wording has it.
 
-	Forgetting the target when it disappears is offered only while the target is
-	being remembered, because that is the only time it decides anything; see
-	:meth:`.TrackedTarget.isForgottenWhenGone`.
+	Two of them are offered only while the setting they qualify is on, because
+	that is the only time they decide anything: skipping the focused control,
+	which the monitor consults only in a window it reads while the user is in it,
+	and forgetting the target when it disappears (see
+	:meth:`.TrackedTarget.isForgottenWhenGone`). The panel greys
+	those two out instead, where a missing line would leave a hole in a layout the
+	user knows; here every target already offers its own set of items, so one more
+	absent line is what a menu does.
 
 	Built on each call rather than held in a module-level constant, because the
 	labels are translated at the moment they are built and the user can change
@@ -101,10 +106,13 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 				("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
 				# Translators: treat a window that renames itself as a target that has disappeared.
 				("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
+			)
+		)
+		if target.setting("trackForegroundTargets"):
+			items.append(
 				# Translators: suppress announcements of the control the user is typing in.
 				("ignoreFocusedControl", _("Ignore focu&sed control")),
 			)
-		)
 	items.extend(
 		(
 			# Translators: submenu item; read this one target while its own application is in the foreground.
