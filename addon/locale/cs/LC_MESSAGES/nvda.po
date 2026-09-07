@@ -121,9 +121,6 @@ msgstr[1] "před {n} hodinami"
 msgstr[2] "před {n} hodinami"
 
 #. Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-#. Queued rather than interrupting: an application coming back can bring
-#. several remembered targets with it, and an interrupting message would
-#. leave only the last of them audible.
 #, python-brace-format
 msgid "Tracking {target}"
 msgstr "Sleduji {target}"
@@ -189,7 +186,6 @@ msgstr "Neznámý příkaz, stiskněte H pro nápovědu."
 #. Translators: the title of the add-on's category in NVDA's Settings dialog.
 #. Translators: the category for this add-on's commands in the Input Gestures
 #. dialog, and its title in the Settings dialog.
-#. Add-on summary/title, usually the user visible name of the add-on
 #. Translators: Summary/title for this add-on
 #. to be shown on installation and add-on information found in add-on store
 msgid "Background Content Tracker"
@@ -199,7 +195,6 @@ msgstr "Sledování obsahu na pozadí"
 msgid "Enable background content &tracking"
 msgstr "Povolit &sledování obsahu na pozadí"
 
-#. Group: When target changes -----------------------------------------
 #. Translators: group of options controlling what happens on a change.
 msgid "When target changes"
 msgstr "Při změně cíle"
@@ -222,12 +217,10 @@ msgstr "&Interval sledování (v sekundách)"
 msgid "Changes to announce at &once"
 msgstr "Kolik změn oznámit &najednou"
 
-#. Group: Window tracking behavior ------------------------------------
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
 msgstr "Chování při sledování okna"
 
-#. Group: Beep parameters ---------------------------------------------
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
 msgstr "Parametry pípnutí"
@@ -244,7 +237,6 @@ msgstr "&Výška (Hz)"
 msgid "&Test"
 msgstr "&Otestovat"
 
-#. Group: Include in change announcement -------------------------------
 #. Translators: group choosing what a change announcement contains.
 msgid "Include in change announcement"
 msgstr "Do oznámení o změně zahrnout"
@@ -257,7 +249,6 @@ msgstr "&Typ cíle"
 msgid "Changed &content"
 msgstr "Změněný &obsah"
 
-#. Group: Include in menu descriptions --------------------------------
 #. Translators: group choosing what a target menu description contains.
 msgid "Include in menu descriptions"
 msgstr "Do popisů v nabídce zahrnout"
@@ -390,7 +381,6 @@ msgid ""
 msgstr ""
 "Sleduje okna nebo jednotlivé prvky na pozadí a upozorní, když se změní."
 
-#. Brief changelog for this version
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 msgid "Initial release"
 msgstr "První verze"

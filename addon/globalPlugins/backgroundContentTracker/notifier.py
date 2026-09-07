@@ -105,10 +105,10 @@ class Notifier:
 
 	def announceTracking(self, target: TrackedTarget):
 		desc = self._describeTarget(target)
-		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
 		# Queued rather than interrupting: an application coming back can bring
 		# several remembered targets with it, and an interrupting message would
 		# leave only the last of them audible.
+		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
 		ui.message(_("Tracking {target}").format(target=desc), speechPriority=Spri.NEXT)
 
 	def announceRestored(self, found: int, total: int):

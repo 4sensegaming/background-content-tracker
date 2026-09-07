@@ -117,9 +117,6 @@ msgstr[0] "vor {n} Stunde"
 msgstr[1] "vor {n} Stunden"
 
 #. Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-#. Queued rather than interrupting: an application coming back can bring
-#. several remembered targets with it, and an interrupting message would
-#. leave only the last of them audible.
 #, python-brace-format
 msgid "Tracking {target}"
 msgstr "Verfolge {target}"
@@ -184,7 +181,6 @@ msgstr "Unbekannter Befehl, drücken Sie H für Hilfe."
 #. Translators: the title of the add-on's category in NVDA's Settings dialog.
 #. Translators: the category for this add-on's commands in the Input Gestures
 #. dialog, and its title in the Settings dialog.
-#. Add-on summary/title, usually the user visible name of the add-on
 #. Translators: Summary/title for this add-on
 #. to be shown on installation and add-on information found in add-on store
 msgid "Background Content Tracker"
@@ -194,7 +190,6 @@ msgstr "Hintergrund-Inhaltsverfolgung"
 msgid "Enable background content &tracking"
 msgstr "Hintergrund-Inhalts&verfolgung aktivieren"
 
-#. Group: When target changes -----------------------------------------
 #. Translators: group of options controlling what happens on a change.
 msgid "When target changes"
 msgstr "Wenn sich ein Ziel ändert"
@@ -217,12 +212,10 @@ msgstr "Verfolgungs&intervall (Sekunden)"
 msgid "Changes to announce at &once"
 msgstr "Auf &einmal anzusagende Änderungen"
 
-#. Group: Window tracking behavior ------------------------------------
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
 msgstr "Verhalten bei Fensterverfolgung"
 
-#. Group: Beep parameters ---------------------------------------------
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
 msgstr "Signalton-Parameter"
@@ -239,7 +232,6 @@ msgstr "&Tonhöhe (Hz)"
 msgid "&Test"
 msgstr "&Testen"
 
-#. Group: Include in change announcement -------------------------------
 #. Translators: group choosing what a change announcement contains.
 msgid "Include in change announcement"
 msgstr "In Änderungsansage einbeziehen"
@@ -252,7 +244,6 @@ msgstr "Ziel&typ"
 msgid "Changed &content"
 msgstr "Geänderter &Inhalt"
 
-#. Group: Include in menu descriptions --------------------------------
 #. Translators: group choosing what a target menu description contains.
 msgid "Include in menu descriptions"
 msgstr "In Menübeschreibungen einbeziehen"
@@ -386,7 +377,6 @@ msgstr ""
 "Verfolgt Fenster oder einzelne Steuerelemente im Hintergrund und "
 "benachrichtigt Sie, wenn sie sich ändern."
 
-#. Brief changelog for this version
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 msgid "Initial release"
 msgstr "Erste Veröffentlichung"
