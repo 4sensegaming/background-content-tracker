@@ -175,6 +175,41 @@ def _isInActiveStoreApp(hwnd: int) -> bool:
 	return bool(active and winUser.isDescendantWindow(active, hwnd))
 
 
+def isReachableWindow(obj: NVDAObject | None) -> bool:
+	"""Whether the window this object lives in is one the user could still get to.
+
+	A window that has been hidden rather than closed — an application minimised
+	to the system tray is the everyday case — still exists, still answers, and
+	still carries a whole accessible tree, so nothing about the object itself says
+	it has gone. What it no longer does is show the user anything or appear in
+	alt+tab, and a target the user cannot get to is not there any more in the only
+	sense that matters: they asked to be told about a window that, as far as they
+	are concerned, has closed.
+
+	Minimising leaves ``WS_VISIBLE`` set, so an ordinary minimised window is
+	reachable and goes on being tracked, exactly as before. Only hiding clears it.
+
+	The question is asked of ``GA_ROOT`` — the top-level window the target lives
+	in — rather than of the target's own window, so that a control on a background
+	tab page is not called gone while the window holding it is still on screen.
+	Note that this is deliberately not the ``GA_ROOTOWNER`` that
+	:func:`isInForegroundApp` and :meth:`TrackedTarget._reactivateWindow` ask for:
+	those want the application window that owns this one, whereas a hidden dialog
+	is unreachable whatever its owner is doing.
+
+	A window that cannot be placed answers True, the way an unreadable state does
+	in the monitor: being wrong that way costs an announcement that comes late,
+	and being wrong the other way throws the target away.
+	"""
+	if obj is None:
+		return False
+	hwnd = safeCall(lambda: obj.windowHandle)
+	if not hwnd:
+		return True
+	root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) or hwnd
+	return safeCall(lambda: winUser.isWindowVisible(root), True) is not False
+
+
 class TrackedTarget:
 	"""One tracked window or control, plus its change-detection state."""
 
@@ -333,8 +368,10 @@ class TrackedTarget:
 		exactly what "Remember targets" asks for: a target that is not remembered
 		would sit in the list reading "not found" for the rest of the session with
 		nothing on its way to find it. It is therefore always dropped, whatever
-		the forgetting option says — which is also why that option is offered,
-		here and in the settings panel, only while "Remember targets" is on.
+		the forgetting option says — which is also why the target menu offers that
+		option only while "Remember targets" is on for the target. The settings
+		panel offers its own copy unconditionally; see
+		:meth:`.BCTSettingsPanel._updateDependentControls`.
 
 		Both options are read per target, so one target may be kept where the
 		global settings would drop it, and the other way round.
@@ -397,6 +434,10 @@ class TrackedTarget:
 			return False
 		hwnd = safeCall(lambda: obj.windowHandle)
 		if hwnd and not winUser.isWindow(hwnd):
+			return False
+		# A window that has been hidden is gone as far as the user is concerned,
+		# whatever it still answers; see :func:`isReachableWindow`.
+		if not isReachableWindow(obj):
 			return False
 		# Touch a cheap property to detect a dead COM object. The sentinel is what
 		# tells a name that is legitimately ``None`` from one that could not be read.

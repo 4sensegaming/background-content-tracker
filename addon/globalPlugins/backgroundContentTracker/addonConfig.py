@@ -62,7 +62,7 @@ confspec: dict[str, str] = {
 	"menuTargetType": "boolean(default=True)",
 	"menuTimeSinceChange": "boolean(default=True)",
 	"menuChangedContent": "boolean(default=True)",
-	"overlayTimeout": "integer(default=10,min=1,max=120)",
+	"overlayTimeout": "integer(default=10,min=0,max=120)",
 	"targetSorting": "option('oldest', 'newest', default='oldest')",
 	"trackForegroundTargets": "boolean(default=False)",
 	"rememberTargets": "boolean(default=False)",

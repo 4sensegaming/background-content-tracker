@@ -87,10 +87,11 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 	that is the only time they decide anything: skipping the focused control,
 	which the monitor consults only in a window it reads while the user is in it,
 	and forgetting the target when it disappears (see
-	:meth:`.TrackedTarget.isForgottenWhenGone`). The panel greys
-	those two out instead, where a missing line would leave a hole in a layout the
-	user knows; here every target already offers its own set of items, so one more
-	absent line is what a menu does.
+	:meth:`.TrackedTarget.isForgottenWhenGone`). This is a menu, read from end to
+	end, and it lists the setting each one qualifies a line or two away, so a line
+	that is not there is read as belonging to a switch that is off. The panel
+	leaves both of its counterparts alone instead, because there the two halves of
+	each pair sit at opposite ends of a long panel.
 
 	Built on each call rather than held in a module-level constant, because the
 	labels are translated at the moment they are built and the user can change

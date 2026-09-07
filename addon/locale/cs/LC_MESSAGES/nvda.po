@@ -5,8 +5,8 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: backgroundContentTracker 1.0.0\n"
-"POT-Creation-Date: 2026-09-06 23:42+0200\n"
+"Project-Id-Version: backgroundContentTracker 1.0\n"
+"POT-Creation-Date: 2026-09-07 08:55+0200\n"
 "PO-Revision-Date: 2026-08-02 18:25+0200\n"
 "Last-Translator: Lukáš Hosnedl <lukas@4sensegaming.cz>\n"
 "Language-Team: Czech\n"
@@ -274,7 +274,8 @@ msgstr "Čas od poslední &změny"
 msgid "Changed cont&ent"
 msgstr "Změněný o&bsah"
 
-#. Translators: how many seconds of inactivity close the command overlay.
+#. Translators: how many seconds of inactivity close the command overlay
+#. (0 means the overlay stays open until it is closed by a command or escape).
 msgid "&Overlay timeout (seconds)"
 msgstr "Čas do zavření &překrytí (v sekundách)"
 
@@ -378,6 +379,10 @@ msgstr "S: otevře nastavení doplňku"
 #. Translators: overlay help line for the I key.
 msgid "I: open the add-on input gestures"
 msgstr "I: otevře klávesové příkazy doplňku"
+
+#. Translators: overlay help line for the Escape key.
+msgid "Escape: close the overlay"
+msgstr "Escape: zavře překrytí"
 
 msgid ""
 "Tracks windows or individual controls in the background and notifies you "

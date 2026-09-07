@@ -337,11 +337,18 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	# decides is only whether it counts as a repeat. It is matched on the command
 	# *and* its target, so 2 followed by 3 is two first presses, not a repeat.
 	def _isSecondPress(self, pendingKind: PendingKind, uid: int | None) -> bool:
-		"""True if this press repeats the one still pending, within the timeout."""
+		"""True if this press repeats the one still pending, within the timeout.
+
+		It is the overlay's own timeout, so a press stays pending exactly as long
+		as the overlay it was given in stays open — an overlay set never to time
+		out keeps it pending for as long as the user holds it open, and a fresh
+		opening clears it either way.
+		"""
+		timeout = int(addonConfig.get("overlayTimeout"))
 		return (
 			self._pendingKind == pendingKind
 			and self._pendingUid == uid
-			and (time.time() - self._pendingTime) <= int(addonConfig.get("overlayTimeout"))
+			and (timeout <= 0 or (time.time() - self._pendingTime) <= timeout)
 		)
 
 	def _awaitSecondPress(self, pendingKind: PendingKind, uid: int | None):
@@ -413,6 +420,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("S: open the add-on settings"),
 			# Translators: overlay help line for the I key.
 			_("I: open the add-on input gestures"),
+			# Translators: overlay help line for the Escape key.
+			_("Escape: close the overlay"),
 		]
 		if self._isSecondPress(("help", None), None):
 			self._pendingKind = None

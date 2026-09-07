@@ -187,10 +187,11 @@ class BCTSettingsPanel(SettingsPanel):
 		self.menuContentCb.SetValue(addonConfig.get("menuChangedContent"))
 
 		self.overlayTimeoutCtrl = sHelper.addLabeledControl(
-			# Translators: how many seconds of inactivity close the command overlay.
+			# Translators: how many seconds of inactivity close the command overlay
+			# (0 means the overlay stays open until it is closed by a command or escape).
 			_("&Overlay timeout (seconds)"),
 			nvdaControls.SelectOnFocusSpinCtrl,
-			min=1,
+			min=0,
 			max=120,
 			initial=addonConfig.get("overlayTimeout"),
 		)
@@ -217,12 +218,10 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: also track a target while its own application is in the foreground.
 		self.trackForegroundCb = sHelper.addItem(wx.CheckBox(self, label=_("Trac&k even foreground targets")))
 		self.trackForegroundCb.SetValue(addonConfig.get("trackForegroundTargets"))
-		self.trackForegroundCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self.rememberCb = sHelper.addItem(wx.CheckBox(self, label=_("&Remember targets")))
 		self.rememberCb.SetValue(addonConfig.get("rememberTargets"))
-		self.rememberCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 
 		self.forgetCb = sHelper.addItem(
 			# Translators: automatically drop remembered targets that no longer exist.
@@ -242,22 +241,18 @@ class BCTSettingsPanel(SettingsPanel):
 		announceOn = self.announceCb.IsChecked()
 		for control in (self.annTypeCb, self.annContentCb):
 			control.Enable(announceOn)
-		# Forgetting a target when it disappears qualifies remembering it and
-		# decides nothing without it, so it goes unavailable while "Remember
-		# targets" is off — the same way the beep parameters and the announcement
-		# contents above follow the switches they belong to. Disabled rather than
-		# hidden, because the switch that governs it is one line up in this very
-		# panel: the option stays where the user left it, in a layout that does
-		# not move under them, and being told it is unavailable is what says which
-		# other setting it belongs to. Its stored value is untouched and is saved
-		# either way, so turning remembering back on finds it as it was left.
-		self.forgetCb.Enable(self.rememberCb.IsChecked())
-		# The focused control is only ever passed over in a window that is read
-		# while the user is working in it, which is what tracking even foreground
-		# targets allows, so this one qualifies that switch the way forgetting
-		# qualifies remembering, and goes unavailable without it for the same
-		# reasons — the setting keeps its value and is saved either way.
-		self.ignoreFocusedCb.Enable(self.trackForegroundCb.IsChecked())
+		# Nothing else is greyed out here, and two settings that would qualify are
+		# deliberately left alone: "Forget remembered targets when they disappear",
+		# which decides nothing while "Remember targets" is off, and "Ignore focused
+		# control", which decides nothing while "Track even foreground targets" is
+		# off. Both of those pairs sit at opposite ends of this panel, so a user
+		# reading it one control at a time would toggle the switch at one end and
+		# have no way of noticing that a control at the other end had just gone
+		# unavailable. Greying out belongs to a group that follows its own master
+		# switch, where the switch is right there and the whole group moves with it;
+		# a single global option answering a distant one is only confusing. Each of
+		# these two stays reachable and keeps its value, and simply has no effect
+		# until the setting it qualifies is turned on.
 
 	def _onTest(self, evt: wx.CommandEvent):
 		# The same best-effort tone as a change announcement plays, and silent for

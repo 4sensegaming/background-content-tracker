@@ -1151,17 +1151,29 @@ class Monitor:
 		target.nextRelocate = now + target.relocateDelay
 
 	def _desktopWindows(self) -> list[tuple[str, NVDAObject]]:
-		"""Every top-level window as ``(application name, object)``, or ``[]``.
+		"""Every reachable top-level window as ``(application name, object)``, or ``[]``.
 
 		The application name is read here, once per window per pass, because it is
 		what rules a window out for every target that does not want that
 		application: one read against the six a full identity descriptor costs,
 		and shared by the whole pass instead of taken again for each target.
+
+		A window the user cannot get to is left out, by the same test that decides
+		a target has gone (:func:`.isReachableWindow`), and this pass must not be
+		allowed to disagree with that one: a target detached because its window was
+		hidden would otherwise be found again here while it is still hidden, called
+		gone by the very next sweep, and announced back and forth for as long as
+		the application sat in the tray. Leaving those windows out is also what
+		makes restoring one from the tray read as the target reappearing.
 		"""
 		topWindows = safeCall(lambda: list(api.getDesktopObject().children))
 		if not topWindows:
 			return []
-		return [(targetsMod.appNameOf(window), window) for window in topWindows]
+		return [
+			(targetsMod.appNameOf(window), window)
+			for window in topWindows
+			if targetsMod.isReachableWindow(window)
+		]
 
 	def _candidateWindows(
 		self,

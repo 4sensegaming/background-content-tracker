@@ -14,7 +14,8 @@ it opens, and keeps it across command after command until one of exactly three
 things ends it:
 
 * the user presses escape;
-* the timeout elapses with no key pressed;
+* the timeout elapses with no key pressed, unless it is set to zero, which
+  leaves escape and a handing-off command as the only ways out;
 * a command hands the focus somewhere else — a dialog, the target menu, or a
   tracked target — and closes the overlay itself, so that the keys the user
   types there are not swallowed here.
@@ -170,10 +171,17 @@ class Overlay:
 
 	# --- main thread: the timeout --------------------------------------------
 	def _restartTimer(self):
-		"""(Re)start the inactivity timeout. Every command press earns a full one."""
+		"""(Re)start the inactivity timeout. Every command press earns a full one.
+
+		A timeout of zero means the overlay is never closed by the clock, so no
+		timer is started at all; escape and a command that hands the focus on stay
+		the ways out of it.
+		"""
 		self._cancelTimer()
-		timeoutMs = int(addonConfig.get("overlayTimeout")) * 1000
-		self._timer = core.callLater(timeoutMs, self._onTimeout, self._session)
+		timeout = int(addonConfig.get("overlayTimeout"))
+		if timeout <= 0:
+			return
+		self._timer = core.callLater(timeout * 1000, self._onTimeout, self._session)
 
 	def _cancelTimer(self):
 		if self._timer is not None:

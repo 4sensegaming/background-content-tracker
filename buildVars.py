@@ -25,7 +25,7 @@ addon_info = AddonInfo(
 		"Tracks windows or individual controls in the background and notifies you when they change."
 	),
 	# version
-	addon_version="1.0.0",
+	addon_version="1.0",
 	# Brief changelog for this version
 	# Translators: what's new content for the add-on version to be shown in the add-on store
 	addon_changelog=_("Initial release"),
