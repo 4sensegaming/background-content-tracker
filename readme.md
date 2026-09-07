@@ -36,9 +36,9 @@ The add-on is operated through a single **layered command**: you press a prefix 
 
 The default prefix is NVDA+; (the semicolon key, to the right of L on the letters row).
 
-When you press the prefix, the add-on opens a **virtual overlay** and announces "Background Content Tracker, H for help". The overlay is a mode rather than a one-off prompt: while it is open, every key you press is treated as one of the commands below, one command after another, until something closes it.
+When you press the prefix, the add-on opens a **virtual overlay** and announces "Overlay opened". The overlay is a mode rather than a one-off prompt: while it is open, every key you press is treated as one of the commands below, one command after another, until something closes it.
 
-Exactly three things close it. Pressing `escape`; the timeout running out, which is ten seconds without a key press (you can change this delay in the add-on's [settings](#settings), or set it to 0 so that the overlay never closes on its own); and any command that takes your focus somewhere else — a dialog, the target menu, or a tracked target — which closes the overlay so that what you type there is not swallowed by it. Anything else leaves the overlay open, a mistyped key included: the add-on says "Unknown command, press H for help." and waits for the next key, rather than costing you the command you actually meant to give. Opening and closing the overlay never moves your focus by itself — it stays exactly where it was, so the add-on commands never disturb what you are doing. Whenever the overlay closes, the add-on announces "Overlay closed".
+Exactly three things close it. Pressing `escape`; the timeout running out, which is ten seconds without a key press (you can change this delay in the add-on's [settings](#settings), or set it to 0 so that the overlay never closes on its own); and any command that takes your focus somewhere else — a dialog, the target menu, or a tracked target — which closes the overlay so that what you type there is not swallowed by it. Anything else leaves the overlay open, a mistyped key included: the add-on says "Unknown command. Press H once for help, twice to display the help as a browseable message." and waits for the next key, rather than costing you the command you actually meant to give. Opening and closing the overlay never moves your focus by itself — it stays exactly where it was, so the add-on commands never disturb what you are doing. Whenever the overlay closes, the add-on announces "Overlay closed".
 
 After pressing the prefix, press one of the following keys:
 
@@ -76,7 +76,7 @@ Each item names exactly what it acts on, for example *Window: Claude, 3 minutes 
 
 Every target is a submenu. When you expand it, you get *Stop tracking*, *Set focus*, and a *Target settings* submenu holding that one target's own copy of the settings that can be [set per target](#global-and-per-target-settings).
 
-Each item in *Target settings* is a check box, and what it shows is what the target actually does: its own value where you have given it one, and the global setting everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting goes on following the global. The settings that apply to whole windows only are offered for a whole-window target only, and two more are offered only while the setting they qualify is ticked — *Ignore focused control* while *Read this target even when in foreground* is, and *Forget this target when it disappears* while *Remember this target* is — because that is the only time they decide anything.
+Each item in *Target settings* is a check box, and what it shows is what the target actually does: its own value where you have given it one, and the global setting everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting goes on following the global. The settings that apply to whole windows only are offered for a whole-window target only, and two more are offered only while the setting they qualify is ticked — *Ignore the focused control* while *Read this target even when in foreground* is, and *Forget this target when it disappears* while *Remember this target* is — because that is the only time they decide anything.
 
 Anything you are already tracking appears first in the menu, so you can move to the target of your interest or stop tracking it quickly. Below that are the targets you can start tracking from your current location (window, focus, mouse pointer, or navigator object). The item to stop tracking all current targets is at the end of the menu.
 
@@ -85,12 +85,12 @@ Anything you are already tracking appears first in the menu, so you can move to 
 The add-on announces a few fixed messages during its operation:
 
 - **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears.
-- **Restoring remembered targets** — when NVDA starts, the remembered targets are looked for and reported together, as "Tracking 3 remembered targets", or as "Tracking 3 of 10 remembered targets" when the rest have not appeared yet. Any that turn up later announce themselves individually.
+- **Restoring remembered targets** — when NVDA starts, the remembered targets are looked for and reported together, as "Found 3 remembered targets", or as "Found 3 of 10 remembered targets" when the rest have not appeared yet. Any that turn up later announce themselves individually.
 - **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You also hear this whenever a target no longer exists.
 - **Clearing the whole target list** — "All targets cleared".
 - **Set focus not getting through** — "Could not move focus to the target", when *Set focus* in the target menu cannot reach the target, because its window is gone, for instance.
-- **Pausing** (the `p` key) — "Background content tracking disabled".
-- **Resuming** — "Background content tracking enabled". When tracking resumes, and each time NVDA starts, the add-on announces "No targets to track" instead if there is nothing left to track.
+- **Pausing** (the `p` key) — "Tracking paused".
+- **Resuming** — "Tracking resumed". When tracking resumes, and each time NVDA starts, the add-on announces "No remembered targets found" instead if there is nothing left to track.
 
 ## Global and per-target settings
 
@@ -99,7 +99,7 @@ Most of the add-on's options are **global**: you set them in the [settings](#set
 - *Ignore progress bars*
 - *Ignore counters, steppers and timers*
 - *Consider changed title a disappeared target*
-- *Ignore focused control*
+- *Ignore the focused control when tracking the foreground window*
 - *Track even foreground targets*
 - *Remember targets*
 - *Forget remembered targets when they disappear*
@@ -164,7 +164,7 @@ A control has to contain a number to qualify at all, and its wording has to stay
 
 When enabled, if the title of a window being tracked changes, the add-on will consider it a different window and thus act as if the original target has disappeared, even though the physical window is still the same one in the system. The default value is disabled.
 
-#### **Ignore focused control** (checkbox)
+#### **Ignore the focused control when tracking the foreground window** (checkbox)
 
 This only makes a difference for a window that is read while you are working in it, which is what the option to track even foreground targets allows. When enabled, the control you are focused on, and anything inside it, is never announced as a change, so the characters you type into an edit field are not read back at you as new content. What you typed is not announced when you leave the control either, only what arrived elsewhere in the window while you were writing. The default value is enabled.
 
@@ -226,7 +226,7 @@ The two radio buttons in this group are always available. They determine in whic
 
 ### **Track even foreground targets** (checkbox)
 
-This option is always available. Normally a target is only read while you are working somewhere else: once its own application comes to the foreground you are looking at it yourself, so the add-on leaves it alone. When enabled, the target is read even then, so new content is announced in the very window you are working in — a chat window you are typing into, say. Whether what *you* type there is read back at you is decided by **Ignore focused control** above, which only makes a difference while this option is on. The default value is disabled.
+This option is always available. Normally a target is only read while you are working somewhere else: once its own application comes to the foreground you are looking at it yourself, so the add-on leaves it alone. When enabled, the target is read even then, so new content is announced in the very window you are working in — a chat window you are typing into, say. Whether what *you* type there is read back at you is decided by **Ignore the focused control when tracking the foreground window** above, which only makes a difference while this option is on. The default value is disabled.
 
 ### **Remember targets** (checkbox)
 

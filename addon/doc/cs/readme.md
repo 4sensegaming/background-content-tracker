@@ -36,9 +36,9 @@ Doplněk se ovládá jediným **vrstveným příkazem**: stisknete klávesovou z
 
 Výchozí klávesová zkratka je NVDA+; (středník – na české klávesnici klávesa nalevo od číslice 1).
 
-Po stisku hlavní klávesové zkratky doplněk otevře **virtuální překrytí** a oznámí „Sledování obsahu na pozadí, H pro nápovědu“. Překrytí je režim, nikoli jednorázová výzva: dokud je otevřené, považuje se každý stisk klávesy za jeden z níže uvedených příkazů, příkaz za příkazem, dokud ho něco nezavře.
+Po stisku hlavní klávesové zkratky doplněk otevře **virtuální překrytí** a oznámí „Překrytí otevřeno“. Překrytí je režim, nikoli jednorázová výzva: dokud je otevřené, považuje se každý stisk klávesy za jeden z níže uvedených příkazů, příkaz za příkazem, dokud ho něco nezavře.
 
-Zavřou ho přesně tři věci. Stisk klávesy `escape`; vypršení časového limitu, tedy deset sekund bez stisku klávesy (tuto prodlevu lze změnit v [nastavení doplňku](#nastavení), nebo ji nastavit na 0, a překrytí se pak samo nezavře nikdy); a každý příkaz, který přesune fokus jinam – do dialogu, do nabídky cílů nebo na sledovaný cíl –, protože jinak by překrytí spolklo to, co tam napíšete. Cokoli jiného nechá překrytí otevřené, včetně překlepu: doplněk oznamí „Neznámý příkaz, stiskněte H pro nápovědu.“ a čeká na další klávesu, místo aby vás připravil o příkaz, který jste chtěli zadat. Otevření ani zavření překrytí samo o sobě nepřesouvá fokus – ten zůstává přesně tam, kde byl, takže příkazy doplňku nikdy nenaruší to, co právě děláte. Kdykoli se překrytí zavře, doplněk oznámí „Překrytí zavřeno“.
+Zavřou ho přesně tři věci. Stisk klávesy `escape`; vypršení časového limitu, tedy deset sekund bez stisku klávesy (tuto prodlevu lze změnit v [nastavení doplňku](#nastavení), nebo ji nastavit na 0, a překrytí se pak samo nezavře nikdy); a každý příkaz, který přesune fokus jinam – do dialogu, do nabídky cílů nebo na sledovaný cíl –, protože jinak by překrytí spolklo to, co tam napíšete. Cokoli jiného nechá překrytí otevřené, včetně překlepu: doplněk oznamí „Neznámý příkaz. Stiskněte H jednou pro nápovědu, dvakrát pro zobrazení nápovědy v dialogu.“ a čeká na další klávesu, místo aby vás připravil o příkaz, který jste chtěli zadat. Otevření ani zavření překrytí samo o sobě nepřesouvá fokus – ten zůstává přesně tam, kde byl, takže příkazy doplňku nikdy nenaruší to, co právě děláte. Kdykoli se překrytí zavře, doplněk oznámí „Překrytí zavřeno“.
 
 Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláves:
 
@@ -64,7 +64,7 @@ Tyto čtyři příkazy přijímají i klávesy `shift` a `control`, které urču
 
 Číselné zkratky odkazují na **pořadí** v seznamu cílů, nikoli na pevně dané cíle. Ve výchozím nastavení je `1` cíl, který jste začali sledovat jako první, a `0` (desátý slot) je cíl, který jste začali sledovat naposledy; toto pořadí lze obrátit v [nastavení](#nastavení). Když některý cíl zmizí – protože jste ho přestali sledovat, nebo přestal existovat – cíle za ním se posunou a mezeru zaplní, takže číslo `2` vždy oznámí ten cíl, který je právě teď v seznamu jako druhý. Pokud ve slotu, jehož číslo jste stiskli, není žádný platný cíl, doplněk řekne například „Žádný cíl ve slotu 2“.
 
-Pokud cíl existuje, doplněk ve výchozím nastavení oznámí jeho roli a název a změněný obsah cíle, například *Okno: Claude, Editing readme.md* nebo *Seznam: Seznam zpráv, Řekli jste: Tak jo.*. Úroveň podrobnosti těchto oznámení lze upravit v [nastavení](#nastavení) doplňku. Pokud cíl existuje, ale nic nového nepřibylo, uslyšíte místo obsahu *zatím beze změny*, a pokud právě neexistuje – třeba zapamatovaný cíl, jehož okno ještě není znovu otevřené –, uslyšíte *nenalezeno*.
+Pokud cíl existuje, doplněk ve výchozím nastavení oznámí jeho roli a název a změněný obsah cíle, například *Okno: Claude, Editing readme.md* nebo *Seznam: Seznam zpráv, Řekli jste: Tak jo.*. Úroveň podrobnosti těchto oznámení lze upravit v [nastavení](#nastavení) doplňku. Pokud cíl existuje, ale nic nového nepřibylo, uslyšíte místo obsahu *zatím žádné změny*, a pokud právě neexistuje – třeba zapamatovaný cíl, jehož okno ještě není znovu otevřené –, uslyšíte *nenalezeno*.
 
 Hlavní klávesovou zkratku můžete změnit v dialogu Klávesové příkazy (nabídka NVDA → Možnosti → Klávesové příkazy), kde se příkaz doplňku nachází v kategorii **Sledování obsahu na pozadí**. Následné klávesy jsou součástí samotného vrstveného příkazu.
 
@@ -85,12 +85,12 @@ Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný c
 Doplněk za chodu oznamuje několik neměnných zpráv:
 
 - **Zahájení sledování nového cíle** – například „Sleduji okno: Claude“. Totéž uslyšíte pokaždé, když se zapamatovaný cíl znovu objeví.
-- **Obnovení zapamatovaných cílů** – při spuštění NVDA doplněk zapamatované cíle vyhledá a oznámí najednou, například „Sleduji 3 zapamatované cíle“, nebo „Sleduji 3 z 10 zapamatovaných cílů“, pokud se zbývající zatím neobjevily. Ty, které se objeví později, se ohlásí jednotlivě.
+- **Obnovení zapamatovaných cílů** – při spuštění NVDA doplněk zapamatované cíle vyhledá a oznámí najednou, například „Nalezeny 3 zapamatované cíle“, nebo „Nalezeno 3 z 10 zapamatovaných cílů“, pokud se zbývající zatím neobjevily. Ty, které se objeví později, se ohlásí jednotlivě.
 - **Ukončení sledování cíle** – například „Přestávám sledovat seznam: Seznam zpráv“. Totéž uslyšíte pokaždé, když cíl přestane existovat.
 - **Vymazání celého seznamu cílů** – „Všechny cíle vymazány“.
 - **Nezdařené přesunutí fokusu** – „Nepodařilo se přesunout fokus na cíl“, když se příkaz *Přesunout fokus* v nabídce cílů k cíli nedostane, třeba proto, že jeho okno už neexistuje.
-- **Pozastavení sledování** (klávesa `p`) – „Sledování obsahu na pozadí vypnuto“.
-- **Obnovení** – „Sledování obsahu na pozadí zapnuto“. Při obnovení sledování a při každém spuštění NVDA doplněk místo toho oznámí „Žádné cíle ke sledování“, pokud nezbývá co sledovat.
+- **Pozastavení sledování** (klávesa `p`) – „Sledování pozastaveno“.
+- **Obnovení** – „Sledování obnoveno“. Při obnovení sledování a při každém spuštění NVDA doplněk místo toho oznámí „Žádné zapamatované cíle nenalezeny“, pokud nezbývá co sledovat.
 
 ## Globální nastavení a nastavení pro jednotlivý cíl
 
@@ -99,10 +99,10 @@ Většina možností doplňku je **globálních**: zadáte je v [nastavení](#na
 - *Ignorovat indikátory průběhu*
 - *Ignorovat počítadla, krokovače a časovače*
 - *Považovat změnu názvu za zmizení cíle*
-- *Ignorovat prvek pod fokusem*
+- *Při sledování okna v popředí ignorovat prvek pod fokusem*
 - *Sledovat i cíle v popředí*
 - *Pamatovat si cíle*
-- *Zapomenout zapamatovaný cíl, když přestane existovat*
+- *Zapomínat zapamatované cíle, když přestanou existovat*
 
 První čtyři u cíle, který je jediný prvek, o ničem nerozhodují, a nabízejí se proto jen u cíle, který je celé okno.
 
@@ -144,7 +144,7 @@ Lze zapsat pouze celá čísla. Nastavuje, jak často má doplněk kontrolovat z
 
 Lze zapsat pouze celá čísla. Nastavuje, kolik po sobě jdoucích změn stejného cíle má doplněk oznámit v řadě, než budete muset cíl alespoň jednou znovu fokusovat a poté se opět přepnout jinam, aby se zase začaly oznamovat následující změny. 0 znamená oznámit každou jednotlivou změnu pokaždé, když je cíl na pozadí, bez ohledu na cokoli. Výchozí hodnota je 5.
 
-### **Chování při sledování okna** (skupina)
+### **Chování při sledování oken** (skupina)
 
 Možnosti v této skupině jsou dostupné vždy. Upřesňují, jak má doplněk oznamovat změny v cílech, které jsou celými okny.
 
@@ -164,7 +164,7 @@ Aby prvek vůbec přicházel v úvahu, musí obsahovat číslo a jeho text se kr
 
 Pokud je zaškrtnuto a změní se název okna, které sledujete, doplněk ho začne považovat za jiné okno a tedy se zachová stejně, jako by původní cíl zmizel, přestože fyzické okno v systému je pořád stejné. Výchozí hodnota je nezaškrtnuto.
 
-#### **Ignorovat prvek pod fokusem** (zaškrtávací políčko)
+#### **Při sledování okna v popředí ignorovat prvek pod fokusem** (zaškrtávací políčko)
 
 Tato volba se projeví pouze u okna, které se čte i ve chvíli, kdy v něm pracujete, což umožňuje nastavení sledování cílů i na popředí. Pokud je zaškrtnuta, prvek, na kterém máte fokus, ani nic uvnitř něj se nikdy neoznámí jako změna, takže se vám znaky, které píšete do editačního pole, nečtou zpátky jako nový obsah. Napsaný text se neoznámí ani ve chvíli, kdy prvek opustíte, oznámí se jen to, co mezitím přibylo jinde v okně. Výchozí hodnota je zaškrtnuto.
 
@@ -226,13 +226,13 @@ Dva přepínače v této skupině jsou dostupné vždy. Určují, v jakém pořa
 
 ### **Sledovat i cíle v popředí** (zaškrtávací políčko)
 
-Toto nastavení je dostupné vždy. Běžně se cíl čte jen ve chvíli, kdy pracujete někde jinde: jakmile se jeho aplikace dostane do popředí, díváte se na ni sami, a doplněk ji proto nechává být. Pokud je zaškrtnuto, čte se cíl i tehdy, takže nový obsah uslyšíte i v okně, ve kterém právě pracujete – třeba v okně chatu, do kterého píšete. O tom, jestli se vám bude zpětně číst i to, co píšete *vy*, rozhoduje nastavení **Ignorovat prvek pod fokusem** výše, které má smysl jedině tehdy, když je zaškrtnuto toto. Výchozí hodnota je nezaškrtnuto.
+Toto nastavení je dostupné vždy. Běžně se cíl čte jen ve chvíli, kdy pracujete někde jinde: jakmile se jeho aplikace dostane do popředí, díváte se na ni sami, a doplněk ji proto nechává být. Pokud je zaškrtnuto, čte se cíl i tehdy, takže nový obsah uslyšíte i v okně, ve kterém právě pracujete – třeba v okně chatu, do kterého píšete. O tom, jestli se vám bude zpětně číst i to, co píšete *vy*, rozhoduje nastavení **Při sledování okna v popředí ignorovat prvek pod fokusem** výše, které má smysl jedině tehdy, když je zaškrtnuto toto. Výchozí hodnota je nezaškrtnuto.
 
 ### **Pamatovat si cíle** (zaškrtávací políčko)
 
-Toto nastavení je dostupné vždy. Pokud je zaškrtnuto, seznam cílů zůstane zachován i po restartu NVDA a doplněk se k cíli znovu připojí pokaždé, když se cíl znovu objeví (například sleduje okno asistenta při každém jeho otevření, aniž byste to museli znovu nastavovat). Pokud zaškrtnuto není, začíná seznam cílů při každém spuštění prázdný a ukládají se pouze vaše nastavení. O tom, jestli zapamatovaný cíl přežije zavření svého okna i *během* jedné relace, rozhoduje nastavení **Zapomenout zapamatovaný cíl, když přestane existovat** níže. Výchozí hodnota je nezaškrtnuto.
+Toto nastavení je dostupné vždy. Pokud je zaškrtnuto, seznam cílů zůstane zachován i po restartu NVDA a doplněk se k cíli znovu připojí pokaždé, když se cíl znovu objeví (například sleduje okno asistenta při každém jeho otevření, aniž byste to museli znovu nastavovat). Pokud zaškrtnuto není, začíná seznam cílů při každém spuštění prázdný a ukládají se pouze vaše nastavení. O tom, jestli zapamatovaný cíl přežije zavření svého okna i *během* jedné relace, rozhoduje nastavení **Zapomínat zapamatované cíle, když přestanou existovat** níže. Výchozí hodnota je nezaškrtnuto.
 
-### **Zapomenout zapamatovaný cíl, když přestane existovat** (zaškrtávací políčko)
+### **Zapomínat zapamatované cíle, když přestanou existovat** (zaškrtávací políčko)
 
 Toto nastavení je dostupné vždy, ale rozhoduje o něčem jedině u cíle, který si doplněk pamatuje. Cíl, který si doplněk nepamatuje, se ze seznamu odebere vždy, jakmile přestane existovat, ať je toto nastavení jakkoli: nikdo už by ho znovu nehledal, takže by v seznamu jen do konce relace stál a hlásil *nenalezeno*.
 

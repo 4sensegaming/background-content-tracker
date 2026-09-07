@@ -50,7 +50,7 @@ msgid "Consider c&hanged title a disappeared target"
 msgstr "Geänderten Titel als verschwundenes Ziel &betrachten"
 
 #. Translators: suppress announcements of the control the user is typing in.
-msgid "Ignore focu&sed control"
+msgid "Ignore the focu&sed control"
 msgstr "Fo&kussiertes Steuerelement ignorieren"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
@@ -124,17 +124,17 @@ msgstr "Verfolge {target}"
 #. Translators: announced at start-up when every remembered target has been
 #. found. {n} is how many there are.
 #, python-brace-format
-msgid "Tracking {n} remembered target"
-msgid_plural "Tracking {n} remembered targets"
-msgstr[0] "Verfolge {n} gemerktes Ziel"
-msgstr[1] "Verfolge {n} gemerkte Ziele"
+msgid "Found {n} remembered target"
+msgid_plural "Found {n} remembered targets"
+msgstr[0] "{n} gemerktes Ziel gefunden"
+msgstr[1] "{n} gemerkte Ziele gefunden"
 
 #. Translators: announced at start-up when only some of the remembered targets
 #. have been found; the rest are still being looked for. {found} is how many
 #. are being tracked, {total} how many there are.
 #, python-brace-format
-msgid "Tracking {found} of {total} remembered targets"
-msgstr "Verfolge {found} von {total} gemerkten Zielen"
+msgid "Found {found} of {total} remembered targets"
+msgstr "{found} von {total} gemerkten Zielen gefunden"
 
 #. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 #, python-brace-format
@@ -151,32 +151,36 @@ msgid "All targets cleared"
 msgstr "Alle Ziele entfernt"
 
 #. Translators: announced (on resume and at start-up) when there are no valid targets.
-msgid "No targets to track"
-msgstr "Keine Ziele zum Verfolgen"
+msgid "No remembered targets found"
+msgstr "Keine gemerkten Ziele gefunden"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
 msgstr "Der Fokus konnte nicht zum Ziel bewegt werden"
 
 #. Translators: announced when background content tracking is paused.
-msgid "Background content tracking disabled"
-msgstr "Hintergrund-Inhaltsverfolgung deaktiviert"
+msgid "Tracking paused"
+msgstr "Verfolgung pausiert"
 
 #. Translators: announced when background content tracking is resumed.
-msgid "Background content tracking enabled"
-msgstr "Hintergrund-Inhaltsverfolgung aktiviert"
+msgid "Tracking resumed"
+msgstr "Verfolgung fortgesetzt"
 
-#. Translators: announced when the command overlay opens. "H" is the help key.
-msgid "Background Content Tracker, H for help"
-msgstr "Hintergrund-Inhaltsverfolgung, H für Hilfe"
+#. Translators: announced when the command overlay opens.
+msgid "Overlay opened"
+msgstr "Überlagerung geöffnet"
 
 #. Translators: announced when the command overlay closes.
 msgid "Overlay closed"
 msgstr "Überlagerung geschlossen"
 
 #. Translators: announced when a key pressed in the overlay is not one of its commands.
-msgid "Unknown command, press H for help."
-msgstr "Unbekannter Befehl, drücken Sie H für Hilfe."
+msgid ""
+"Unknown command. Press H once for help, twice to display the help as a "
+"browseable message."
+msgstr ""
+"Unbekannter Befehl. Drücken Sie H einmal für die Hilfe, zweimal, um die "
+"Hilfe als Meldung im Lesemodus anzuzeigen."
 
 #. Translators: the title of the add-on's category in NVDA's Settings dialog.
 #. Translators: the category for this add-on's commands in the Input Gestures
@@ -204,17 +208,27 @@ msgstr "&Ansagen"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
-msgid "Tracking &interval (seconds)"
-msgstr "Verfolgungs&intervall (Sekunden)"
+msgid ""
+"Tracking &interval (seconds, 0 means never announce, only display in target "
+"menu)"
+msgstr ""
+"Verfolgungs&intervall (Sekunden, 0 bedeutet nie ansagen, nur im Zielmenü "
+"anzeigen)"
 
 #. Translators: how many consecutive changes to one target to announce in a
 #. row before you have to refocus it (0 means announce every change).
-msgid "Changes to announce at &once"
-msgstr "Auf &einmal anzusagende Änderungen"
+msgid "Changes to announce at &once (0 means always announce every change)"
+msgstr ""
+"Auf &einmal anzusagende Änderungen (0 bedeutet immer jede Änderung ansagen)"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
 msgstr "Verhalten bei Fensterverfolgung"
+
+#. Translators: suppress announcements of the control the user is typing in.
+msgid "Ignore the focu&sed control when tracking the foreground window"
+msgstr ""
+"Fo&kussiertes Steuerelement beim Verfolgen des Vordergrundfensters ignorieren"
 
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
@@ -262,8 +276,8 @@ msgstr "Geänderter Inhal&t"
 
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
-msgid "&Overlay timeout (seconds)"
-msgstr "&Überlagerungs-Timeout (Sekunden)"
+msgid "&Overlay timeout (seconds, 0 means never time out)"
+msgstr "&Überlagerungs-Timeout (Sekunden, 0 bedeutet nie ablaufen)"
 
 #. Translators: target sorting option (the default).
 msgid "Oldest first"
@@ -289,6 +303,7 @@ msgstr "Ziele &merken"
 msgid "&Forget remembered targets when they disappear"
 msgstr "Gemerkte Ziele &vergessen, wenn sie verschwinden"
 
+#. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
 "Opens the Background Content Tracker command overlay: press and release it, "
 "then press a command key (H for help)"
@@ -320,9 +335,10 @@ msgstr "M: Verfolgung des Steuerelements unter der Maus starten oder stoppen"
 msgid "N: start or stop tracking the navigator object"
 msgstr "N: Verfolgung des Navigatorobjekts starten oder stoppen"
 
+#. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
-"Add shift to any of W, F, M or N to remember that one target, control to "
-"read it even in the foreground, or both"
+"Add shift to W, F, M or N to remember that one target, control to read it "
+"even in the foreground, or both"
 msgstr ""
 "Mit Umschalt merkt sich W, F, M oder N genau dieses eine Ziel, mit Strg wird "
 "es auch im Vordergrund verfolgt, mit beiden beides"
@@ -331,6 +347,7 @@ msgstr ""
 msgid "T: open the target menu"
 msgstr "T: das Zielmenü öffnen"
 
+#. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "move focus to it"
@@ -339,8 +356,12 @@ msgstr ""
 "um den Fokus dorthin zu bewegen"
 
 #. Translators: overlay help line for Space and Enter.
-msgid "Space or Enter: the most recently added target"
-msgstr "Leertaste oder Eingabetaste: das zuletzt hinzugefügte Ziel"
+msgid ""
+"Space or Enter: speak information about the most recently added target; "
+"press again to move focus to it"
+msgstr ""
+"Leertaste oder Eingabetaste: Informationen über das zuletzt hinzugefügte "
+"Ziel ansagen; erneut drücken, um den Fokus dorthin zu bewegen"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
@@ -370,6 +391,7 @@ msgstr "I: die Tastenzuordnungen des Add-ons öffnen"
 msgid "Escape: close the overlay"
 msgstr "Escape: die Überlagerung schließen"
 
+#. Translators: Long description to be shown for this add-on on add-on information from add-on store
 msgid ""
 "Tracks windows or individual controls in the background and notifies you "
 "when they change."

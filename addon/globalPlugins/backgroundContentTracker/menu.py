@@ -111,8 +111,11 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 		)
 		if target.setting("trackForegroundTargets"):
 			items.append(
-				# Translators: suppress announcements of the control the user is typing in.
-				("ignoreFocusedControl", _("Ignore focu&sed control")),
+				(
+					"ignoreFocusedControl",
+					# Translators: suppress announcements of the control the user is typing in.
+					_("Ignore the focu&sed control"),
+				),
 			)
 	items.extend(
 		(

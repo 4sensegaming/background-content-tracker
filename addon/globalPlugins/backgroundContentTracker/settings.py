@@ -92,7 +92,7 @@ class BCTSettingsPanel(SettingsPanel):
 		self.intervalCtrl = changeGroup.addLabeledControl(
 			# Translators: how often, in seconds, targets are queried for changes
 			# (0 means only display changes in the target menu, never announce them).
-			_("Tracking &interval (seconds)"),
+			_("Tracking &interval (seconds, 0 means never announce, only display in target menu)"),
 			nvdaControls.SelectOnFocusSpinCtrl,
 			min=0,
 			max=3600,
@@ -101,7 +101,7 @@ class BCTSettingsPanel(SettingsPanel):
 		self.changesAtOnceCtrl = changeGroup.addLabeledControl(
 			# Translators: how many consecutive changes to one target to announce in a
 			# row before you have to refocus it (0 means announce every change).
-			_("Changes to announce at &once"),
+			_("Changes to announce at &once (0 means always announce every change)"),
 			nvdaControls.SelectOnFocusSpinCtrl,
 			min=0,
 			max=100,
@@ -127,8 +127,10 @@ class BCTSettingsPanel(SettingsPanel):
 			wx.CheckBox(windowBox, label=_("Consider c&hanged title a disappeared target"))
 		)
 		self.titleChangeCb.SetValue(addonConfig.get("titleChangeDisappears"))
-		# Translators: suppress announcements of the control the user is typing in.
-		self.ignoreFocusedCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore focu&sed control")))
+		self.ignoreFocusedCb = windowGroup.addItem(
+			# Translators: suppress announcements of the control the user is typing in.
+			wx.CheckBox(windowBox, label=_("Ignore the focu&sed control when tracking the foreground window"))
+		)
 		self.ignoreFocusedCb.SetValue(addonConfig.get("ignoreFocusedControl"))
 
 		# Group: Beep parameters ---------------------------------------------
@@ -189,7 +191,7 @@ class BCTSettingsPanel(SettingsPanel):
 		self.overlayTimeoutCtrl = sHelper.addLabeledControl(
 			# Translators: how many seconds of inactivity close the command overlay
 			# (0 means the overlay stays open until it is closed by a command or escape).
-			_("&Overlay timeout (seconds)"),
+			_("&Overlay timeout (seconds, 0 means never time out)"),
 			nvdaControls.SelectOnFocusSpinCtrl,
 			min=0,
 			max=120,

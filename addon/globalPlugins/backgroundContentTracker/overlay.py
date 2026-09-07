@@ -131,8 +131,8 @@ class Overlay:
 		self._armed = True
 		inputCore.manager._captureFunc = self._captureRef
 		self._restartTimer()
-		# Translators: announced when the command overlay opens. "H" is the help key.
-		ui.message(_("Background Content Tracker, H for help"))
+		# Translators: announced when the command overlay opens.
+		ui.message(_("Overlay opened"))
 
 	def close(self):
 		"""Close the overlay silently. Used on plugin termination."""
@@ -265,8 +265,12 @@ class Overlay:
 			# either: whatever was waiting to be repeated is forgotten, rather
 			# than left to pair up with a press two keys later.
 			self.controller.cancelPendingPress()
-			# Translators: announced when a key pressed in the overlay is not one of its commands.
-			ui.message(_("Unknown command, press H for help."))
+			ui.message(
+				_(
+					# Translators: announced when a key pressed in the overlay is not one of its commands.
+					"Unknown command. Press H once for help, twice to display the help as a browseable message."
+				)
+			)
 		if self._armed:
 			# Still open, so keep it open: the command did not hand the focus on.
 			self._restartTimer()

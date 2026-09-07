@@ -51,7 +51,7 @@ msgid "Consider c&hanged title a disappeared target"
 msgstr "Považovať z&menu názvu za zmiznutie cieľa"
 
 #. Translators: suppress announcements of the control the user is typing in.
-msgid "Ignore focu&sed control"
+msgid "Ignore the focu&sed control"
 msgstr "Ignorovať prvok pod &fokusom"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
@@ -128,18 +128,18 @@ msgstr "Sledujem {target}"
 #. Translators: announced at start-up when every remembered target has been
 #. found. {n} is how many there are.
 #, python-brace-format
-msgid "Tracking {n} remembered target"
-msgid_plural "Tracking {n} remembered targets"
-msgstr[0] "Sledujem {n} zapamätaný cieľ"
-msgstr[1] "Sledujem {n} zapamätané ciele"
-msgstr[2] "Sledujem {n} zapamätaných cieľov"
+msgid "Found {n} remembered target"
+msgid_plural "Found {n} remembered targets"
+msgstr[0] "Nájdený {n} zapamätaný cieľ"
+msgstr[1] "Nájdené {n} zapamätané ciele"
+msgstr[2] "Nájdených {n} zapamätaných cieľov"
 
 #. Translators: announced at start-up when only some of the remembered targets
 #. have been found; the rest are still being looked for. {found} is how many
 #. are being tracked, {total} how many there are.
 #, python-brace-format
-msgid "Tracking {found} of {total} remembered targets"
-msgstr "Sledujem {found} z {total} zapamätaných cieľov"
+msgid "Found {found} of {total} remembered targets"
+msgstr "Nájdených {found} z {total} zapamätaných cieľov"
 
 #. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
 #, python-brace-format
@@ -156,32 +156,36 @@ msgid "All targets cleared"
 msgstr "Všetky ciele vymazané"
 
 #. Translators: announced (on resume and at start-up) when there are no valid targets.
-msgid "No targets to track"
-msgstr "Žiadne ciele na sledovanie"
+msgid "No remembered targets found"
+msgstr "Žiadne zapamätané ciele sa nenašli"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
 msgstr "Nepodarilo sa presunúť fokus na cieľ"
 
 #. Translators: announced when background content tracking is paused.
-msgid "Background content tracking disabled"
-msgstr "Sledovanie obsahu na pozadí vypnuté"
+msgid "Tracking paused"
+msgstr "Sledovanie pozastavené"
 
 #. Translators: announced when background content tracking is resumed.
-msgid "Background content tracking enabled"
-msgstr "Sledovanie obsahu na pozadí zapnuté"
+msgid "Tracking resumed"
+msgstr "Sledovanie obnovené"
 
-#. Translators: announced when the command overlay opens. "H" is the help key.
-msgid "Background Content Tracker, H for help"
-msgstr "Sledovanie obsahu na pozadí, H pre nápovedu"
+#. Translators: announced when the command overlay opens.
+msgid "Overlay opened"
+msgstr "Prekrytie otvorené"
 
 #. Translators: announced when the command overlay closes.
 msgid "Overlay closed"
 msgstr "Prekrytie zatvorené"
 
 #. Translators: announced when a key pressed in the overlay is not one of its commands.
-msgid "Unknown command, press H for help."
-msgstr "Neznámy príkaz, stlačte H pre nápovedu."
+msgid ""
+"Unknown command. Press H once for help, twice to display the help as a "
+"browseable message."
+msgstr ""
+"Neznámy príkaz. Stlačte H raz pre nápovedu, dvakrát pre zobrazenie nápovedy "
+"v dialógu."
 
 #. Translators: the title of the add-on's category in NVDA's Settings dialog.
 #. Translators: the category for this add-on's commands in the Input Gestures
@@ -209,17 +213,26 @@ msgstr "&Oznámiť"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
-msgid "Tracking &interval (seconds)"
-msgstr "&Interval sledovania (sekundy)"
+msgid ""
+"Tracking &interval (seconds, 0 means never announce, only display in target "
+"menu)"
+msgstr ""
+"&Interval sledovania (sekundy, 0 znamená nikdy neoznamovať, iba zobrazovať v "
+"ponuke cieľov)"
 
 #. Translators: how many consecutive changes to one target to announce in a
 #. row before you have to refocus it (0 means announce every change).
-msgid "Changes to announce at &once"
-msgstr "Počet zmien oznamovaných &naraz"
+msgid "Changes to announce at &once (0 means always announce every change)"
+msgstr ""
+"Počet zmien oznamovaných &naraz (0 znamená vždy oznamovať všetky zmeny)"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
 msgstr "Správanie pri sledovaní okna"
+
+#. Translators: suppress announcements of the control the user is typing in.
+msgid "Ignore the focu&sed control when tracking the foreground window"
+msgstr "Ignorovať prvok pod &fokusom pri sledovaní okna v popredí"
 
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
@@ -267,8 +280,8 @@ msgstr "Zmenený o&bsah"
 
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
-msgid "&Overlay timeout (seconds)"
-msgstr "Čas do zatvorenia &prekrytia (sekundy)"
+msgid "&Overlay timeout (seconds, 0 means never time out)"
+msgstr "Čas do zatvorenia &prekrytia (sekundy, 0 znamená nikdy nezatvárať)"
 
 #. Translators: target sorting option (the default).
 msgid "Oldest first"
@@ -294,6 +307,7 @@ msgstr "&Zapamätať si ciele"
 msgid "&Forget remembered targets when they disappear"
 msgstr "&Zabudnúť zapamätané ciele, keď prestanú existovať"
 
+#. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
 "Opens the Background Content Tracker command overlay: press and release it, "
 "then press a command key (H for help)"
@@ -325,9 +339,10 @@ msgstr "M: začne alebo prestane sledovať prvok pod myšou"
 msgid "N: start or stop tracking the navigator object"
 msgstr "N: začne alebo prestane sledovať navigačný objekt"
 
+#. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
-"Add shift to any of W, F, M or N to remember that one target, control to "
-"read it even in the foreground, or both"
+"Add shift to W, F, M or N to remember that one target, control to read it "
+"even in the foreground, or both"
 msgstr ""
 "So shiftom si W, F, M alebo N zapamätá práve tento cieľ, s controlom ho bude "
 "čítať aj v popredí, s oboma naraz oboje"
@@ -336,6 +351,7 @@ msgstr ""
 msgid "T: open the target menu"
 msgstr "T: otvorí ponuku cieľov"
 
+#. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "move focus to it"
@@ -344,8 +360,12 @@ msgstr ""
 "presunie fokus"
 
 #. Translators: overlay help line for Space and Enter.
-msgid "Space or Enter: the most recently added target"
-msgstr "Medzerník alebo Enter: naposledy pridaný cieľ"
+msgid ""
+"Space or Enter: speak information about the most recently added target; "
+"press again to move focus to it"
+msgstr ""
+"Medzerník alebo Enter: oznámi informácie o naposledy pridanom cieli; ďalším "
+"stlačením sa naň presunie fokus"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
@@ -375,6 +395,7 @@ msgstr "I: otvorí klávesové skratky doplnku"
 msgid "Escape: close the overlay"
 msgstr "Escape: zatvorí prekrytie"
 
+#. Translators: Long description to be shown for this add-on on add-on information from add-on store
 msgid ""
 "Tracks windows or individual controls in the background and notifies you "
 "when they change."

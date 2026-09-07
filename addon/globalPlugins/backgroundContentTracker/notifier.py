@@ -126,13 +126,13 @@ class Notifier:
 		if found >= total:
 			# Translators: announced at start-up when every remembered target has been
 			# found. {n} is how many there are.
-			text = ngettext("Tracking {n} remembered target", "Tracking {n} remembered targets", found)
+			text = ngettext("Found {n} remembered target", "Found {n} remembered targets", found)
 			ui.message(text.format(n=found), speechPriority=Spri.NEXT)
 			return
 		# Translators: announced at start-up when only some of the remembered targets
 		# have been found; the rest are still being looked for. {found} is how many
 		# are being tracked, {total} how many there are.
-		text = _("Tracking {found} of {total} remembered targets")
+		text = _("Found {found} of {total} remembered targets")
 		ui.message(text.format(found=found, total=total), speechPriority=Spri.NEXT)
 
 	def announceStopped(self, target: TrackedTarget):
@@ -215,7 +215,7 @@ class Notifier:
 
 	def noTargets(self):
 		# Translators: announced (on resume and at start-up) when there are no valid targets.
-		ui.message(_("No targets to track"))
+		ui.message(_("No remembered targets found"))
 
 	def focusFailed(self):
 		# Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
@@ -223,8 +223,8 @@ class Notifier:
 
 	def paused(self):
 		# Translators: announced when background content tracking is paused.
-		ui.message(_("Background content tracking disabled"))
+		ui.message(_("Tracking paused"))
 
 	def resumed(self):
 		# Translators: announced when background content tracking is resumed.
-		ui.message(_("Background content tracking enabled"))
+		ui.message(_("Tracking resumed"))

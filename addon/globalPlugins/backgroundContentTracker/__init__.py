@@ -317,8 +317,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	# --- the single, rebindable prefix gesture ------------------------------
 	@script(
-		# Translators: the description of the main command, shown in Input Gestures.
 		description=_(
+			# Translators: the description of the main command, shown in Input Gestures.
 			"Opens the Background Content Tracker command overlay: press and release it, then press a command key (H for help)"
 		),
 		gestures=["kb:NVDA+;"],
@@ -396,18 +396,20 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("M: start or stop tracking the control under the mouse pointer"),
 			# Translators: overlay help line for the N key.
 			_("N: start or stop tracking the navigator object"),
-			# Translators: overlay help line for shift and control with W, F, M or N.
 			_(
-				"Add shift to any of W, F, M or N to remember that one target, control to read it even in the foreground, or both"
+				# Translators: overlay help line for shift and control with W, F, M or N.
+				"Add shift to W, F, M or N to remember that one target, control to read it even in the foreground, or both"
 			),
 			# Translators: overlay help line for the T key.
 			_("T: open the target menu"),
-			# Translators: overlay help line for the number keys.
 			_(
+				# Translators: overlay help line for the number keys.
 				"1 through 0: speak information about the target in that slot; press again to move focus to it"
 			),
-			# Translators: overlay help line for Space and Enter.
-			_("Space or Enter: the most recently added target"),
+			_(
+				# Translators: overlay help line for Space and Enter.
+				"Space or Enter: speak information about the most recently added target; press again to move focus to it"
+			),
 			# Translators: overlay help line for Control plus a number.
 			_("Control plus a number: stop tracking the target in that slot"),
 			# Translators: overlay help line for Backspace.

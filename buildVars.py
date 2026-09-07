@@ -20,8 +20,8 @@ addon_info = AddonInfo(
 	# to be shown on installation and add-on information found in add-on store
 	addon_summary=_("Background Content Tracker"),
 	# Add-on description
-	# Translators: Long description to be shown for this add-on on add-on information from add-on store
 	addon_description=_(
+		# Translators: Long description to be shown for this add-on on add-on information from add-on store
 		"Tracks windows or individual controls in the background and notifies you when they change."
 	),
 	# version
