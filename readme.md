@@ -85,12 +85,12 @@ Anything you are already tracking appears first in the menu, so you can move to 
 The add-on announces a few fixed messages during its operation:
 
 - **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears.
-- **Restoring remembered targets** — when NVDA starts, the remembered targets are looked for over the first few seconds and reported together, as "Tracking 3 remembered targets", or as "Tracking 3 of 10 remembered targets" when the rest have not appeared yet. Any that turn up after that announce themselves individually.
+- **Restoring remembered targets** — when NVDA starts, the remembered targets are looked for and reported together, as "Tracking 3 remembered targets", or as "Tracking 3 of 10 remembered targets" when the rest have not appeared yet. Any that turn up later announce themselves individually.
 - **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You also hear this whenever a target no longer exists.
 - **Clearing the whole target list** — "All targets cleared".
 - **Set focus not getting through** — "Could not move focus to the target", when *Set focus* in the target menu cannot reach the target, because its window is gone, for instance.
 - **Pausing** (the `p` key) — "Background content tracking disabled".
-- **Resuming** — "Background content tracking enabled". When tracking resumes, and at the end of the start-up search, the add-on announces "No targets to track" instead if there is nothing left to track.
+- **Resuming** — "Background content tracking enabled". When tracking resumes, and each time NVDA starts, the add-on announces "No targets to track" instead if there is nothing left to track.
 
 ## Global and per-target settings
 

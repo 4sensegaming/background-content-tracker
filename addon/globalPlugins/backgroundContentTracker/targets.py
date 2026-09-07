@@ -293,14 +293,6 @@ class TrackedTarget:
 		#: merely changed. ``None`` for the entire life of anything else, a single
 		#: control included: a title is not part of what such a target is.
 		self.trackedTitle: str | None = None
-		#: When this target may next be looked for while it is detached, as a
-		#: ``time.time()``, and how long the wait after another failure. Zero for
-		#: both means "at the next relocation pass", which is where every target
-		#: starts and what attaching puts it back to. The policy behind them is
-		#: the monitor's (:meth:`.Monitor._deferRelocate`), and so is the thread:
-		#: nothing else ever writes them.
-		self.nextRelocate = 0.0
-		self.relocateDelay = 0.0
 
 	def setting(self, key: str, settings: Settings | None = None) -> ConfigValue:
 		"""The effective value of a local setting: this target's, or the global.

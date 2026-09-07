@@ -548,10 +548,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""Whether anything is tracked, or is still waiting to be found.
 
 		A remembered target that is not there yet counts: the monitor looks for it
-		every few seconds and takes it up the moment it appears, so calling that
-		nothing to track would be wrong — which is what resuming shortly after
-		NVDA started used to do, before the first relocation pass had had its turn
-		and while every remembered target was therefore still detached.
+		on every poll and takes it up the moment it appears, so calling that
+		nothing to track would be wrong. Resuming is exactly when it would be:
+		nothing is looked for while tracking is paused, so at that moment every
+		remembered target that was not already attached is still detached.
 		"""
 		settings = addonConfig.snapshot()
 		return any(

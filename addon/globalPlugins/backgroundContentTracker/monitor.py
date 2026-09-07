@@ -92,29 +92,13 @@ Entry = tuple[str, str]
 #: to be announced.
 _HIDDEN_STATES = frozenset((State.INVISIBLE, State.OFFSCREEN))
 
-#: The monitor thread's base tick, in seconds. The configurable tracking
-#: interval is rounded up to a whole number of these, so it is also the finest
+#: The monitor thread's base tick, in seconds. Every tick looks for the
+#: remembered targets that are not attached, and the configurable tracking
+#: interval is rounded up to a whole number of ticks, so this is also the finest
 #: polling resolution and the fastest the add-on will react. A sweep that takes
 #: longer than a tick simply stretches the effective interval: the thread sweeps
 #: between waits, so slow targets can never pile polls up on top of each other.
 POLL_INTERVAL = 1.0
-#: Minimum seconds between relocation sweeps for remembered targets.
-RELOCATE_INTERVAL = 3.0
-#: Ceiling on the wait between attempts at one remembered target that keeps not
-#: being found. Only a target whose application is actually running backs off at
-#: all (see :meth:`Monitor._deferRelocate`), so this bounds the one search that
-#: costs anything — a subtree walk for a control that may never come back —
-#: without making a target whose application simply is not running any slower to
-#: pick up than the pass itself.
-RELOCATE_BACKOFF_MAX = 15.0
-#: How many relocation passes the remembered targets restored at start-up are
-#: gathered over before they are reported, as a single message. It closes early
-#: the moment they are all back, so the wait is only ever paid where the answer
-#: would otherwise be wrong: applications are still launching while NVDA starts,
-#: and at one pass — a second in — most of them have not opened their windows
-#: yet. Four passes is about ten seconds, which is late enough to have the real
-#: answer and still be part of starting up.
-STARTUP_PASSES = 4
 #: Caps on one sweep. MAX_NODES bounds the controls visited per target — a
 #: window, a list, a document, all the same budget — and MAX_TEXT_CHARS bounds
 #: one control's text. MAX_DEPTH is a guard against a pathological or cyclic
@@ -555,16 +539,11 @@ class Monitor:
 		self._onListChanged = onListChanged
 		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
-		self._lastRelocate = 0.0
-		#: Whether the remembered targets restored at start-up have been reported.
-		#: Until they have, an attaching target is folded into that one message
-		#: instead of announcing itself; afterwards each announces as it appears.
+		#: Whether the first search for the remembered targets has run. The
+		#: targets it finds are reported as one message rather than announcing
+		#: themselves one by one; every target that attaches after it announces
+		#: itself as it appears. Monitor thread only.
 		self._startupDone = False
-		#: Relocation passes the restoration has had so far, how many targets it
-		#: was looking for, and how many of them it has found. Monitor thread only.
-		self._startupPasses = 0
-		self._startupTotal = 0
-		self._startupFound = 0
 
 	# --- lifecycle -----------------------------------------------------------
 	def start(self):
@@ -661,12 +640,19 @@ class Monitor:
 
 	# --- polling -------------------------------------------------------------
 	def _run(self):
-		"""The monitor thread's loop.
+		"""The monitor thread's loop, which runs two jobs at two different rates.
 
-		The thread wakes on a fixed POLL_INTERVAL tick, but only actually sweeps
-		once the configured *tracking interval* has elapsed. An interval of 0 is a
-		special "detection only" mode: it still sweeps on every tick so the target
-		menu stays current, but the sweep announces nothing.
+		Presence — which targets exist right now — is settled on every
+		POLL_INTERVAL tick, and the first time before the thread has waited at
+		all, so a remembered target is taken up, or reported missing, as soon as
+		the answer can be had. Content is swept only once the configured
+		*tracking interval* has elapsed. They are separate questions: how often
+		the user wants a window re-read says nothing about how soon they want to
+		hear that it has opened.
+
+		An interval of 0 is a special "detection only" mode: it still sweeps on
+		every tick so the target menu stays current, but the sweep announces
+		nothing.
 
 		Elapsed time is measured, not counted in ticks. A sweep of a large window
 		can take longer than a tick, and charging it a flat POLL_INTERVAL would
@@ -678,82 +664,61 @@ class Monitor:
 		"""
 		sinceLast = 0.0
 		lastTick = time.monotonic()
-		while not self._stop.wait(POLL_INTERVAL):
+		while True:
 			try:
 				now = time.monotonic()
 				elapsed = now - lastTick
 				lastTick = now
 				settings = addonConfig.snapshot()
-				if not settings["enabled"]:
-					continue
-				interval = int(settings["trackingInterval"])
-				announce = interval != 0
-				effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
-				sinceLast += elapsed
-				if sinceLast + 1e-6 < effective:
-					continue
-				sinceLast = 0.0
-				self._checkAllTargets(settings, announce)
+				if settings["enabled"]:
+					self._checkPresence(settings)
+					interval = int(settings["trackingInterval"])
+					effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
+					sinceLast += elapsed
+					if sinceLast + 1e-6 >= effective:
+						sinceLast = 0.0
+						self._checkContent(settings, announce=interval != 0)
 			# The last line of defence for the whole add-on: whatever one poll ran
 			# into, the thread has to survive it and try again on the next tick.
 			except Exception:
 				log.exception("Error in Background Content Tracker poll")
+			if self._stop.wait(POLL_INTERVAL):
+				return
 
-	def _checkAllTargets(self, settings: Settings, announce: bool = True):
+	def _checkPresence(self, settings: Settings):
+		"""Take up the remembered targets that are there, and let go of those that are not.
+
+		The first run of this is also the start-up restoration, and it is the whole
+		of it: whatever is open when the add-on loads is found and reported there
+		and then. Nothing is waited for, because there is nothing to wait for — the
+		applications the user had open were open before NVDA started, and one that
+		is launching announces itself as it attaches, like any other target that
+		appears later in the session.
+		"""
 		remembered = [
 			target
 			for target in self.registry.detachedTargets()
 			if target.setting("rememberTargets", settings)
 		]
-		if remembered:
-			now = time.time()
-			if now - self._lastRelocate >= RELOCATE_INTERVAL:
-				self._lastRelocate = now
-				attached = self._relocatePass(remembered, settings, now)
-				if not self._startupDone:
-					self._noteStartupPass(len(remembered), attached)
-		elif not self._startupDone:
-			# Nothing is left to look for. Either the restoration has found
-			# everything it was going to, and should say so now rather than wait
-			# out passes with nothing to do, or nothing was remembered in the first
-			# place and there is no restoration to report at all. Either way, the
-			# targets that attach from here on speak for themselves again.
-			if self._startupPasses:
-				self._finishStartup()
-			else:
-				self._startupDone = True
+		attached = self._relocatePass(remembered, settings)
+		if not self._startupDone:
+			self._startupDone = True
+			# Silent where nothing was remembered in the first place: there is no
+			# restoration to report, and the user has not asked for one.
+			if remembered:
+				self._callOnMainThread(self.notifier.announceRestored, attached, len(remembered))
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
 			if not target.isAlive() or not self._keptItsTitle(target, target.obj, settings):
 				self._handleDisappeared(target, target.isForgottenWhenGone(settings))
-				continue
+
+	def _checkContent(self, settings: Settings, announce: bool):
+		"""Read every target that is there, and announce what has arrived in it."""
+		for target in self.registry.liveTargets():
+			if self._stop.is_set():
+				return
 			self._checkTargetContent(target, settings, announce)
-
-	# --- the one message the start-up restoration makes ---------------------
-	def _noteStartupPass(self, pending: int, found: int):
-		"""Fold one relocation pass into the report the restoration will make.
-
-		Ten remembered targets used to mean ten "Tracking …" announcements in a
-		quick loop, on top of NVDA's own start-up speech, and — decided on the
-		strength of a single pass one second in — a "No targets to track" that the
-		next few seconds routinely contradicted. So the passes that make up the
-		restoration are counted here instead, and report themselves once.
-
-		The window closes as soon as every remembered target is back, so the
-		common case of everything already being open is still reported at once.
-		"""
-		if not self._startupPasses:
-			self._startupTotal = pending
-		self._startupPasses += 1
-		self._startupFound += found
-		if self._startupFound >= self._startupTotal or self._startupPasses >= STARTUP_PASSES:
-			self._finishStartup()
-
-	def _finishStartup(self):
-		"""Report what the restoration found, and let later targets speak for themselves."""
-		self._startupDone = True
-		self._callOnMainThread(self.notifier.announceRestored, self._startupFound, self._startupTotal)
 
 	def _checkTargetContent(self, target: TrackedTarget, settings: Settings, announce: bool):
 		obj = target.obj
@@ -1082,27 +1047,33 @@ class Monitor:
 			daemon=True,
 		).start()
 
-	def _relocatePass(self, targets: Sequence[TrackedTarget], settings: Settings, now: float) -> int:
-		"""Look for every detached target that is due, over one view of the desktop.
+	def _relocatePass(self, targets: Sequence[TrackedTarget], settings: Settings) -> int:
+		"""Look for every detached target, over one view of the desktop.
 
 		The desktop is enumerated once for the whole pass rather than once per
 		target: the list of top-level windows and their application names is the
-		same for all of them, and re-reading it ten times over — every three
-		seconds, for as long as NVDA runs — is ten times the cross-process traffic
-		for one answer.
+		same for all of them, and re-reading it ten times over — every tick, for
+		as long as NVDA runs — is ten times the cross-process traffic for one
+		answer.
 
-		Returns how many targets it attached. Each of them is picked up by the
-		content sweep of this very pass: :meth:`_attach` leaves its cache stale, so
-		that sweep is what baselines it, on this thread and at no extra cost.
+		Every target is tried on every pass, however long it has been missing. A
+		target whose application is not running is ruled out by the shared window
+		list before a single cross-process read; one whose application is running
+		walks a subtree, and pays that walk every tick for as long as its control
+		is absent. That is the price of a target being taken up the moment it
+		comes back rather than up to a back-off later.
+
+		Returns how many targets it attached. Each of them is baselined by the
+		next content sweep: :meth:`_attach` leaves its cache stale, so whatever
+		arrived before anybody was looking is folded in silently.
 		"""
-		due = [target for target in targets if target.nextRelocate <= now]
-		if not due:
+		if not targets:
 			return 0
 		windows = self._desktopWindows()
 		if not windows:
 			return 0
 		attached = 0
-		for target in due:
+		for target in targets:
 			if self._stop.is_set():
 				# NVDA is going down. Relocation is the one thing here that can run
 				# long — a hung application can hold a cross-process read for as
@@ -1120,35 +1091,12 @@ class Monitor:
 				# old title comes back.
 				obj = None
 			if obj is None:
-				# Never back off during the start-up restoration: its passes are
-				# the ones where an application is most likely to be halfway
-				# through starting, and there are only a handful of them.
-				self._deferRelocate(target, now, bool(candidates) and self._startupDone)
 				continue
-			# During the start-up restoration the targets are reported together,
-			# so an attaching one does not speak for itself; afterwards it does.
+			# The targets the first pass finds are reported together, so one
+			# attaching there does not speak for itself; afterwards each does.
 			self._attach(target, obj, announce=self._startupDone)
 			attached += 1
 		return attached
-
-	def _deferRelocate(self, target: TrackedTarget, now: float, searched: bool):
-		"""Put off the next attempt at ``target``, backing off if this one cost anything.
-
-		A target whose application is not running is ruled out by the shared
-		window list before a single cross-process read, so it is retried at the
-		pass interval for as long as it takes and is picked up within one pass of
-		its application appearing. Backing off is for the target that really was
-		searched for — its application is running, but the control is not there —
-		because that is the search that walks a subtree per pass, and repeating it
-		every three seconds for a control that may never come back is the one case
-		worth slowing down. Either way the wait is dropped the moment the target
-		attaches (see :meth:`_attach`).
-		"""
-		if searched:
-			target.relocateDelay = min(max(target.relocateDelay * 2, RELOCATE_INTERVAL), RELOCATE_BACKOFF_MAX)
-		else:
-			target.relocateDelay = 0.0
-		target.nextRelocate = now + target.relocateDelay
 
 	def _desktopWindows(self) -> list[tuple[str, NVDAObject]]:
 		"""Every reachable top-level window as ``(application name, object)``, or ``[]``.
@@ -1265,15 +1213,11 @@ class Monitor:
 	def _attach(self, target: TrackedTarget, obj: NVDAObject, announce: bool = True):
 		"""Take up a target that has been found again, and baseline it.
 
-		``announce`` is false only for the targets restored at start-up, which are
-		reported together rather than one by one (see :meth:`_noteStartupPass`).
+		``announce`` is false only for the targets found by the first pass, which
+		are reported together rather than one by one (see :meth:`_checkPresence`).
 		"""
 		target.obj = obj
 		moved = self._refreshIdentity(target, obj)
-		# It is here now, so any wait accumulated while it was not has done its
-		# job: should it disappear again, it is looked for at the pass interval.
-		target.relocateDelay = 0.0
-		target.nextRelocate = 0.0
 		self.onAdded(target)
 		if announce:
 			self._callOnMainThread(self.notifier.announceTracking, target)

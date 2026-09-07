@@ -85,12 +85,12 @@ Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný c
 Doplněk za chodu oznamuje několik neměnných zpráv:
 
 - **Zahájení sledování nového cíle** – například „Sleduji okno: Claude“. Totéž uslyšíte pokaždé, když se zapamatovaný cíl znovu objeví.
-- **Obnovení zapamatovaných cílů** – při spuštění NVDA doplněk zapamatované cíle několik sekund hledá a pak je oznámí najednou, například „Sleduji 3 zapamatované cíle“, nebo „Sleduji 3 z 10 zapamatovaných cílů“, pokud se zbývající zatím neobjevily. Ty, které se objeví později, se ohlásí jednotlivě.
+- **Obnovení zapamatovaných cílů** – při spuštění NVDA doplněk zapamatované cíle vyhledá a oznámí najednou, například „Sleduji 3 zapamatované cíle“, nebo „Sleduji 3 z 10 zapamatovaných cílů“, pokud se zbývající zatím neobjevily. Ty, které se objeví později, se ohlásí jednotlivě.
 - **Ukončení sledování cíle** – například „Přestávám sledovat seznam: Seznam zpráv“. Totéž uslyšíte pokaždé, když cíl přestane existovat.
 - **Vymazání celého seznamu cílů** – „Všechny cíle vymazány“.
 - **Nezdařené přesunutí fokusu** – „Nepodařilo se přesunout fokus na cíl“, když se příkaz *Přesunout fokus* v nabídce cílů k cíli nedostane, třeba proto, že jeho okno už neexistuje.
 - **Pozastavení sledování** (klávesa `p`) – „Sledování obsahu na pozadí vypnuto“.
-- **Obnovení** – „Sledování obsahu na pozadí zapnuto“. Při obnovení sledování a na konci hledání po spuštění NVDA doplněk místo toho oznámí „Žádné cíle ke sledování“, pokud nezbývá co sledovat.
+- **Obnovení** – „Sledování obsahu na pozadí zapnuto“. Při obnovení sledování a při každém spuštění NVDA doplněk místo toho oznámí „Žádné cíle ke sledování“, pokud nezbývá co sledovat.
 
 ## Globální nastavení a nastavení pro jednotlivý cíl
 
