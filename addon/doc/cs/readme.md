@@ -46,7 +46,7 @@ Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláve
 - `w` – začne nebo přestane sledovat aktuální **okno** (jakoukoli změnu v celém okně v popředí).
 - `f` – začne nebo přestane sledovat prvek, který má právě **fokus** klávesnice.
 - `m` – začne nebo přestane sledovat prvek pod ukazatelem **myši**.
-- `n` – začne nebo přestane sledovat aktuální objekt, který prohlížíte objektovou **navigací** (tam, kde je prohlížecí kurzor).
+- `n` – začne nebo přestane sledovat aktuální **prohlížený objekt** (tam, kde je prohlížecí kurzor).
 - `t` – otevře **[nabídku cílů](#nabídka-cílů)**.
 - `1` až `0` – **oznámí informace o cíli** podle jeho pořadí v seznamu (viz níže). Stisknete-li totéž číslo podruhé do deseti sekund a mezitím nestisknete jinou klávesu, přesune se na daný cíl fokus.
 - `mezerník` nebo `enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: prvním stisknutím si o něm necháte oznámit informace, dalším stiskem do deseti sekund se na něj přesune fokus.
@@ -144,7 +144,7 @@ Lze zapsat pouze celá čísla. Nastavuje, jak často má doplněk kontrolovat z
 
 Lze zapsat pouze celá čísla. Nastavuje, kolik po sobě jdoucích změn stejného cíle má doplněk oznámit v řadě, než budete muset cíl alespoň jednou znovu fokusovat a poté se opět přepnout jinam, aby se zase začaly oznamovat následující změny. 0 znamená oznámit každou jednotlivou změnu pokaždé, když je cíl na pozadí, bez ohledu na cokoli. Výchozí hodnota je 5.
 
-### **Chování při sledování oken** (skupina)
+### **Chování při sledování okna** (skupina)
 
 Možnosti v této skupině jsou dostupné vždy. Upřesňují, jak má doplněk oznamovat změny v cílech, které jsou celými okny.
 
