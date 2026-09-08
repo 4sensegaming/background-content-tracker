@@ -5,6 +5,16 @@
 
 """Everything the user hears. All wording here is translatable; control-type
 (role) names are taken from NVDA itself and are therefore already localised.
+
+Nothing here is given a speech priority, so every message is spoken at NVDA's
+normal one and falls in behind whatever NVDA has already been given to say. That
+is what the messages the add-on raises on its own account need — the start-up
+report of what was remembered, and a target found or lost later on — because
+they arrive while NVDA is saying something the user is waiting to hear, the
+focus it reports as it starts included. A higher priority does not wait for
+that: it is spoken as soon as the current utterance ends, in the middle of the
+announcement rather than after it. The same messages answering a keypress are
+still heard at once, because the keypress itself stops NVDA's speech.
 """
 
 import time
@@ -15,7 +25,6 @@ import addonHandler
 import tones
 import ui
 from logHandler import log
-from speech.priorities import Spri
 
 from . import addonConfig
 from .targets import TrackedTarget
@@ -105,11 +114,8 @@ class Notifier:
 
 	def announceTracking(self, target: TrackedTarget):
 		desc = self._describeTarget(target)
-		# Queued rather than interrupting: an application coming back can bring
-		# several remembered targets with it, and an interrupting message would
-		# leave only the last of them audible.
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-		ui.message(_("Tracking {target}").format(target=desc), speechPriority=Spri.NEXT)
+		ui.message(_("Tracking {target}").format(target=desc))
 
 	def announceRestored(self, found: int, total: int):
 		"""Report the remembered targets restored at start-up, in one message.
@@ -127,13 +133,13 @@ class Notifier:
 			# Translators: announced at start-up when every remembered target has been
 			# found. {n} is how many there are.
 			text = ngettext("Found {n} remembered target", "Found {n} remembered targets", found)
-			ui.message(text.format(n=found), speechPriority=Spri.NEXT)
+			ui.message(text.format(n=found))
 			return
 		# Translators: announced at start-up when only some of the remembered targets
 		# have been found; the rest are still being looked for. {found} is how many
 		# are being tracked, {total} how many there are.
 		text = _("Found {found} of {total} remembered targets")
-		ui.message(text.format(found=found, total=total), speechPriority=Spri.NEXT)
+		ui.message(text.format(found=found, total=total))
 
 	def announceStopped(self, target: TrackedTarget):
 		desc = self._describeTarget(target)
