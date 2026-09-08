@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
-"POT-Creation-Date: 2026-09-08 07:38+0200\n"
+"POT-Creation-Date: 2026-09-08 08:21+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -102,24 +102,24 @@ msgstr ""
 
 #. Translators: shown in the target menu, and spoken on demand, for a target
 #. that does not currently exist (e.g. a remembered target not yet reopened).
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:71
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:75
 msgid "not found"
 msgstr ""
 
 #. Translators: shown in the target menu when a target has not changed yet.
 #. Translators: on-demand target info when there is nothing new to report.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:78
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:177
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:82
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:211
 msgid "no changes yet"
 msgstr ""
 
 #. Translators: relative time for a change that has only just happened.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:82
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:86
 msgid "just now"
 msgstr ""
 
 #. Translators: relative time in seconds. {n} is the number of seconds.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:85
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:89
 #, python-brace-format
 msgid "{n} second ago"
 msgid_plural "{n} seconds ago"
@@ -127,7 +127,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: relative time in minutes. {n} is the number of minutes.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:89
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:93
 #, python-brace-format
 msgid "{n} minute ago"
 msgid_plural "{n} minutes ago"
@@ -135,7 +135,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: relative time in hours. {n} is the number of hours.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:93
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:97
 #, python-brace-format
 msgid "{n} hour ago"
 msgid_plural "{n} hours ago"
@@ -143,14 +143,14 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:118
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:150
 #, python-brace-format
 msgid "Tracking {target}"
 msgstr ""
 
 #. Translators: announced at start-up when every remembered target has been
 #. found. {n} is how many there are.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:135
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:168
 #, python-brace-format
 msgid "Found {n} remembered target"
 msgid_plural "Found {n} remembered targets"
@@ -160,45 +160,45 @@ msgstr[1] ""
 #. Translators: announced at start-up when only some of the remembered targets
 #. have been found; the rest are still being looked for. {found} is how many
 #. are being tracked, {total} how many there are.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:141
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:174
 #, python-brace-format
 msgid "Found {found} of {total} remembered targets"
 msgstr ""
 
 #. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:147
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:180
 #, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr ""
 
 #. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:216
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:250
 #, python-brace-format
 msgid "No target in slot {slot}"
 msgstr ""
 
 #. Translators: announced when the whole target list is cleared at once.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:220
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:254
 msgid "All targets cleared"
 msgstr ""
 
 #. Translators: announced (on resume and at start-up) when there are no valid targets.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:224
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:258
 msgid "No remembered targets found"
 msgstr ""
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:228
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:263
 msgid "Could not move focus to the target"
 msgstr ""
 
 #. Translators: announced when background content tracking is paused.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:232
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:267
 msgid "Tracking paused"
 msgstr ""
 
 #. Translators: announced when background content tracking is resumed.
-#: addon\globalPlugins\backgroundContentTracker\notifier.py:236
+#: addon\globalPlugins\backgroundContentTracker\notifier.py:271
 msgid "Tracking resumed"
 msgstr ""
 

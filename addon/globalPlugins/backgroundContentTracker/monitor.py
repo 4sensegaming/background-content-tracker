@@ -992,7 +992,7 @@ class Monitor:
 		# relocation pass above to take up again when it reappears.
 		if forget:
 			self._callOnMainThread(self.registry.remove, target)
-		self._callOnMainThread(self.notifier.announceStopped, target)
+		self._callOnMainThread(self.notifier.announceStopped, target, unprompted=True)
 		if forget:
 			# Queued after the removal, so what is written out is the list without
 			# this target rather than the one it is still in.
@@ -1220,6 +1220,6 @@ class Monitor:
 		moved = self._refreshIdentity(target, obj)
 		self.onAdded(target)
 		if announce:
-			self._callOnMainThread(self.notifier.announceTracking, target)
+			self._callOnMainThread(self.notifier.announceTracking, target, unprompted=True)
 		if moved:
 			self._notifyListChanged()

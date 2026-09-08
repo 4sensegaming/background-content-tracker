@@ -6,15 +6,12 @@
 """Everything the user hears. All wording here is translatable; control-type
 (role) names are taken from NVDA itself and are therefore already localised.
 
-Nothing here is given a speech priority, so every message is spoken at NVDA's
-normal one and falls in behind whatever NVDA has already been given to say. That
-is what the messages the add-on raises on its own account need — the start-up
-report of what was remembered, and a target found or lost later on — because
-they arrive while NVDA is saying something the user is waiting to hear, the
-focus it reports as it starts included. A higher priority does not wait for
-that: it is spoken as soon as the current utterance ends, in the middle of the
-announcement rather than after it. The same messages answering a keypress are
-still heard at once, because the keypress itself stops NVDA's speech.
+The messages here are of two kinds. One answers a keypress, and is spoken as it
+stands. The other the add-on raises on its own account — the start-up report of
+what was remembered, and a target found or lost while the user is doing
+something else — and arrives in the middle of NVDA's own speech, at a moment
+nobody chose. :meth:`Notifier._announce` is where that second kind is fitted
+around NVDA, and every method below says which kind its message is.
 """
 
 import time
@@ -22,9 +19,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 import addonHandler
+import core
 import tones
 import ui
 from logHandler import log
+from speech.priorities import Spri
 
 from . import addonConfig
 from .targets import TrackedTarget
@@ -38,6 +37,11 @@ if TYPE_CHECKING:
 	from gettext import ngettext  # noqa: TC004
 
 addonHandler.initTranslation()
+
+#: How long a message the add-on raised itself is held back before it is spoken,
+#: in milliseconds. Long enough for a window arriving at or leaving the front to
+#: have been dealt with, short enough that the message still belongs to it.
+_UNPROMPTED_DELAY_MS = 400
 
 #: The trailing pieces that go after a target's name in a description. A piece
 #: that came to nothing is passed as it was worked out and dropped here, so
@@ -96,6 +100,34 @@ def relativeTime(when: float | None) -> str:
 class Notifier:
 	"""Turns registry/monitor events into speech and beeps, per the settings."""
 
+	def _announce(self, text: str, unprompted: bool, priority: Spri):
+		"""Say ``text``, kept out of NVDA's way where the add-on raised it itself.
+
+		A message answering a keypress is spoken as it stands: the keypress has
+		just stopped whatever NVDA was saying, so there is nothing to fit around
+		and nothing to wait for.
+
+		One the add-on raised on its own account arrives while NVDA is busy with
+		something the user did ask for, and ``priority`` says how it should sit
+		with that — waiting for NVDA to finish, or being let in at the end of the
+		current sentence, after which NVDA carries on where it left off. Those are
+		the two settings NVDA gives a web page's polite and assertive live
+		regions, and they behave here exactly as they do there.
+
+		The wait in front of both is for something else. What most often puts a
+		target in or out of reach is a window arriving at or leaving the front,
+		and NVDA answers a window coming to the front by throwing away everything
+		it has queued to be spoken, whatever priority it carries. A message raised
+		in the moment before that is not outranked but discarded: it reaches the
+		log and the speech viewer, and is never heard. Waiting lets the change of
+		window go by first, so the message is queued behind what NVDA says about
+		it instead of into what is about to be dropped.
+		"""
+		if not unprompted:
+			ui.message(text)
+			return
+		core.callLater(_UNPROMPTED_DELAY_MS, ui.message, text, priority)
+
 	def _describeTarget(
 		self,
 		target: TrackedTarget,
@@ -112,10 +144,11 @@ class Notifier:
 		"""
 		return _describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
 
-	def announceTracking(self, target: TrackedTarget):
+	def announceTracking(self, target: TrackedTarget, unprompted: bool = False):
 		desc = self._describeTarget(target)
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
-		ui.message(_("Tracking {target}").format(target=desc))
+		text = _("Tracking {target}").format(target=desc)
+		self._announce(text, unprompted, Spri.NEXT)
 
 	def announceRestored(self, found: int, total: int):
 		"""Report the remembered targets restored at start-up, in one message.
@@ -127,24 +160,25 @@ class Notifier:
 		announce themselves as usual.
 		"""
 		if not found:
-			self.noTargets()
+			self.noTargets(unprompted=True)
 			return
 		if found >= total:
 			# Translators: announced at start-up when every remembered target has been
 			# found. {n} is how many there are.
 			text = ngettext("Found {n} remembered target", "Found {n} remembered targets", found)
-			ui.message(text.format(n=found))
+			self._announce(text.format(n=found), unprompted=True, priority=Spri.NORMAL)
 			return
 		# Translators: announced at start-up when only some of the remembered targets
 		# have been found; the rest are still being looked for. {found} is how many
 		# are being tracked, {total} how many there are.
 		text = _("Found {found} of {total} remembered targets")
-		ui.message(text.format(found=found, total=total))
+		self._announce(text.format(found=found, total=total), unprompted=True, priority=Spri.NORMAL)
 
-	def announceStopped(self, target: TrackedTarget):
+	def announceStopped(self, target: TrackedTarget, unprompted: bool = False):
 		desc = self._describeTarget(target)
 		# Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
-		ui.message(_("Stopped tracking {target}").format(target=desc))
+		text = _("Stopped tracking {target}").format(target=desc)
+		self._announce(text, unprompted, Spri.NEXT)
 
 	def announceChange(self, target: TrackedTarget, delta: str):
 		"""A change was detected in ``target``; ``delta`` is the new content."""
@@ -219,9 +253,10 @@ class Notifier:
 		# Translators: announced when the whole target list is cleared at once.
 		ui.message(_("All targets cleared"))
 
-	def noTargets(self):
+	def noTargets(self, unprompted: bool = False):
 		# Translators: announced (on resume and at start-up) when there are no valid targets.
-		ui.message(_("No remembered targets found"))
+		text = _("No remembered targets found")
+		self._announce(text, unprompted, Spri.NORMAL)
 
 	def focusFailed(self):
 		# Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
