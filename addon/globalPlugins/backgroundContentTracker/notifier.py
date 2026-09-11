@@ -212,11 +212,11 @@ class Notifier:
 
 	def focusFailed(self):
 		# Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-		ui.message(_("Could not move focus to the target"))
+		ui.message(_("Could not set focus"))
 
 	def alreadyFocused(self):
 		# Translators: announced when a second press would move the focus to a target that already has it.
-		ui.message(_("The target already has the focus"))
+		ui.message(_("This target already has focus"))
 
 	def paused(self):
 		# Translators: announced when background content tracking is paused.

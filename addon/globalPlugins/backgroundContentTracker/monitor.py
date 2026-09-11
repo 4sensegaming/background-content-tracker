@@ -42,6 +42,7 @@ Entry = tuple[str, str]
 _HIDDEN_STATES = frozenset((State.INVISIBLE, State.OFFSCREEN))
 
 POLL_INTERVAL = 1.0
+SETTLE_SECONDS = 10.0
 MAX_NODES = 1000
 MAX_TEXT_CHARS = 10000
 MAX_DEPTH = 50
@@ -483,6 +484,7 @@ class Monitor:
 				wasEnabled = enabled
 				if enabled:
 					self._checkPresence(settings, report)
+					self._settlePass(settings)
 					interval = int(settings["trackingInterval"])
 					effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
 					sinceLast += elapsed
@@ -526,7 +528,20 @@ class Monitor:
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
+			if target.isSettling():
+				continue
 			self._checkTargetContent(target, settings, announce)
+
+	def _settlePass(self, settings: Settings):
+		"""Re-take the baseline of a target just attached to, every second until a sweep
+		reveals nothing the one before it did not, so a window still opening is not taken
+		for a window that has just filled itself with new content.
+		"""
+		for target in self.registry.liveTargets():
+			if self._stop.is_set():
+				return
+			if target.isSettling():
+				self._checkTargetContent(target, settings, announce=False)
 
 	def _checkTargetContent(self, target: TrackedTarget, settings: Settings, announce: bool):
 		obj = target.obj
@@ -550,9 +565,12 @@ class Monitor:
 		entries, whole, nodes = _sweepEntries(obj, ignorePB)
 		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
-			target.staleCache = False
+			texts = frozenset(text for _, text in entries)
 			self._absorb(target, entries, whole, dark)
-			target.prevTexts = frozenset(text for _, text in entries)
+			target.staleCache = target.isSettling() and not texts <= target.prevTexts
+			target.prevTexts = texts
+			if not target.staleCache:
+				target.settleUntil = None
 			return
 		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusObj, typedBefore)
 		self._absorb(target, entries, whole, dark)
@@ -795,6 +813,7 @@ class Monitor:
 		target.obj = obj
 		moved = self._refreshIdentity(target, obj)
 		self.onAdded(target)
+		target.settleFor(SETTLE_SECONDS)
 		if announce:
 			self._callOnMainThread(self.notifier.announceTracking, target, unprompted=True)
 		if moved:

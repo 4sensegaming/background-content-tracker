@@ -38,8 +38,9 @@ msgid "Track {source}: {name}"
 msgstr "{source} verfolgen: {name}"
 
 #. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-msgid "I&nterrupt previous speech when announcing a change"
-msgstr "Beim Ansagen einer Änderung vorherige Sprachausgabe u&nterbrechen"
+msgid "I&nterrupt previous speech when announcing a new change"
+msgstr ""
+"Beim Ansagen einer neuen Änderung vorherige Sprachausgabe u&nterbrechen"
 
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
@@ -247,12 +248,12 @@ msgid "No targets"
 msgstr "Keine Ziele"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-msgid "Could not move focus to the target"
-msgstr "Der Fokus konnte nicht zum Ziel bewegt werden"
+msgid "Could not set focus"
+msgstr "Der Fokus konnte nicht gesetzt werden"
 
 #. Translators: announced when a second press would move the focus to a target that already has it.
-msgid "The target already has the focus"
-msgstr "Das Ziel hat bereits den Fokus"
+msgid "This target already has focus"
+msgstr "Dieses Ziel hat bereits den Fokus"
 
 #. Translators: announced when background content tracking is paused.
 msgid "Tracking paused"
@@ -383,10 +384,6 @@ msgstr "Geänderter Inhal&t"
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr "&Überlagerungs-Timeout (Sekunden, 0 bedeutet nie ablaufen)"
 
-#. Translators: group holding the two target orders, of the number slots and of the target menu.
-msgid "Target sorting"
-msgstr "Zielsortierung"
-
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
 msgstr "Neuestes Ziel zuerst"
@@ -429,7 +426,7 @@ msgstr "Gemerkte Ziele &vergessen, wenn sie verschwinden"
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
-"Opens the Background Content Tracker command overlay: press and release it, "
+"Opens the Background Content Tracker command overlay: press and release, "
 "then press a command key (H for help)"
 msgstr ""
 "Öffnet die Befehlsüberlagerung der Hintergrund-Inhaltsverfolgung: drücken "
@@ -474,18 +471,18 @@ msgstr "T: das Zielmenü öffnen"
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
-"move focus to it"
+"set focus to it"
 msgstr ""
 "1 bis 0: Informationen über das Ziel in diesem Fach ansagen; erneut drücken, "
-"um den Fokus dorthin zu bewegen"
+"um den Fokus dorthin zu setzen"
 
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press again to move focus to it"
+"press again to set focus to it"
 msgstr ""
 "Leertaste oder Eingabetaste: Informationen über das zuletzt hinzugefügte "
-"Ziel ansagen; erneut drücken, um den Fokus dorthin zu bewegen"
+"Ziel ansagen; erneut drücken, um den Fokus dorthin zu setzen"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"

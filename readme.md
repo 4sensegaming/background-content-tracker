@@ -14,7 +14,19 @@ While sighted people work in one window, they notice out of the corner of their 
 
 Background Content Tracker gives you this awareness: you choose what to track and how you want to be told, and NVDA notifies you when the content changes, without you having to move away from what you were doing.
 
-This add-on will most likely be appreciated only by power users who feel the need to increase their speed and efficiency at work, such as team developers, those who routinely use paid AI services or local models to create something substantial, or those working in partially or fully automated corporate workflows involving several tasks at once. If you need it, you probably know it right away after reading the above description. It's possible that others might feel overwhelmed or confused when using it instead.
+This add-on is a very powerful and customizable tool that can essentially turn an inaccessible app into a talking live region as needed. It works surprisingly well with:
+
+- Terminals,
+- Brief, quickly changing dynamic messages in a single list, text area or NVDA object,
+- As well as large windows of Electron apps like Claude that leave a lot to be desired in terms of accessibility, which can stay silent for long periods of time and then suddenly start dumping tons of large chunks of new text in quick succession that could be hard to locate otherwise.
+
+However, the add-on will most likely be appreciated only by power users who feel the need to increase their speed and efficiency at work, such as:
+
+- Team developers,
+- Those who routinely use paid AI services or local models to create something substantial,
+- Or those working in partially or fully automated corporate workflows involving several tasks at once.
+
+If you need it, you probably know it right away after reading the above description. It's possible that others might feel overwhelmed or confused when using it instead.
 
 ## Usage
 
@@ -53,7 +65,7 @@ After pressing the prefix, press one of the following keys:
 - `control`+a number (`1` to `0`) — **stop tracking** the target in that slot.
 - `backspace` — **stop tracking the most recently added** target.
 - `delete` — **stop tracking all targets** (clear the whole list at once).
-- `p` — **pause or resume** all tracking (this flips the *Enable background content tracking* switch described under [Settings](#settings)).
+- `p` — **pause or resume** all tracking (this flips the *Enable tracking* switch described under [Settings](#settings)).
 - `s` — open the add-on's **[settings](#settings)** (the same panel as NVDA menu → Preferences → Settings → Background Content Tracker).
 - `i` — open NVDA's **Input Gestures** dialog, so you can rebind the prefix without hunting for it in the menus.
 - `escape` — **close the overlay** without doing anything else.
@@ -62,7 +74,7 @@ The window, focus, mouse and navigator commands are toggles: press one once to a
 
 Those four commands also take `shift` and `control`, which say how the target you are adding is to be tracked: `shift` remembers that one target, `control` reads it even while its own app is in the foreground, and holding both does both. These are [per-target settings](#global-and-per-target-settings), set on that specific target as it is added instead of via inheriting the global [settings](#settings) or via [the target menu](#the-target-menu) later, and they don't change the global setting. A press that *stops* tracking simply ignores the modifiers.
 
-The number keys refer to **slots** in your target list, not to fixed targets. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0`, the tenth slot. The [**Target sorting** setting](#settings) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list. If there is currently no valid target in the slot you pressed, the add-on says for example "No target in slot 2".
+The number keys refer to **slots** in your target list, not to fixed targets. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0` — the tenth slot. The [**Target sorting** setting](#settings) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list. If there is currently no valid target in the slot you pressed, the add-on says for example "No target in slot 2" (or "target name not found" for a previously remembered target).
 
 When a target is present, by default the add-on speaks its name and role, and the changed content of the target, for example *Window: Claude, Editing readme.md* or *Listbox: Message list, You said: Okay.*. The level of detail of these announcements can be configured in the add-on's [settings](#settings).
 
@@ -78,7 +90,7 @@ Every target is a submenu. When you expand it, you can *Stop tracking* it, *Set 
 
 Each item in *Target settings* is a check box, and what it shows is what the target actually does: its own value where you have given it one, and the global setting everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting still follows the global.
 
-- *Interrupt previous speech when announcing a change* is displayed at the top of *Target settings* for all targets, as long as the global *Announce* option is enabled.
+- *Interrupt previous speech when announcing a new change* is displayed at the top of *Target settings* for all targets, as long as the global *Announce* option is enabled.
 - The *Ignore progress bars*, *Ignore counters, steppers and timers*, *Consider changed title a disappeared target* and *Ignore known generic controls* options come next for window targets.
 - *Track this target even in the foreground* comes next, displayed for all targets.
 - *Ignore the focused control* is after that as long as the target is a window and it's also set to be tracked even in the foreground.
@@ -90,28 +102,28 @@ Anything you are already tracking appears first in the menu, so you can move to 
 ## Important add-on messages
 
 - **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears later, after launch.
-- **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You hear this when you stop tracking a target yourself, and when a target disappears and the add-on stops tracking it as a result: always for a target that is not remembered, and for a remembered one when it is set to be forgotten when it disappears.
+- **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You hear this when you stop tracking a target yourself, and when a target disappears and the add-on stops tracking it as a result: always for a target that is not remembered, and for a remembered one when it is set to be forgotten on disappear.
 - **A target disappearing** — for example "Target disappeared: Claude". You hear this when a remembered target disappears but is kept in the list, so it's tracked again as soon as it reappears.
 
-Neither of these is announced for a target that disappears while it's in the foreground — for example, when you close its window yourself — because you already know about it. The one exception is a remembered target that is forgotten because it disappeared: you still hear "Stopped tracking", since closing it also means it won't be tracked again, which you may not have intended.
+Neither of these is announced for a target that disappears while it's in the foreground, such as when you close its window yourself. The one exception is a remembered target that's set to be forgotten on disappear: you still hear "Stopped tracking target name" in that case, since closing it also means it won't be tracked again, which you may not have intended.
 
 When NVDA starts and every time you resume previously paused tracking, the remembered targets are looked for and reported together, as "Found 7 remembered targets", or as "Found 6 of 9 remembered targets" when the rest have not appeared yet. When fewer than five are found, their names follow, for example "Found 3 remembered targets: Claude, ChatGPT Classic, Gemini" or "Found 1 of 3 remembered targets: Claude". Any that turn up later announce themselves individually. The add-on announces "No remembered targets found" instead if none of the remembered targets are there at the moment.
 
 ## Global and per-target settings
 
-Most of the add-on's options are **global**: you set them in the [settings](#settings) panel, and every target follows them. Nine of them can also be set on a **single target**, which then follows its own value for that one setting and keeps following the global for all the rest:
+Most of the add-on's options are **global**: you set them in the [settings](#settings) panel, and every target follows them. Nine of them can also be set on a **single target** via [the target menu](#the-target-menu), which then follows its own value for that one setting and keeps following the global for all the rest:
 
-- *Interrupt previous speech when announcing a change*
+- *Interrupt previous speech when announcing a new change*
 - *Ignore progress bars*
 - *Ignore counters, steppers and timers*
 - *Consider changed title a disappeared target*
 - *Ignore known generic controls*
-- *Track even foreground targets*
-- *Ignore the focused control when tracking the foreground window*
-- *Remember targets*
-- *Forget remembered targets when they disappear*
+- *Track this target even in the foreground*
+- *Ignore the focused control*
+- *Remember this target*
+- *Forget this target when it disappears*
 
-There are two ways to give one target its own value. In the [target menu](#the-target-menu), open that target's *Target settings* submenu and tick or untick what you want. Or hold `shift`, `control` or both while adding a target with the [`w`, `f`, `m` or `n` keystrokes](#keystrokes), which gives the target being added its own *Remember targets* and *Track even foreground targets* respectively.
+There are two ways to give one target its own value. In the [target menu](#the-target-menu), open that target's *Target settings* submenu and tick or untick what you want. Or hold `shift`, `control` or both while adding a target with the [`w`, `f`, `m` or `n` keystrokes](#keystrokes), which gives the target being added its own *Remember this target* and *Track this target even in the foreground* respectively.
 
 Changing a setting affects even existing targets unless that setting has been overridden locally. The settings panel sets globals only: nothing you do there takes a target's own value away from it. Stopping the target and adding it again or forgetting a remembered target is what clears all local values.
 
@@ -137,7 +149,7 @@ Plays a tone when the target has changed.
 
 Announces what changed where, for example "Window: Claude" or "Listbox: Message list". The level of detail of the announcement can be further customized below.
 
-#### **Interrupt previous speech when announcing a change** (checkbox, disabled by default)
+#### **Interrupt previous speech when announcing a new change** (checkbox, disabled by default)
 
 This option is only available when the **Announce** checkbox above is enabled. When enabled, a change announcement cuts off whatever NVDA is saying at the moment and is spoken right away. When disabled, it waits until NVDA has finished speaking.
 
@@ -159,7 +171,7 @@ The options in this group refine how the add-on should announce changes in targe
 
 #### **Ignore progress bars** (checkbox, enabled by default)
 
-When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to spam you with double-reporting a constantly changing progress bar from a specific app.
+When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to spam you with double-reporting a constantly changing progress bar in a specific app.
 
 #### **Ignore counters, steppers and timers** (checkbox, enabled by default)
 
@@ -171,7 +183,12 @@ When enabled, if the title of a window being tracked changes, the add-on will co
 
 #### **Ignore known generic controls** (checkbox, enabled by default)
 
-When enabled, this option suppresses announcements of generic controls, like a "Minimize" button of a window changing to "Maximize" and vice versa. This includes the applications menu (usually opened with the alt key), the "Minimize", "Restore" and "Maximize" buttons, "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next" and "Not now" buttons, and "Yes" and "No" buttons.
+When enabled, this option suppresses announcements of generic controls, like a "Minimize" button of a window changing to "Maximize" and vice versa. This includes:
+
+- The applications menu (usually opened with the alt key)
+- The "Minimize", "Restore", "Maximize" and "Close" buttons
+- "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next" and "Not now" buttons
+- And "Yes" and "No" buttons.
 
 #### **Ignore the focused control when tracking the foreground window** (checkbox, enabled by default)
 
@@ -195,7 +212,9 @@ Plays a test beep with the currently set parameters, so you can verify whether i
 
 ### **Include in change announcement** (group)
 
-The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the target changed announcement consists of. As long as the verbal announcement itself is enabled, the name of the target (for example Claude or Message list) is always included.
+The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the target changed announcement consists of.
+
+As long as the verbal announcement itself is enabled, the name of the target (for example Claude or Message list) is always included, unless the same target changes very rapidly with no intermittent changes in other targets in between, such as an AI chatbot's gradually growing reply. In these cases, the target name will be omitted, so you can perceive the reply naturally, seemingly as a single continuous utterance, without it being split into chunks by the constantly repeating app name.
 
 #### **Target type** (checkbox, enabled by default)
 
@@ -225,9 +244,9 @@ Whether the new content in the target after the most recent change is displayed 
 
 Only accepts whole numbers. This determines how many seconds without a key press must pass before the overlay closes on its own. Setting this to 0 means that the overlay never closes by itself: it stays open until you close it with escape or a command that takes focus somewhere else.
 
-### **Target sorting** (group)
+### Target sorting
 
-There are two groups of radio buttons, one after the other: *Target slot sorting* and *Target menu sorting*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently from one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
+There are two sets of radio buttons, one after the other: *Target slot sorting* and *Target menu sorting*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently from one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
 
 - *Newest target first* (set by default for both sorting types)
 - *Oldest target first*
@@ -248,7 +267,7 @@ Determines whether a remembered target should be forgotten when it no longer exi
 
 - **Background browser tabs are never tracked.** A web browser only keeps the tab you are looking at readable. To keep an eye on a page while you work elsewhere, open it in a separate window rather than leaving it on a background tab. This behaves the same for sighted users.
 - **Some apps reveal very little while not in the foreground.** How much an app tells a screen reader about non-focused content is exclusively controlled by the app itself. Modern UIA apps — Terminal, Settings, Calculator, Mail, Photos and most apps from the Microsoft Store — and apps that are rendered as web views — the Claude desktop app, Visual Studio Code, Discord, Slack, Signal, WhatsApp for Windows, Spotify, as well as web browsers themselves — differ considerably in this respect. Where an app does not expose its new content as visible text, the add-on cannot report it.
-- **Only what a window currently reveals counts.** Long lists — chat history, file lists, search results — usually exist only as the handful of rows that happen to be displayed. The add-on cannot see entries that are scrolled out of view, just like sighted users can't, and a minimized window often stops revealing its contents altogether until you restore it.
+- **Only what a window currently reveals counts.** Long lists — chat history, file lists, search results — usually exist only as the handful of rows that happen to be displayed. The add-on cannot see entries that are scrolled out of view, just like sighted users can't, and a minimized window may stop revealing its contents altogether until you restore it, depending on how the app in question is programmed.
 
 If you need to know about frequent updates from an app that you use in the background, it's usually more reliable and straightforward to configure the app itself to send you notifications, if the app can do that. Likewise, if you minimize the app to the system tray, it no longer displays a visible window, so the add-on can't track it anymore. However, if the tray icon does expose useful information as text updates that are accessible, you can in deed track the icon itself.
 
@@ -258,5 +277,5 @@ If you would like to contribute to the add-on's development by providing transla
 
 ## Changelog
 
-### Version 1.0, 2026/09/09
+### Version 1.0, 2026/09/12
 * Initial release

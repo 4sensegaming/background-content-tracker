@@ -5,6 +5,7 @@
 
 import locale
 import threading
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any
@@ -167,6 +168,13 @@ class TrackedTarget:
 		self.lastChangeTime: float | None = None
 		self.announcedDelta = ""
 		self.staleCache = True
+		self.settleUntil: float | None = None
+
+	def settleFor(self, seconds: float):
+		self.settleUntil = time.monotonic() + seconds
+
+	def isSettling(self) -> bool:
+		return self.settleUntil is not None and time.monotonic() < self.settleUntil
 
 	@property
 	def obj(self) -> NVDAObject | None:

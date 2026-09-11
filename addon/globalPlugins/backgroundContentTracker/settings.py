@@ -106,7 +106,7 @@ class BCTSettingsPanel(SettingsPanel):
 			changeBox,
 			"interruptSpeech",
 			# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-			_("I&nterrupt previous speech when announcing a change"),
+			_("I&nterrupt previous speech when announcing a new change"),
 		)
 		self._spinCtrl(
 			changeGroup,
@@ -204,8 +204,6 @@ class BCTSettingsPanel(SettingsPanel):
 			120,
 		)
 
-		# Translators: group holding the two target orders, of the number slots and of the target menu.
-		sortBox, sortGroup = self._group(sHelper, _("Target sorting"))
 		sortLabels = {
 			# Translators: a target order; the most recently added target comes first.
 			"newest": _("Newest target first"),
@@ -222,9 +220,9 @@ class BCTSettingsPanel(SettingsPanel):
 		}
 		sortChoices = [sortLabels[order] for order in addonConfig.SORT_ORDERS]
 		# Translators: the order the targets take the ten number slots in.
-		self._sortRadio(sortGroup, sortBox, "slotSorting", _("Target slot sorting"), sortChoices)
+		self._sortRadio(sHelper, self, "slotSorting", _("Target slot sorting"), sortChoices)
 		# Translators: the order the targets are listed in, in the target menu.
-		self._sortRadio(sortGroup, sortBox, "menuSorting", _("Target menu sorting"), sortChoices)
+		self._sortRadio(sHelper, self, "menuSorting", _("Target menu sorting"), sortChoices)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))

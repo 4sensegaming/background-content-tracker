@@ -39,8 +39,8 @@ msgid "Track {source}: {name}"
 msgstr "Sledovat {source}: {name}"
 
 #. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-msgid "I&nterrupt previous speech when announcing a change"
-msgstr "Při oznamování změny přer&ušit předchozí řeč"
+msgid "I&nterrupt previous speech when announcing a new change"
+msgstr "Při oznamování nové změny přer&ušit předchozí řeč"
 
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
@@ -253,12 +253,12 @@ msgid "No targets"
 msgstr "Žádné cíle"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-msgid "Could not move focus to the target"
-msgstr "Nepodařilo se přesunout fokus na cíl"
+msgid "Could not set focus"
+msgstr "Nepodařilo se přesunout fokus"
 
 #. Translators: announced when a second press would move the focus to a target that already has it.
-msgid "The target already has the focus"
-msgstr "Cíl už má fokus"
+msgid "This target already has focus"
+msgstr "Tento cíl už má fokus"
 
 #. Translators: announced when background content tracking is paused.
 msgid "Tracking paused"
@@ -388,10 +388,6 @@ msgstr "Změněný o&bsah"
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr "Čas do zavření &překrytí (v sekundách, 0 znamená nikdy nezavírat)"
 
-#. Translators: group holding the two target orders, of the number slots and of the target menu.
-msgid "Target sorting"
-msgstr "Řazení cílů"
-
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
 msgstr "Nejnovější cíl první"
@@ -434,7 +430,7 @@ msgstr "&Zapomínat zapamatované cíle, když přestanou existovat"
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
-"Opens the Background Content Tracker command overlay: press and release it, "
+"Opens the Background Content Tracker command overlay: press and release, "
 "then press a command key (H for help)"
 msgstr ""
 "Otevře příkazové překrytí doplňku Sledování obsahu na pozadí: stiskněte a "
@@ -479,7 +475,7 @@ msgstr "T: otevře nabídku cílů"
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
-"move focus to it"
+"set focus to it"
 msgstr ""
 "1 až 0: oznámí informace o cíli v daném slotu; dalším stiskem se na cíl "
 "přesune fokus"
@@ -487,7 +483,7 @@ msgstr ""
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press again to move focus to it"
+"press again to set focus to it"
 msgstr ""
 "Mezerník nebo Enter: oznámí informace o naposledy přidaném cíli; dalším "
 "stiskem se na cíl přesune fokus"

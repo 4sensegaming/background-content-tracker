@@ -172,7 +172,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	@script(
 		description=_(
 			# Translators: the description of the main command, shown in Input Gestures.
-			"Opens the Background Content Tracker command overlay: press and release it, then press a command key (H for help)"
+			"Opens the Background Content Tracker command overlay: press and release, then press a command key (H for help)"
 		),
 		gestures=["kb:NVDA+;"],
 	)
@@ -207,11 +207,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("T: open the target menu"),
 			_(
 				# Translators: overlay help line for the number keys.
-				"1 through 0: speak information about the target in that slot; press again to move focus to it"
+				"1 through 0: speak information about the target in that slot; press again to set focus to it"
 			),
 			_(
 				# Translators: overlay help line for Space and Enter.
-				"Space or Enter: speak information about the most recently added target; press again to move focus to it"
+				"Space or Enter: speak information about the most recently added target; press again to set focus to it"
 			),
 			# Translators: overlay help line for Control plus a number.
 			_("Control plus a number: stop tracking the target in that slot"),
@@ -234,6 +234,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				_helpDocument(heading, commands),
 				_("Background Content Tracker"),
 				isHtml=True,
+				copyButton=True,
 			)
 		else:
 			ui.message("\n".join([heading] + commands))

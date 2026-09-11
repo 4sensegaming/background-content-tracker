@@ -58,7 +58,7 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 			(
 				"interruptSpeech",
 				# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-				_("I&nterrupt previous speech when announcing a change"),
+				_("I&nterrupt previous speech when announcing a new change"),
 			),
 		)
 	if target.kind == "window":

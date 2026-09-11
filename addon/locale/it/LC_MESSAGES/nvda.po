@@ -38,8 +38,8 @@ msgid "Track {source}: {name}"
 msgstr "Monitora {source}: {name}"
 
 #. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-msgid "I&nterrupt previous speech when announcing a change"
-msgstr "Int&errompi il parlato precedente all'annuncio di una modifica"
+msgid "I&nterrupt previous speech when announcing a new change"
+msgstr "Int&errompi il parlato precedente all'annuncio di una nuova modifica"
 
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
@@ -247,12 +247,12 @@ msgid "No targets"
 msgstr "Nessun obiettivo"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-msgid "Could not move focus to the target"
-msgstr "Impossibile spostare il focus sull'obiettivo"
+msgid "Could not set focus"
+msgstr "Impossibile impostare il focus"
 
 #. Translators: announced when a second press would move the focus to a target that already has it.
-msgid "The target already has the focus"
-msgstr "L'obiettivo ha già il focus"
+msgid "This target already has focus"
+msgstr "Questo obiettivo ha già il focus"
 
 #. Translators: announced when background content tracking is paused.
 msgid "Tracking paused"
@@ -384,10 +384,6 @@ msgstr "Contenuto modi&ficato"
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr "Timeout dell'&overlay (secondi, 0 significa nessun timeout)"
 
-#. Translators: group holding the two target orders, of the number slots and of the target menu.
-msgid "Target sorting"
-msgstr "Ordinamento degli obiettivi"
-
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
 msgstr "Prima l'obiettivo più recente"
@@ -430,11 +426,11 @@ msgstr "&Dimentica gli obiettivi ricordati quando scompaiono"
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
-"Opens the Background Content Tracker command overlay: press and release it, "
+"Opens the Background Content Tracker command overlay: press and release, "
 "then press a command key (H for help)"
 msgstr ""
-"Apre l'overlay dei comandi di Monitoraggio contenuti in background: premilo "
-"e rilascialo, quindi premi un tasto comando (premi H per la guida)"
+"Apre l'overlay dei comandi di Monitoraggio contenuti in background: premi e "
+"rilascia, quindi premi un tasto comando (premi H per la guida)"
 
 #. Translators: heading of the overlay help.
 msgid "Background Content Tracker commands"
@@ -475,18 +471,18 @@ msgstr "T: apre il menu degli obiettivi"
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
-"move focus to it"
+"set focus to it"
 msgstr ""
 "Da 1 a 0: annuncia le informazioni sull'obiettivo in quello slot; premi di "
-"nuovo per spostarvi il focus"
+"nuovo per impostare il focus su di esso"
 
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press again to move focus to it"
+"press again to set focus to it"
 msgstr ""
 "Spazio o Invio: annuncia le informazioni sull'obiettivo aggiunto più di "
-"recente; premi di nuovo per spostarvi il focus"
+"recente; premi di nuovo per impostare il focus su di esso"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
