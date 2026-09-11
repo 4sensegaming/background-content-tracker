@@ -17,9 +17,10 @@ from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any
 
+import api
 import core
 import winUser
-from controlTypes import Role
+from controlTypes import Role, State
 from logHandler import log
 from NVDAObjects import NVDAObject
 from winBindings import user32
@@ -175,6 +176,24 @@ def _isInActiveStoreApp(hwnd: int) -> bool:
 	return bool(active and winUser.isDescendantWindow(active, hwnd))
 
 
+#: Where the focus is, as NVDA holds it: the focused object, and every object
+#: above it from the desktop down. Taken in one piece by :func:`currentFocus`,
+#: so that everything asked of it is asked of the same moment.
+FocusState = tuple[NVDAObject | None, list[NVDAObject]]
+
+
+def currentFocus() -> FocusState:
+	"""The focus as it stands now, for :meth:`TrackedTarget.hasFocus`.
+
+	NVDA keeps the focus's ancestors itself, updated on every focus change, so
+	asking whether a target holds the focus somewhere inside it costs no walk up
+	the tree. Taken at the moment the answer is about: by the target menu before
+	it takes the focus to itself, and by the press-again-to-focus keys as they are
+	pressed. Main thread only, like NVDA's own bookkeeping of the focus.
+	"""
+	return safeCall(api.getFocusObject), list(safeCall(api.getFocusAncestors) or ())
+
+
 def isReachableWindow(obj: NVDAObject | None) -> bool:
 	"""Whether the window this object lives in is one the user could still get to.
 
@@ -270,6 +289,12 @@ class TrackedTarget:
 		self.lastDelta = ""
 		#: ``time.time()`` of the last detected change, or ``None``.
 		self.lastChangeTime: float | None = None
+		#: The last change that was actually announced, whole, as it was detected
+		#: rather than as it was spoken: the next announcement has this taken out
+		#: of it, and a reply that grows over several polls must be measured
+		#: against everything of it already heard, not against the last fragment.
+		#: Monitor thread only.
+		self.announcedDelta = ""
 		#: Whether the target's application was in the foreground at the previous
 		#: check. Only the previous state: what the monitor does about it depends
 		#: on whether the target is tracked in the foreground as well.
@@ -438,6 +463,81 @@ class TrackedTarget:
 	def isInForeground(self) -> bool:
 		"""Whether this target is currently in the foreground application."""
 		return isInForegroundApp(self.obj)
+
+	def canTakeFocus(self) -> bool:
+		"""Whether the focus could be moved to this target right now.
+
+		Not to a target that is not there, or whose window is gone or hidden, or
+		whose object has died (:meth:`isAlive`); not to a single control that is
+		itself invisible, such as one on a tab page that is not showing, which no
+		application lets the focus onto; and not into an application that has
+		stopped responding, where the focus would go nowhere and NVDA would be held
+		up while it tried. A window is held to its visibility by :meth:`isAlive`
+		alone: a minimised one can take the focus, and bringing it back is exactly
+		what moving the focus there does.
+
+		Hung is asked first, and of the window manager alone, because every
+		question after it is put to the application, and one that is not responding
+		answers none of them promptly. A state that cannot be read does not count
+		as invisible.
+		"""
+		obj = self.obj
+		if obj is None:
+			return False
+		hwnd = safeCall(lambda: obj.windowHandle)
+		if hwnd:
+			root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) or hwnd
+			if safeCall(lambda: user32.dll.IsHungAppWindow(root), False):
+				return False
+		if not self.isAlive():
+			return False
+		if self.kind == "window":
+			return True
+		states = safeCall(lambda: obj.states)
+		return not (states and State.INVISIBLE in states)
+
+	def hasFocus(self, focus: FocusState) -> bool:
+		"""Whether the focus, as :func:`currentFocus` captured it, is already at this target.
+
+		The target has it when the focus is on it or anywhere inside it, on however
+		deeply nested a control: moving the focus "to" the target would then only
+		take the user off the control they are working in. A whole window is judged
+		by the top-level window above the focus, so a control in a child window of
+		its own — web content is the everyday case — counts as inside the window
+		around it; a single control, by NVDA's own list of the focus's ancestors.
+
+		Any target also has it while a window owned by the target's own window holds
+		the focus — a dialog, most often. The application hands the focus straight
+		back to such a dialog when anything else in its window is focused, exactly
+		as it does when the user alt+tabs there, so there is nowhere to move it to.
+
+		A question that cannot be answered answers False: an application that has
+		hung, or an object that has gone dead. The callers offer, or carry out, a
+		move of the focus here, and making that move towards a target that already
+		has the focus costs nothing, whereas refusing it to one that does not would
+		leave the user with no way there.
+		"""
+		obj = self.obj
+		focusObj, ancestors = focus
+		if obj is None or focusObj is None:
+			return False
+		hwnd = safeCall(lambda: obj.windowHandle)
+		focusHwnd = safeCall(lambda: focusObj.windowHandle)
+		root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) if hwnd else None
+		if root and focusHwnd:
+			focusRoot = safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOT))
+			if focusRoot and focusRoot != root:
+				# Another top-level window has the focus. It is still the target's
+				# own if the target's window owns it.
+				return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == root
+			if focusRoot and self.kind == "window":
+				return True
+		if self.kind == "window":
+			return False
+		# Nearest first: a control the user is working inside is most often the
+		# focus itself or only a level or two above it.
+		candidates = (focusObj, *reversed(ancestors))
+		return any(safeCall(lambda c=candidate: obj == c, False) is True for candidate in candidates)
 
 	def hasReportableChange(self) -> bool:
 		"""Whether a manual query should surface a cached change for this target.

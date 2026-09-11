@@ -49,6 +49,7 @@ confspec: dict[str, str] = {
 	"enabled": "boolean(default=True)",
 	"changeBeep": "boolean(default=True)",
 	"changeAnnounce": "boolean(default=True)",
+	"interruptSpeech": "boolean(default=False)",
 	"trackingInterval": "integer(default=1,min=0,max=3600)",
 	"changesAtOnce": "integer(default=5,min=0,max=100)",
 	"ignoreProgressBars": "boolean(default=True)",
@@ -76,6 +77,7 @@ DEFAULTS: Settings = {
 	"enabled": True,
 	"changeBeep": True,
 	"changeAnnounce": True,
+	"interruptSpeech": False,
 	"trackingInterval": 1,
 	"changesAtOnce": 5,
 	"ignoreProgressBars": True,
@@ -102,6 +104,7 @@ DEFAULTS: Settings = {
 #: the rest, so a global the user changes later still moves every target that
 #: never had an opinion about it.
 LOCAL_KEYS: tuple[str, ...] = (
+	"interruptSpeech",
 	"ignoreProgressBars",
 	"ignoreCounters",
 	"titleChangeDisappears",

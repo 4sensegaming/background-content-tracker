@@ -37,6 +37,10 @@ msgstr "oggetto navigatore"
 msgid "Track {source}: {name}"
 msgstr "Monitora {source}: {name}"
 
+#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+msgid "I&nterrupt previous speech when announcing a change"
+msgstr "Int&errompi il parlato precedente all'annuncio di una modifica"
+
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
 msgstr "Ignora le barre di &avanzamento"
@@ -157,6 +161,10 @@ msgstr "Nessun obiettivo ricordato trovato"
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
 msgstr "Impossibile spostare il focus sull'obiettivo"
+
+#. Translators: announced when a second press would move the focus to a target that already has it.
+msgid "The target already has the focus"
+msgstr "L'obiettivo ha già il focus"
 
 #. Translators: announced when background content tracking is paused.
 msgid "Tracking paused"

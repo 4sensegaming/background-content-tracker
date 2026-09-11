@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING
 
 import addonHandler
 import core
+import speech
 import tones
 import ui
 from logHandler import log
@@ -42,6 +43,10 @@ addonHandler.initTranslation()
 #: in milliseconds. Long enough for a window arriving at or leaving the front to
 #: have been dealt with, short enough that the message still belongs to it.
 _UNPROMPTED_DELAY_MS = 400
+
+#: How many tracking intervals a change announcement goes on following the
+#: previous one about the same target, without naming the target again.
+_SAME_TARGET_INTERVALS = 5
 
 #: The trailing pieces that go after a target's name in a description. A piece
 #: that came to nothing is passed as it was worked out and dropped here, so
@@ -99,6 +104,11 @@ def relativeTime(when: float | None) -> str:
 
 class Notifier:
 	"""Turns registry/monitor events into speech and beeps, per the settings."""
+
+	def __init__(self):
+		#: The target the last change announcement was about, as its uid, and
+		#: ``time.monotonic()`` of that announcement; ``None`` before the first.
+		self._lastChange: tuple[int, float] | None = None
 
 	def _announce(self, text: str, unprompted: bool, priority: Spri):
 		"""Say ``text``, kept out of NVDA's way where the add-on raised it itself.
@@ -181,15 +191,40 @@ class Notifier:
 		self._announce(text, unprompted, Spri.NEXT)
 
 	def announceChange(self, target: TrackedTarget, delta: str):
-		"""A change was detected in ``target``; ``delta`` is the new content."""
+		"""A change was detected in ``target``; ``delta`` is the new content.
+
+		The target is not named when the previous change announcement was about
+		this same target and came less than :data:`_SAME_TARGET_INTERVALS`
+		tracking intervals ago: nothing else has been heard in between, so the
+		content can only belong to the target that was just named. Every change so
+		announced starts the count again, so a steady run of them stays unnamed for
+		as long as it lasts. Where the content is not announced the name is all
+		there is to say, and is said every time.
+
+		With "Interrupt previous speech when announcing a change" in force for the
+		target, whatever NVDA is saying is cancelled first, rather than having the
+		announcement wait its turn behind it.
+		"""
 		if addonConfig.get("changeBeep"):
 			self.beep()
 		if not addonConfig.get("changeAnnounce"):
 			return
-		content = delta if addonConfig.get("announceChangedContent") else None
-		desc = self._describeTarget(target, [content])
-		if desc:
-			ui.message(desc)
+		now = time.monotonic()
+		window = _SAME_TARGET_INTERVALS * int(addonConfig.get("trackingInterval"))
+		last = self._lastChange
+		sameRun = last is not None and last[0] == target.uid and now - last[1] < window
+		self._lastChange = (target.uid, now)
+		if not addonConfig.get("announceChangedContent"):
+			text = self._describeTarget(target)
+		elif sameRun:
+			text = delta
+		else:
+			text = self._describeTarget(target, [delta])
+		if not text:
+			return
+		if target.setting("interruptSpeech"):
+			speech.cancelSpeech()
+		ui.message(text)
 
 	def speakInfo(self, target: TrackedTarget):
 		"""On-demand information about a target (the number/space/enter keys).
@@ -261,6 +296,10 @@ class Notifier:
 	def focusFailed(self):
 		# Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 		ui.message(_("Could not move focus to the target"))
+
+	def alreadyFocused(self):
+		# Translators: announced when a second press would move the focus to a target that already has it.
+		ui.message(_("The target already has the focus"))
 
 	def paused(self):
 		# Translators: announced when background content tracking is paused.

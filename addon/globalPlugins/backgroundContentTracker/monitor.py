@@ -29,7 +29,10 @@ differ from the global configuration in any setting that has a local equivalent.
 
 A target read in the foreground says nothing about the control the user is
 typing in, unless "Ignore focused control" is off for it: every keystroke moves
-that control's text, and hearing your own typing back is not news.
+that control's text, and hearing your own typing back is not news. Nor does it
+say anything about another control that holds everything typed into the focused
+one, whatever it says besides: that is the same typing, repeated elsewhere in
+the window.
 
 Reading a target means sweeping its **whole accessible subtree**
 (:func:`_sweepEntries`): one entry per control, carrying that control's own
@@ -312,6 +315,36 @@ def _sameObject(a: NVDAObject | None, b: NVDAObject | None) -> bool:
 	return safeCall(lambda: a == b, False) is True
 
 
+def _typedText(entries: Sequence[Entry], nodes: Mapping[str, NVDAObject], focusKey: str) -> str:
+	"""Everything typed into the focused control, as one text.
+
+	A web application often shows what is typed into a field a second time,
+	somewhere outside the field — a combobox or group that carries it as its
+	value beside its own label, a copy kept to size the field to its content, a
+	region that reads it out — and a control outside the focused one is not
+	caught by asking where in the tree it sits. What it shows is the only thing
+	that gives it away, so this is what it is held against.
+
+	It is read from the control's own text, because the entries the sweep made of
+	the control cannot tell what was typed from what the control is called: one
+	with children contributes its label as an entry of its own, and an empty one
+	offers its label in place of the text it does not have. A label taken for
+	typed text would silence every control that mentions it, and an empty field
+	would do that the whole time the user is waiting for replies. Where the
+	control has no text of its own, or it cannot be read, what the sweep found
+	inside the control is joined into one instead, which is what that text is made
+	of. Whitespace is collapsed and the text capped exactly as for any entry, so it
+	reads as a copy of it would.
+	"""
+	focusObj = nodes.get(focusKey)
+	if focusObj is not None and _hasOwnText(focusObj):
+		own = _readableText(_ownText(focusObj))
+		if own:
+			return own
+	prefix = focusKey + "/"
+	return _readableText(" ".join(text for key, text in entries if key.startswith(prefix)))
+
+
 def _sweepEntries(
 	root: NVDAObject,
 	ignoreProgressBars: bool = False,
@@ -478,6 +511,32 @@ def _templateOf(text: str) -> str:
 	return _NUMBER_RUN.sub(_NUMBER_SENTINEL, text)
 
 
+def _stripAnnounced(delta: str, announced: str) -> str:
+	"""``delta`` with everything the previous announcement said taken out of it.
+
+	Every line of ``announced`` is cut out of every line of ``delta`` wherever it
+	occurs, so a reply that has grown since it was last read is heard only from
+	where it left off, and a line heard already is not heard again. Longer lines
+	are cut first, so that a short one cannot break up a longer one before that
+	has been cut out whole. A cut leaves a space rather than nothing, so the words
+	on either side of it are not run together, and a line left with nothing in it
+	is dropped.
+	"""
+	if not announced:
+		return delta
+	heard = sorted({line for line in announced.split("\n") if line}, key=len, reverse=True)
+	kept: list[str] = []
+	for line in delta.split("\n"):
+		rest = line
+		for old in heard:
+			if old in rest:
+				rest = rest.replace(old, " ")
+		rest = " ".join(rest.split())
+		if rest:
+			kept.append(rest)
+	return "\n".join(kept)
+
+
 def _joinSurfaced(surfaced: Sequence[Entry]) -> str:
 	"""The announcement text for the ``(key, text)`` pairs judged new.
 
@@ -627,6 +686,7 @@ class Monitor:
 		"""
 		settings = addonConfig.snapshot()
 		target.lastChangeTime = None
+		target.announcedDelta = ""
 		target.announcedRun = 0
 		target.ignoredTemplates = frozenset()
 		target.seenContent = OrderedDict()
@@ -779,8 +839,14 @@ class Monitor:
 		cap = int(settings["changesAtOnce"])
 		if cap and target.announcedRun >= cap:
 			return  # reached the consecutive-announcement cap; wait for a refocus
+		# A poll catches everything that arrived since the previous one, so however
+		# many changes a long interval gathered, this is already all of them as one.
+		spoken = _stripAnnounced(delta, target.announcedDelta)
+		if not spoken:
+			return  # nothing the previous announcement did not already say
+		target.announcedDelta = delta
 		target.announcedRun += 1
-		self._callOnMainThread(self.notifier.announceChange, target, delta, immediate=True)
+		self._callOnMainThread(self.notifier.announceChange, target, spoken, immediate=True)
 
 	def _collectDelta(
 		self,
@@ -843,14 +909,22 @@ class Monitor:
 
 		When "Ignore focused control" is on for a window, ``focusKey`` names the
 		control the user is typing in, and it and everything inside it are dropped
-		from what is surfaced. They are still absorbed into the cache, which is the
-		whole point of dropping them here rather than skipping them in the sweep:
-		what was typed is known to have been there, so moving the focus away later
-		cannot turn it into new content and read it all back.
+		from what is surfaced. So is any other control whose text holds everything
+		typed into the focused one (:func:`_typedText`), whatever else it says —
+		the label of a group that carries the field's text as its value, say: that
+		is the same typing, repeated elsewhere in the window. The typed text has to
+		be there whole and as words of its own, so a single letter in the field does
+		not silence every control with that letter somewhere in a word, and only
+		the repeating control is dropped, never the rest of the change. They are all
+		still absorbed into the cache, which is the whole point of dropping them
+		here rather than skipping them in the sweep: what was typed is known to have
+		been there, so moving the focus away later cannot turn it into new content
+		and read it all back.
 
 		What is surfaced is always the node's whole current text, never a
-		character-level diff: a bare fragment of added characters is meaningless
-		read aloud, so the listener always hears the complete line or message.
+		character-level diff. It is what the target menu shows, and what the next
+		announcement is measured against; what is spoken has the previous
+		announcement taken out of it first (:func:`_stripAnnounced`).
 		"""
 		cache = target.seenContent
 		counts = Counter(text for _, text in entries)
@@ -875,6 +949,14 @@ class Monitor:
 			picked = [(key, text) for key, text in picked if key != focusKey and not key.startswith(prefix)]
 			if not picked:
 				return ""
+			# Only read once something outside the focused control is about to be
+			# announced, because reading the typed text costs a cross-process read.
+			typed = _typedText(entries, nodes, focusKey)
+			if typed:
+				holdsTyped = re.compile(rf"(?<!\w){re.escape(typed)}(?!\w)")
+				picked = [(key, text) for key, text in picked if not holdsTyped.search(text)]
+				if not picked:
+					return ""
 		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
 		if not picked:
 			return ""

@@ -37,7 +37,7 @@ from .addonConfig import ChangedKeys
 from .monitor import Monitor
 from .notifier import Notifier
 from .overlay import Overlay
-from .targets import TargetRegistry, TrackedTarget, objectIdentity, safeCall
+from .targets import TargetRegistry, TrackedTarget, currentFocus, objectIdentity, safeCall
 
 if TYPE_CHECKING:
 	# NVDA puts the translation lookup into this module's namespace at run time,
@@ -475,8 +475,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def _infoOrFocus(self, pendingKind: PendingKind, target: TrackedTarget):
 		if self._isSecondPress(pendingKind, target.uid):
-			# Second identical press within the window: move the focus.
+			# Second identical press within the window: move the focus, unless it
+			# cannot go there or is there already, which the target menu settles
+			# the same way by not offering Set focus at all.
 			self._pendingKind = None
+			if not target.canTakeFocus():
+				self.notifier.focusFailed()
+				return
+			if target.hasFocus(currentFocus()):
+				self.notifier.alreadyFocused()
+				return
 			self._focus(target)
 		else:
 			self.notifier.speakInfo(target)
@@ -598,9 +606,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def openMenu(self):
 		self._pendingKind = None
 		self.overlay.handOff()
-		# Capture the current-location sources now, before the menu takes focus.
+		# Capture the current-location sources and the focus now, before the menu
+		# takes the focus.
 		sources = self._captureSources()
-		wx.CallAfter(menuModule.showTargetMenu, self, sources)
+		wx.CallAfter(menuModule.showTargetMenu, self, sources, currentFocus())
 
 	def _captureSources(self) -> list[menuModule.Source]:
 		sources: list[menuModule.Source] = []

@@ -38,6 +38,10 @@ msgstr "navigačný objekt"
 msgid "Track {source}: {name}"
 msgstr "Sledovať {source}: {name}"
 
+#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+msgid "I&nterrupt previous speech when announcing a change"
+msgstr "Pri oznamovaní zmeny p&rerušiť predchádzajúcu reč"
+
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
 msgstr "Ignorovať &ukazovatele priebehu"
@@ -162,6 +166,10 @@ msgstr "Žiadne zapamätané ciele sa nenašli"
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
 msgstr "Nepodarilo sa presunúť fokus na cieľ"
+
+#. Translators: announced when a second press would move the focus to a target that already has it.
+msgid "The target already has the focus"
+msgstr "Cieľ už má fokus"
 
 #. Translators: announced when background content tracking is paused.
 msgid "Tracking paused"

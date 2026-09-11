@@ -6,9 +6,12 @@
 """Builds and shows the target menu (the prefix followed by "t"): a real wx
 pop-up menu listing the tracked targets (each a submenu with Stop tracking, Set
 focus and the target's own settings), then the targets that can be started from
-the current location, and finally Stop tracking all targets. The current-location
-sources are captured before the menu is shown, because showing it takes the focus
-to the menu.
+the current location, and finally Stop tracking all targets. Set focus is left
+out for a target that could not take the focus right now
+(:meth:`.TrackedTarget.canTakeFocus`), and for one that already has it
+(:meth:`.TrackedTarget.hasFocus`).
+The current-location sources and the focus are captured before the menu is
+shown, because showing it takes the focus to the menu.
 """
 
 import contextlib
@@ -21,7 +24,8 @@ import wx
 from logHandler import log
 from NVDAObjects import NVDAObject
 
-from .targets import TrackedTarget, safeCall
+from . import addonConfig
+from .targets import FocusState, TrackedTarget, safeCall
 
 if TYPE_CHECKING:
 	# NVDA puts the translation lookup into this module's namespace at run time,
@@ -45,10 +49,13 @@ Source = tuple[str, NVDAObject]
 Bind = Callable[[wx.MenuItem, Callable[[], None]], None]
 
 
-def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source]):
-	"""Entry point, invoked (via ``wx.CallAfter``) on the main thread."""
+def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
+	"""Entry point, invoked (via ``wx.CallAfter``) on the main thread.
+
+	``focus`` is where the focus was before the menu was asked for.
+	"""
 	try:
-		_buildAndShow(plugin, sources)
+		_buildAndShow(plugin, sources, focus)
 	except Exception:
 		log.exception("Error showing the target menu")
 
@@ -93,11 +100,25 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 	leaves both of its counterparts alone instead, because there the two halves of
 	each pair sit at opposite ends of a long panel.
 
+	Interrupting speech is offered only while "Announce" is on, for the same
+	reason: without an announcement there is no speech to interrupt. "Announce"
+	is global only, so it is the one condition here not answered by the target,
+	and the panel does grey its own copy out, because there it sits directly
+	below the switch it follows.
+
 	Built on each call rather than held in a module-level constant, because the
 	labels are translated at the moment they are built and the user can change
 	NVDA's language without restarting the add-on.
 	"""
 	items: list[tuple[str, str]] = []
+	if addonConfig.get("changeAnnounce"):
+		items.append(
+			(
+				"interruptSpeech",
+				# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+				_("I&nterrupt previous speech when announcing a change"),
+			),
+		)
 	if target.kind == "window":
 		items.extend(
 			(
@@ -162,7 +183,7 @@ def _appendSettingsSubmenu(
 	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
 
 
-def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source]):
+def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
 	registry = plugin.registry
 	notifier = plugin.notifier
 	menu = wx.Menu()
@@ -180,9 +201,10 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source]):
 		# Translators: submenu item that stops tracking a single target.
 		stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
 		bind(stopItem, lambda t=target: plugin.stopTracking(t))
-		# Translators: submenu item that moves the focus to a target.
-		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
-		bind(focusItem, lambda t=target: plugin.setFocusToTarget(t))
+		if target.canTakeFocus() and not target.hasFocus(focus):
+			# Translators: submenu item that moves the focus to a target.
+			focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
+			bind(focusItem, lambda t=target: plugin.setFocusToTarget(t))
 		_appendSettingsSubmenu(submenu, plugin, target, bind)
 		menu.AppendSubMenu(submenu, notifier.menuDescription(target))
 

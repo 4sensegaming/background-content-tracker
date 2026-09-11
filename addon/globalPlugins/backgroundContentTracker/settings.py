@@ -43,6 +43,7 @@ class BCTSettingsPanel(SettingsPanel):
 	enabledCb: wx.CheckBox
 	beepCb: wx.CheckBox
 	announceCb: wx.CheckBox
+	interruptCb: wx.CheckBox
 	intervalCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	changesAtOnceCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	#: What a whole-window target is not to report.
@@ -89,6 +90,11 @@ class BCTSettingsPanel(SettingsPanel):
 		self.announceCb = changeGroup.addItem(wx.CheckBox(changeBox, label=_("&Announce")))
 		self.announceCb.SetValue(addonConfig.get("changeAnnounce"))
 		self.announceCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
+		self.interruptCb = changeGroup.addItem(
+			# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+			wx.CheckBox(changeBox, label=_("I&nterrupt previous speech when announcing a change"))
+		)
+		self.interruptCb.SetValue(addonConfig.get("interruptSpeech"))
 		self.intervalCtrl = changeGroup.addLabeledControl(
 			# Translators: how often, in seconds, targets are queried for changes
 			# (0 means only display changes in the target menu, never announce them).
@@ -241,7 +247,7 @@ class BCTSettingsPanel(SettingsPanel):
 		for control in (self.durationCtrl, self.pitchCtrl, self.testButton):
 			control.Enable(beepOn)
 		announceOn = self.announceCb.IsChecked()
-		for control in (self.annTypeCb, self.annContentCb):
+		for control in (self.interruptCb, self.annTypeCb, self.annContentCb):
 			control.Enable(announceOn)
 		# Nothing else is greyed out here, and two settings that would qualify are
 		# deliberately left alone: "Forget remembered targets when they disappear",
@@ -271,6 +277,7 @@ class BCTSettingsPanel(SettingsPanel):
 				"enabled": self.enabledCb.IsChecked(),
 				"changeBeep": self.beepCb.IsChecked(),
 				"changeAnnounce": self.announceCb.IsChecked(),
+				"interruptSpeech": self.interruptCb.IsChecked(),
 				"trackingInterval": self.intervalCtrl.GetValue(),
 				"changesAtOnce": self.changesAtOnceCtrl.GetValue(),
 				"ignoreProgressBars": self.ignoreProgressCb.IsChecked(),
