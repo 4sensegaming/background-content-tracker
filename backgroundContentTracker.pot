@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
-"POT-Creation-Date: 2026-09-12 01:20+0200\n"
+"POT-Creation-Date: 2026-09-12 01:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -497,7 +497,7 @@ msgstr ""
 
 #. Translators: the order the targets are listed in, in the target menu.
 #: addon\globalPlugins\backgroundContentTracker\settings.py:225
-msgid "Target menu sorting"
+msgid "Target sorting in the menu"
 msgstr ""
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.

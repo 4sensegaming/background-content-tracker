@@ -222,7 +222,7 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: the order the targets take the ten number slots in.
 		self._sortRadio(sHelper, self, "slotSorting", _("Target slot sorting"), sortChoices)
 		# Translators: the order the targets are listed in, in the target menu.
-		self._sortRadio(sHelper, self, "menuSorting", _("Target menu sorting"), sortChoices)
+		self._sortRadio(sHelper, self, "menuSorting", _("Target sorting in the menu"), sortChoices)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))

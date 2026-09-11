@@ -417,8 +417,8 @@ msgid "Target slot sorting"
 msgstr "Zoradenie cieľov v slotoch"
 
 #. Translators: the order the targets are listed in, in the target menu.
-msgid "Target menu sorting"
-msgstr "Zoradenie cieľov v ponuke cieľov"
+msgid "Target sorting in the menu"
+msgstr "Zoradenie cieľov v ponuke"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 msgid "&Remember targets"

@@ -246,7 +246,7 @@ Only accepts whole numbers. This determines how many seconds without a key press
 
 ### Target sorting
 
-There are two sets of radio buttons, one after the other: *Target slot sorting* and *Target menu sorting*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently from one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
+There are two sets of radio buttons, one after the other: *Target slot sorting* and *Target sorting in the menu*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently from one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
 
 - *Newest target first* (set by default for both sorting types)
 - *Oldest target first*
