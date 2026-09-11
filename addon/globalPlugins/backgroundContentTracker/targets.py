@@ -23,6 +23,7 @@ import winUser
 from controlTypes import Role, State
 from logHandler import log
 from NVDAObjects import NVDAObject
+from NVDAObjects.IAccessible import getNVDAObjectFromEvent
 from winBindings import user32
 
 from . import addonConfig
@@ -61,6 +62,33 @@ def safeCall(func: Callable[[], Any], default: Any = None) -> Any:
 		return func()
 	except Exception:  # noqa: BLE001
 		return default
+
+
+def onThisThread(obj: NVDAObject) -> NVDAObject | None:
+	"""``obj`` as an object the calling thread may ask things of, or ``None``.
+
+	An object another application hands out answers only the thread that
+	obtained it. Asked from any other it fails every question, which this add-on,
+	guarding every question, cannot tell from a control that holds nothing. NVDA's
+	main thread adds targets and speaks about them, the monitor thread reads them,
+	and a relocation thread finds them again, so an object crossing from one to
+	another is fetched again for the thread that is to ask it, through NVDA's own
+	lookup from the winEvent that names it: the window, object and child id NVDA
+	keeps on every IAccessible object as plain numbers.
+
+	An object without them is returned as it is: a window object answers from
+	any thread, and so does UI Automation. ``None`` means one with them could not
+	be fetched — the control is gone, or the application did not answer — and
+	leaves the caller to decide what to do instead.
+	"""
+	event = (
+		getattr(obj, "event_windowHandle", None),
+		getattr(obj, "event_objectID", None),
+		getattr(obj, "event_childID", None),
+	)
+	if None in event:
+		return obj
+	return safeCall(lambda: getNVDAObjectFromEvent(*event))
 
 
 def appNameOf(obj: NVDAObject) -> str:
@@ -241,7 +269,11 @@ class TrackedTarget:
 	):
 		#: Unique, monotonically increasing id. Also encodes insertion order.
 		self.uid = uid
-		#: The live NVDAObject, or ``None`` when the target is detached (gone).
+		#: The object this target is at, as whichever thread set it, and the copy
+		#: of it each thread has fetched for itself, by thread id. Rebound as one,
+		#: under ``_objectsLock``, never mutated in place. See :attr:`obj`.
+		self._objects: tuple[NVDAObject | None, dict[int, NVDAObject]] = (None, {})
+		self._objectsLock = threading.Lock()
 		self.obj = obj
 		#: How the target was added: "window", "focus", "mouse" or "navigator".
 		self.kind = kind
@@ -318,6 +350,52 @@ class TrackedTarget:
 		#: merely changed. ``None`` for the entire life of anything else, a single
 		#: control included: a title is not part of what such a target is.
 		self.trackedTitle: str | None = None
+
+	@property
+	def obj(self) -> NVDAObject | None:
+		"""The object this target is at, as one the calling thread may ask things of.
+
+		``None`` while the target is detached (gone). Each thread gets its own copy
+		of the same control (:func:`onThisThread`), fetched the first time it asks
+		and kept until the target is set to another object; the thread that set it
+		keeps the very object it set. A copy that cannot be fetched is not kept, so
+		the next question tries again, and meanwhile the object as it was set is
+		answered, which is all any question got before.
+
+		The fetch itself happens outside the lock: it is a question put to the
+		application, and holding a lock across it would hold up every other thread
+		that wanted this target for as long as the application took to answer.
+		"""
+		found, copies = self._objects
+		if found is None:
+			return None
+		thread = threading.get_ident()
+		mine = copies.get(thread)
+		if mine is not None:
+			return mine
+		mine = onThisThread(found)
+		if mine is None:
+			return found
+		with self._objectsLock:
+			# Only while the target is still at the object this copy came from:
+			# another thread may have moved it, or detached it, meanwhile.
+			if self._objects[0] is found:
+				self._objects = (found, {**self._objects[1], thread: mine})
+		return mine
+
+	@obj.setter
+	def obj(self, obj: NVDAObject | None):
+		with self._objectsLock:
+			self._objects = (obj, {} if obj is None else {threading.get_ident(): obj})
+
+	@property
+	def isAttached(self) -> bool:
+		"""Whether the target is at an object at all, asked without fetching a copy.
+
+		What the registry asks of every target while it holds its lock, where a
+		fetch — a question put to the application — has no business happening.
+		"""
+		return self._objects[0] is not None
 
 	def setting(self, key: str, settings: Settings | None = None) -> ConfigValue:
 		"""The effective value of a local setting: this target's, or the global.
@@ -717,8 +795,8 @@ class TargetRegistry:
 
 	def liveTargets(self) -> list[TrackedTarget]:
 		with self._lock:
-			return [t for t in self._targets if t.obj is not None]
+			return [t for t in self._targets if t.isAttached]
 
 	def detachedTargets(self) -> list[TrackedTarget]:
 		with self._lock:
-			return [t for t in self._targets if t.obj is None]
+			return [t for t in self._targets if not t.isAttached]

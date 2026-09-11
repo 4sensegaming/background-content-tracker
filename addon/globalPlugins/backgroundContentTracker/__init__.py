@@ -245,7 +245,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""
 		settings = addonConfig.snapshot()
 		for target in self.registry:
-			if target.obj is None and not target.setting("rememberTargets", settings):
+			if not target.isAttached and not target.setting("rememberTargets", settings):
 				self.registry.remove(target)
 
 	# --- persistence of remembered targets ----------------------------------
@@ -565,7 +565,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		"""
 		settings = addonConfig.snapshot()
 		return any(
-			target.obj is not None or target.setting("rememberTargets", settings) for target in self.registry
+			target.isAttached or target.setting("rememberTargets", settings) for target in self.registry
 		)
 
 	def openSettings(self):

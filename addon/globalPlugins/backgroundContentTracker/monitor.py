@@ -29,10 +29,10 @@ differ from the global configuration in any setting that has a local equivalent.
 
 A target read in the foreground says nothing about what the user is typing,
 unless "Ignore focused control" is off for it: every keystroke moves that text,
-and hearing your own typing back is not news. Whatever repeats what NVDA's focus
-object holds is kept quiet, wherever in the window it turns up — in the focused
-field itself, or in another control that carries the typing beside words of its
-own.
+and hearing your own typing back is not news. Whatever is part of the value of
+NVDA's focus object, or of any control nested in it — alone, or with the
+control's name in front, and whatever punctuation stands between the words — is
+kept quiet wherever in the window it turns up.
 
 Reading a target means sweeping its **whole accessible subtree**
 (:func:`_sweepEntries`): one entry per control, carrying that control's own
@@ -73,8 +73,8 @@ from typing import Any
 import api
 import queueHandler
 import textInfos
-import winUser
 from controlTypes import Role, State
+from editableText import EditableText
 from logHandler import log
 from NVDAObjects import NVDAObject, NVDAObjectTextInfo
 
@@ -82,7 +82,7 @@ from . import addonConfig
 from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
-from .targets import Identity, TargetRegistry, TrackedTarget, isInForegroundApp, safeCall
+from .targets import Identity, TargetRegistry, TrackedTarget, isInForegroundApp, onThisThread, safeCall
 
 #: One control's contribution to a sweep: the key naming where in the tree it
 #: sits, and the text it holds. The key is for nesting alone; every question
@@ -144,9 +144,13 @@ def _ownText(obj: NVDAObject) -> str:
 	return safeCall(lambda: obj.makeTextInfo(textInfos.POSITION_ALL).text, "") or ""
 
 
-def _labelOf(obj: NVDAObject) -> str:
-	values = (safeCall(lambda: obj.name), safeCall(lambda: obj.value))
-	return " ".join(value for value in values if isinstance(value, str) and value and not value.isspace())
+def _labelOf(obj: NVDAObject, withValue: bool = True) -> str:
+	return _joinLabel(safeCall(lambda: obj.name), safeCall(lambda: obj.value) if withValue else None)
+
+
+def _joinLabel(name: object, value: object) -> str:
+	parts = (name, value)
+	return " ".join(part for part in parts if isinstance(part, str) and part and not part.isspace())
 
 
 #: ``NVDAObject``'s own generic child accessors. A class that has not overridden
@@ -267,66 +271,91 @@ def _isPresented(obj: NVDAObject | None) -> bool:
 
 
 def _focusObject() -> NVDAObject | None:
-	"""NVDA's focus object, or ``None`` if it cannot be had.
+	"""NVDA's focus object, as one this thread may ask things of, or ``None``.
 
-	Safe to read from the monitor thread: this is a plain attribute of NVDA's
-	``api`` module, rebound by the main thread and never mutated in place.
+	NVDA made the object on its main thread, and asked anything from this one it
+	fails every question, which the guard around every question here turns into a
+	control that holds nothing. That is how the Claude app's prompt, whose value
+	NVDA itself reads without trouble, went on having everything typed into it
+	read back. It is therefore fetched again for this thread
+	(:func:`.onThisThread`); where that fails, NVDA's own object is returned,
+	and asking it costs nothing worse than no answer.
 	"""
-	return safeCall(api.getFocusObject)
+	focus = safeCall(api.getFocusObject)
+	if focus is None:
+		return None
+	return onThisThread(focus) or focus
 
 
-def _focusMayBeInside(obj: NVDAObject, focusObj: NVDAObject) -> bool:
-	"""Whether ``focusObj`` could be somewhere inside ``obj``'s window.
+def _focusedValues(focusObj: NVDAObject) -> frozenset[str]:
+	"""The values of the focused control and of every control nested in it.
 
-	Asked once per poll, before what the focused control holds is held against a
-	target, so that it is held only against the target the focus is actually in.
-	The focus being in the target's *application* is not enough: it is routinely
-	in another window of that application, a second document or a dialog, and
-	what is typed there says nothing about what this window shows.
+	A field's value is its text, so this is what the user has typed, read through
+	the simplest property a control has; a slider's, spin button's or combo box's
+	is what the user has set it to. Each value is taken twice: on its own, and
+	with the control's name in front, exactly as a sweep reads a control that has
+	no text of its own (:func:`_labelOf`). Held only against the value, that
+	control's own piece of the sweep — "Volume 55", or "Prompt" and everything
+	typed into it — holds the value rather than being part of it, and was read
+	back at the user on every change they made. The name is never taken without
+	a value beside it: on its own it is not anything the user did, and an empty
+	field would silence every control that mentions the field's name. Nor is a
+	control's own text, which a field's value already gives, and which a control
+	with no value was never typed into.
 
-	Three local window-manager calls at most, and no cross-process traffic. A
-	window owned by the target counts as inside it: a menu, an autocomplete list
-	or a dialog the target window owns is no child of it, yet what it shows can
-	still appear within the target's accessible subtree. A handle that cannot be
-	read answers True, so an unanswerable question costs a little suppression
-	rather than costing the user their own typing read back at them.
+	Read as a poll begins and again once something is about to be announced
+	(:meth:`Monitor._collectDelta`), because the sweep in between takes its own
+	copy of the field at some moment of its own. Typed into or deleted from
+	meanwhile, the field no longer holds what the sweep saw, but the sweep's copy
+	is always part of what it held at one reading or the other.
+
+	A focused control that is a whole document — browse mode leaves the focus
+	there while the user reads — gives nothing: everything in it would count as
+	typed, and the window would fall silent for as long as the user read it.
+	Bounded by :data:`MAX_NODES`, like any sweep.
 	"""
-	hwnd = safeCall(lambda: obj.windowHandle)
-	focusHwnd = safeCall(lambda: focusObj.windowHandle)
-	if not hwnd or not focusHwnd:
+	if safeCall(lambda: focusObj.role) == Role.DOCUMENT:
+		return frozenset()
+	values: set[str] = set()
+	budget = MAX_NODES
+	pending = [focusObj]
+	while pending and budget > 0:
+		obj = pending.pop()
+		budget -= 1
+		value = safeCall(lambda o=obj: o.value)
+		text = _readableText(value) if isinstance(value, str) else ""
+		if text:
+			values.add(text)
+			values.add(_readableText(_joinLabel(safeCall(lambda o=obj: o.name), value)))
+		children, _firstIndex = _childrenOf(obj, budget)
+		pending.extend(children)
+	return frozenset(values)
+
+
+#: A run of letters or digits, in any script.
+_WORD = re.compile(r"\w+")
+
+
+def _wordsOf(text: str) -> str:
+	"""``text`` as its words alone, one space apart, with every punctuation mark gone."""
+	return " ".join(_WORD.findall(text))
+
+
+def _isTyped(text: str, typed: frozenset[str], typedWords: frozenset[str]) -> bool:
+	"""Whether ``text`` is part of what the focused control holds (:func:`_focusedValues`).
+
+	Part of it as written, or word for word: with the punctuation gone from both
+	sides, a button that shows a slider's setting as "Effort: High" repeats the
+	slider's own "Effort High", which is what the Claude app's effort button
+	does. ``typedWords`` is ``typed`` put through :func:`_wordsOf` once for the
+	whole poll, rather than once for every text asked about. A text that is
+	nothing but punctuation is only ever held against ``typed`` as written:
+	as words it is empty, and empty is part of everything.
+	"""
+	if any(text in value for value in typed):
 		return True
-	if hwnd == focusHwnd or winUser.isDescendantWindow(hwnd, focusHwnd):
-		return True
-	return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == hwnd
-
-
-def _focusedText(focusObj: NVDAObject) -> str:
-	"""What the focused control holds, as one text: its own text, or its label.
-
-	Asked of NVDA's focus object itself, never looked for among the controls a
-	sweep met. The same control reached the two ways need not compare equal: the
-	focus event and the walk down from the window can come to it through
-	different accessibility APIs, and objects of different classes are never
-	equal. Relying on the match left the Claude app reading every keystroke
-	typed into its prompt back at the user. Asked once per poll, and only once
-	something is about to be announced.
-
-	A control with text of its own is a field, and that text is what was typed.
-	Its label is not, and is never taken for it: the label would silence every
-	control that mentions it, and an empty field would do so the whole time the
-	user waits for a reply. A control with no text of its own — a button, a list
-	item — holds nothing but its label, so its label is what it says. Whitespace
-	is collapsed and the text capped exactly as for any entry, so that it reads
-	as a copy of it would.
-	"""
-	if _hasOwnText(focusObj):
-		return _readableText(_ownText(focusObj))
-	return _readableText(_labelOf(focusObj))
-
-
-def _wholeWordsIn(part: str, text: str) -> bool:
-	"""Whether ``part`` occurs in ``text`` whole, with no word running into it on either side."""
-	return re.search(rf"(?<!\w){re.escape(part)}(?!\w)", text) is not None
+	words = _wordsOf(text)
+	return bool(words) and any(words in value for value in typedWords)
 
 
 def _sweepEntries(
@@ -353,7 +382,10 @@ def _sweepEntries(
 	**The text of a node.** The children are swept first. If anything below the
 	node produced text, the node itself contributes only its *label* (name and
 	value): a container is a heading over its children, never a second copy of
-	them. Only when the whole subtree came back mute is the node's own text
+	them. An editable field is the exception to the value: its value *is* its
+	text, which its children have just given, so it contributes its name alone;
+	taking both read a field that changed as its name followed by all of its
+	text, where the paragraph that changed is what there was to hear. Only when the whole subtree came back mute is the node's own text
 	interface consulted, falling back to the label. That one rule is what stops a
 	document, a rich edit or a UIA window from collapsing into a single flat blob
 	spanning everything beneath it — the failure that made any change anywhere
@@ -426,7 +458,9 @@ def _sweepEntries(
 		if not gotText and trustOwnText and _hasOwnText(obj):
 			text = _readableText(_ownText(obj))
 		if not text and not (isRoot and children):
-			text = _readableText(_labelOf(obj))
+			# A field's value is its text, which its children have just given.
+			isFieldOverText = gotText and isinstance(obj, EditableText)
+			text = _readableText(_labelOf(obj, withValue=not isFieldOverText))
 		if not text:
 			return gotText
 		entries.append((key, text))
@@ -780,13 +814,17 @@ class Monitor:
 			return
 		# The focused control is only worth keeping quiet while the user is actually
 		# in this application; anywhere else the focus is in another one, and
-		# nothing typed there is in this target. Nor is being in the application
-		# enough on its own — see :func:`_focusMayBeInside`.
+		# nothing typed there is in this target. It is deliberately not held to
+		# being inside this very window as well: such a test could only ever let
+		# the user's typing through, and what the focused control holds is text
+		# they put there, wherever in the window it turns up. Its value is read
+		# before the sweep as well as after it; see :func:`_focusedValues`.
 		focusObj = None
+		typedBefore: frozenset[str] = frozenset()
 		if inForeground and isWindow and target.setting("ignoreFocusedControl", settings):
 			focusObj = _focusObject()
-			if focusObj is not None and not _focusMayBeInside(obj, focusObj):
-				focusObj = None
+			if focusObj is not None:
+				typedBefore = _focusedValues(focusObj)
 		entries, whole, nodes = _sweepEntries(obj, ignorePB)
 		dark = _isDarkSweep(entries, target.seenContent)
 		if target.staleCache:
@@ -798,7 +836,7 @@ class Monitor:
 			self._absorb(target, entries, whole, dark)
 			target.prevTexts = frozenset(text for _, text in entries)
 			return
-		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusObj)
+		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusObj, typedBefore)
 		self._absorb(target, entries, whole, dark)
 		target.prevTexts = frozenset(text for _, text in entries)
 		if not delta:
@@ -826,7 +864,8 @@ class Monitor:
 		nodes: Mapping[str, NVDAObject],
 		isWindow: bool,
 		settings: Settings,
-		focusObj: NVDAObject | None = None,
+		focusObj: NVDAObject | None,
+		typedBefore: frozenset[str],
 	) -> str:
 		"""The new content worth surfacing since the last poll.
 
@@ -879,15 +918,16 @@ class Monitor:
 		other, so uncovering it later cannot turn it into news either.
 
 		When "Ignore focused control" is on for a window, ``focusObj`` is NVDA's
-		focus object, and whatever repeats what it holds (:func:`_focusedText`) is
-		dropped from what is surfaced: a text that holds all of it — the field's
-		own text, or a control outside it carrying the typing beside a label of its
-		own — and a text that is part of it, such as one paragraph of a longer
-		field. Either way it has to be there as whole words, so a single letter in
-		the field does not silence every control with that letter inside a word.
-		What this cannot tell apart is a genuinely new message made only of words
-		the field holds, which stays silent for as long as the field holds them.
-		Only the repeating texts are dropped, never the rest of the change, and
+		focus object, and ``typedBefore`` the values it and the controls nested in
+		it held as the poll began, each alone and with its control's name in front
+		(:func:`_focusedValues`). They are read once more here, and a surfaced text
+		that is part of what either reading holds, as written or word for word
+		(:func:`_isTyped`), is dropped: the field's own paragraph, a line of a
+		longer prompt set out as a control of its own, a slider or combo box as it
+		reads itself or as another control repeats it, and any of those as the
+		sweep caught it between the two readings. What this cannot tell apart is a genuinely new message that
+		happens to be part of what the field holds, which stays silent for as long
+		as the field holds it. Only those texts are dropped, never the rest of the change, and
 		they are still absorbed into the cache, which is the whole point of
 		dropping them here rather than skipping them in the sweep: what was typed is
 		known to have been there, so moving the focus away later cannot turn it
@@ -917,15 +957,11 @@ class Monitor:
 				picked.append((key, text))
 		picked.reverse()
 		if focusObj is not None:
-			# Read here, once something is about to be announced, because reading it
-			# is a cross-process call that a quiet poll has no need to make.
-			typed = _focusedText(focusObj)
+			# Read again, now that the sweep has taken its own copy of the field.
+			typed = typedBefore | _focusedValues(focusObj)
 			if typed:
-				picked = [
-					(key, text)
-					for key, text in picked
-					if not (_wholeWordsIn(typed, text) or _wholeWordsIn(text, typed))
-				]
+				typedWords = frozenset(_wordsOf(value) for value in typed)
+				picked = [(key, text) for key, text in picked if not _isTyped(text, typed, typedWords)]
 				if not picked:
 					return ""
 		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
