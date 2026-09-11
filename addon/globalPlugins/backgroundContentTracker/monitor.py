@@ -234,17 +234,82 @@ def _focusedValues(focusObj: NVDAObject) -> frozenset[str]:
 
 
 _WORD = re.compile(r"\w+")
+_TYPING_SLACK = 20
+_MIN_KEPT = 8
 
 
 def _wordsOf(text: str) -> str:
 	return " ".join(_WORD.findall(text))
 
 
+def _longestPrefixIn(text: str, value: str) -> int:
+	low, high = 0, len(text)
+	while low < high:
+		middle = (low + high + 1) // 2
+		if text[:middle] in value:
+			low = middle
+		else:
+			high = middle - 1
+	return low
+
+
+def _longestSuffixIn(text: str, value: str) -> int:
+	low, high = 0, len(text)
+	while low < high:
+		middle = (low + high + 1) // 2
+		if text[len(text) - middle :] in value:
+			low = middle
+		else:
+			high = middle - 1
+	return low
+
+
+def _joinsNear(head: str, tail: str, value: str) -> bool:
+	if not head or not tail:
+		return head + tail in value
+	start = value.find(head)
+	while start != -1:
+		end = start + len(head)
+		if value.find(tail, end, end + _TYPING_SLACK + len(tail)) != -1:
+			return True
+		start = value.find(head, start + 1)
+	return False
+
+
+def _isEditOf(text: str, value: str) -> bool:
+	"""Whether ``text`` is part of ``value`` but for one run of up to ``_TYPING_SLACK`` characters.
+
+	A sweep catches a field being typed in between the two reads of its value, a few
+	keystrokes away from both, and not part of either unless the typing is at the end.
+	"""
+	if text in value:
+		return True
+	size = len(text)
+	head = _longestPrefixIn(text, value)
+	tail = _longestSuffixIn(text, value)
+	if head + tail < max(size - _TYPING_SLACK, _MIN_KEPT):
+		return False
+	least = size - _TYPING_SLACK
+	for t in range(min(tail, size - head), max(least - head, 0) - 1, -1):
+		kept = head + t
+		if kept < _MIN_KEPT or size - kept > kept:
+			break
+		if _joinsNear(text[:head], text[size - t :], value):
+			return True
+	for h in range(min(head, size - tail), max(least - tail, 0) - 1, -1):
+		kept = h + tail
+		if kept < _MIN_KEPT or size - kept > kept:
+			break
+		if _joinsNear(text[:h], text[size - tail :], value):
+			return True
+	return False
+
+
 def _isTyped(text: str, typed: frozenset[str], typedWords: frozenset[str]) -> bool:
-	if any(text in value for value in typed):
+	if any(_isEditOf(text, value) for value in typed):
 		return True
 	words = _wordsOf(text)
-	return bool(words) and any(words in value for value in typedWords)
+	return bool(words) and any(_isEditOf(words, value) for value in typedWords)
 
 
 def _sweepEntries(
@@ -313,18 +378,28 @@ def _templateOf(text: str) -> str:
 	return _NUMBER_RUN.sub(_NUMBER_SENTINEL, text)
 
 
+def _cutsWord(text: str, index: int) -> bool:
+	return 0 < index < len(text) and bool(_WORD.match(text[index - 1])) and bool(_WORD.match(text[index]))
+
+
 def _stripAnnounced(delta: str, announced: str) -> str:
+	"""``delta`` without the lines ``announced`` said, nor the start of a line that grew from one."""
 	if not announced:
 		return delta
-	heard = sorted({line for line in announced.split("\n") if line}, key=len, reverse=True)
+	heard = {line for line in announced.split("\n") if line}
+	longestFirst = sorted(heard, key=len, reverse=True)
 	kept: list[str] = []
 	for line in delta.split("\n"):
 		rest = line
-		for old in heard:
-			if old in rest:
-				rest = rest.replace(old, " ")
-		rest = " ".join(rest.split())
-		if rest:
+		while rest and rest not in heard:
+			grownFrom = next(
+				(old for old in longestFirst if rest.startswith(old) and not _cutsWord(rest, len(old))),
+				None,
+			)
+			if grownFrom is None:
+				break
+			rest = rest[len(grownFrom) :].lstrip()
+		if rest and rest not in heard:
 			kept.append(rest)
 	return "\n".join(kept)
 
