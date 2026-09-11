@@ -165,13 +165,13 @@ When enabled, this option suppresses announcements of changing progress bar cont
 
 When enabled, the add-on watches for a control that changes in nothing but numeric values — a timer or countdown ticking every second, a step or item counter, a percentage, like the Claude app counting how long it took the model to think. These controls can often be more annoying than helpful, as they do not provide any useful information by themselves and, more importantly, don't convey any real changes — they just indicate that the task is still in progress. The moment such a control is caught doing that, it falls silent and stays silent for as long as the target is tracked.
 
-#### **Ignore known generic controls** (checkbox, enabled by default)
-
-When enabled, this option suppresses announcements of generic controls, like a "Minimize" button of a window changing to "Maximize" and vice versa. This includes the applications menu (usually opened with the alt key), the "Minimize", "Restore" and "Maximize" buttons, "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next" and "Not now" buttons, and "Yes" and "No" buttons.
-
 #### **Consider changed title a disappeared target** (checkbox, disabled by default)
 
 When enabled, if the title of a window being tracked changes, the add-on will consider it a different window and thus act as if the original target has disappeared, even though the physical window is still the same one in the system.
+
+#### **Ignore known generic controls** (checkbox, enabled by default)
+
+When enabled, this option suppresses announcements of generic controls, like a "Minimize" button of a window changing to "Maximize" and vice versa. This includes the applications menu (usually opened with the alt key), the "Minimize", "Restore" and "Maximize" buttons, "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next" and "Not now" buttons, and "Yes" and "No" buttons.
 
 #### **Ignore the focused control when tracking the foreground window** (checkbox, enabled by default)
 

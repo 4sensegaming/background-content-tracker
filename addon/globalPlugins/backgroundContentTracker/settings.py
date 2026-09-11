@@ -156,6 +156,13 @@ class BCTSettingsPanel(SettingsPanel):
 		self._checkBox(
 			windowGroup,
 			windowBox,
+			"ignoreGenericControls",
+			# Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+			_("Ignore kno&wn generic controls"),
+		)
+		self._checkBox(
+			windowGroup,
+			windowBox,
 			"ignoreFocusedControl",
 			# Translators: suppress announcements of the control the user is typing in.
 			_("Ignore the focu&sed control when tracking the foreground window"),

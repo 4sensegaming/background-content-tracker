@@ -53,6 +53,10 @@ msgstr "&Zähler, Schrittanzeigen und Timer ignorieren"
 msgid "Consider c&hanged title a disappeared target"
 msgstr "Geänderten Titel als verschwundenes Ziel &betrachten"
 
+#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+msgid "Ignore kno&wn generic controls"
+msgstr "Bekannte a&llgemeine Steuerelemente ignorieren"
+
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
 msgstr "Dieses Ziel auch im Vordergrund verfolgen"
@@ -84,6 +88,62 @@ msgstr "Fokus setzen"
 #. Translators: menu item that stops tracking every target at once.
 msgid "Stop tracking all targets"
 msgstr "Verfolgung aller Ziele stoppen"
+
+#. Translators: a dialog's OK button, never announced while "Ignore known generic controls" is on.
+msgid "OK"
+msgstr "OK"
+
+#. Translators: a dialog's Cancel button, never announced while "Ignore known generic controls" is on.
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#. Translators: a button closing a window or dialog, never announced while "Ignore known generic
+#. controls" is on.
+msgid "Close"
+msgstr "Schließen"
+
+#. Translators: a dialog's Abort button, never announced while "Ignore known generic controls" is on.
+msgid "Abort"
+msgstr "Abbrechen"
+
+#. Translators: a dialog's Retry button, never announced while "Ignore known generic controls" is on.
+msgid "Retry"
+msgstr "Wiederholen"
+
+#. Translators: a dialog's Continue button, never announced while "Ignore known generic controls" is on.
+msgid "Continue"
+msgstr "Fortfahren"
+
+#. Translators: a wizard's button moving to its next page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Next"
+msgstr "Weiter"
+
+#. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Not now"
+msgstr "Nicht jetzt"
+
+#. Translators: a dialog's Yes button, never announced while "Ignore known generic controls" is on.
+msgid "Yes"
+msgstr "Ja"
+
+#. Translators: a dialog's No button, never announced while "Ignore known generic controls" is on.
+msgid "No"
+msgstr "Nein"
+
+#. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+msgid "Minimize"
+msgstr "Minimieren"
+
+#. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+msgid "Maximize"
+msgstr "Maximieren"
+
+#. Translators: the title bar button of a maximized window, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Restore"
+msgstr "Wiederherstellen"
 
 #. Translators: shown in the target menu, and spoken on demand, for a target
 #. that does not currently exist (e.g. a remembered target not yet reopened).

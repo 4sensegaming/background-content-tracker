@@ -9,13 +9,15 @@ whole sweep that found content may lower a count: a truncated one has not seen
 the rest, and a minimised Chromium window reads as empty.
 """
 
+import ctypes
 import re
 import threading
 import time
 from collections import Counter, deque
 from collections.abc import Callable, Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
+import addonHandler
 import api
 import queueHandler
 import textInfos
@@ -29,6 +31,11 @@ from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
 from .targets import Identity, TargetRegistry, TrackedTarget, isInForegroundApp, onThisThread, safeCall
+
+if TYPE_CHECKING:
+	from gettext import gettext as _  # noqa: TC004
+
+addonHandler.initTranslation()
 
 Entry = tuple[str, str]
 
@@ -130,6 +137,74 @@ def _isPresented(obj: NVDAObject | None) -> bool:
 	if not states:
 		return True
 	return not (states & _HIDDEN_STATES)
+
+
+_FRAME_ROLES = frozenset((Role.TITLEBAR, Role.MENUBAR))
+# MB_GetString indices of OK, Cancel, Abort, Retry, Yes, No, Close and Continue.
+_MESSAGE_BOX_BUTTONS = (0, 1, 2, 3, 5, 6, 7, 10)
+
+
+def _labelKey(label: str) -> str:
+	return " ".join(label.replace("&", "").split()).strip("<> ").casefold()
+
+
+def _windowsButtonLabels() -> list[str]:
+	getString = ctypes.WinDLL("user32").MB_GetString
+	getString.restype = ctypes.c_wchar_p
+	getString.argtypes = (ctypes.c_uint,)
+	return [label for index in _MESSAGE_BOX_BUTTONS if (label := getString(index))]
+
+
+def _genericButtonLabels() -> frozenset[str]:
+	labels: list[str] = list(safeCall(_windowsButtonLabels, []))
+	for english, translated in (
+		# Translators: a dialog's OK button, never announced while "Ignore known generic controls" is on.
+		("OK", _("OK")),
+		# Translators: a dialog's Cancel button, never announced while "Ignore known generic controls" is on.
+		("Cancel", _("Cancel")),
+		# Translators: a button closing a window or dialog, never announced while "Ignore known generic
+		# controls" is on.
+		("Close", _("Close")),
+		# Translators: a dialog's Abort button, never announced while "Ignore known generic controls" is on.
+		("Abort", _("Abort")),
+		# Translators: a dialog's Retry button, never announced while "Ignore known generic controls" is on.
+		("Retry", _("Retry")),
+		# Translators: a dialog's Continue button, never announced while "Ignore known generic controls" is on.
+		("Continue", _("Continue")),
+		# Translators: a wizard's button moving to its next page, never announced while "Ignore known
+		# generic controls" is on.
+		("Next", _("Next")),
+		# Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
+		# generic controls" is on.
+		("Not now", _("Not now")),
+		# Translators: a dialog's Yes button, never announced while "Ignore known generic controls" is on.
+		("Yes", _("Yes")),
+		# Translators: a dialog's No button, never announced while "Ignore known generic controls" is on.
+		("No", _("No")),
+		# Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+		("Minimize", _("Minimize")),
+		# Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+		("Maximize", _("Maximize")),
+		# Translators: the title bar button of a maximized window, never announced while "Ignore known
+		# generic controls" is on.
+		("Restore", _("Restore")),
+	):
+		labels += (english, translated)
+	return frozenset(_labelKey(label) for label in labels)
+
+
+_GENERIC_BUTTON_LABELS = _genericButtonLabels()
+
+
+def _isGenericControl(obj: NVDAObject, text: str) -> bool:
+	role = safeCall(lambda: obj.role)
+	if role == Role.MENUBAR:
+		return True
+	if role == Role.BUTTON and _labelKey(text) in _GENERIC_BUTTON_LABELS:
+		return True
+	if role not in (Role.BUTTON, Role.MENUITEM):
+		return False
+	return safeCall(lambda: obj.parent.role) in _FRAME_ROLES
 
 
 def _focusObject() -> NVDAObject | None:
@@ -457,6 +532,8 @@ class Monitor:
 				if not picked:
 					return ""
 		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
+		if isWindow and target.setting("ignoreGenericControls", settings):
+			picked = [(key, text) for key, text in picked if not _isGenericControl(nodes[key], text)]
 		if not picked:
 			return ""
 		if not (isWindow and target.setting("ignoreCounters", settings)):

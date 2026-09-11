@@ -54,6 +54,10 @@ msgstr "Ignorovat počítadla, &krokovače a časovače"
 msgid "Consider c&hanged title a disappeared target"
 msgstr "Považovat z&měnu názvu za zmizení cíle"
 
+#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+msgid "Ignore kno&wn generic controls"
+msgstr "I&gnorovat známé obecné prvky"
+
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
 msgstr "Sledovat tento cíl i v popředí"
@@ -85,6 +89,62 @@ msgstr "Přesunout fokus"
 #. Translators: menu item that stops tracking every target at once.
 msgid "Stop tracking all targets"
 msgstr "Přestat sledovat všechny cíle"
+
+#. Translators: a dialog's OK button, never announced while "Ignore known generic controls" is on.
+msgid "OK"
+msgstr "OK"
+
+#. Translators: a dialog's Cancel button, never announced while "Ignore known generic controls" is on.
+msgid "Cancel"
+msgstr "Storno"
+
+#. Translators: a button closing a window or dialog, never announced while "Ignore known generic
+#. controls" is on.
+msgid "Close"
+msgstr "Zavřít"
+
+#. Translators: a dialog's Abort button, never announced while "Ignore known generic controls" is on.
+msgid "Abort"
+msgstr "Přerušit"
+
+#. Translators: a dialog's Retry button, never announced while "Ignore known generic controls" is on.
+msgid "Retry"
+msgstr "Opakovat"
+
+#. Translators: a dialog's Continue button, never announced while "Ignore known generic controls" is on.
+msgid "Continue"
+msgstr "Pokračovat"
+
+#. Translators: a wizard's button moving to its next page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Next"
+msgstr "Další"
+
+#. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Not now"
+msgstr "Teď ne"
+
+#. Translators: a dialog's Yes button, never announced while "Ignore known generic controls" is on.
+msgid "Yes"
+msgstr "Ano"
+
+#. Translators: a dialog's No button, never announced while "Ignore known generic controls" is on.
+msgid "No"
+msgstr "Ne"
+
+#. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+msgid "Minimize"
+msgstr "Minimalizovat"
+
+#. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
+msgid "Maximize"
+msgstr "Maximalizovat"
+
+#. Translators: the title bar button of a maximized window, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Restore"
+msgstr "Obnovit"
 
 #. Translators: shown in the target menu, and spoken on demand, for a target
 #. that does not currently exist (e.g. a remembered target not yet reopened).

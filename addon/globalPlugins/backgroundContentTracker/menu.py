@@ -70,6 +70,8 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 				("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
 				# Translators: treat a window that renames itself as a target that has disappeared.
 				("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
+				# Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+				("ignoreGenericControls", _("Ignore kno&wn generic controls")),
 			)
 		)
 	items.append(
