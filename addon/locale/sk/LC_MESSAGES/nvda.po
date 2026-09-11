@@ -54,13 +54,13 @@ msgstr "Ignorovať počítadlá, &krokovače a časovače"
 msgid "Consider c&hanged title a disappeared target"
 msgstr "Považovať z&menu názvu za zmiznutie cieľa"
 
+#. Translators: submenu item; read this one target while its own application is in the foreground.
+msgid "Track this target even in the foreground"
+msgstr "Sledovať tento cieľ aj v popredí"
+
 #. Translators: suppress announcements of the control the user is typing in.
 msgid "Ignore the focu&sed control"
 msgstr "Ignorovať prvok pod &fokusom"
-
-#. Translators: submenu item; read this one target while its own application is in the foreground.
-msgid "Read this target even when in foreground"
-msgstr "Čítať tento cieľ aj v popredí"
 
 #. Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
 msgid "Remember this target"
@@ -91,8 +91,8 @@ msgstr "Prestať sledovať všetky ciele"
 msgid "not found"
 msgstr "nenájdené"
 
-#. Translators: shown in the target menu when a target has not changed yet.
-#. Translators: on-demand target info when there is nothing new to report.
+#. Translators: shown in the target menu, and spoken on demand, for a target
+#. that has not changed since it was added, or is being looked at right now.
 msgid "no changes yet"
 msgstr "zatiaľ bez zmeny"
 
@@ -129,8 +129,23 @@ msgstr[2] "pred {n} hodinami"
 msgid "Tracking {target}"
 msgstr "Sledujem {target}"
 
-#. Translators: announced at start-up when every remembered target has been
-#. found. {n} is how many there are.
+#. Translators: announced at start-up or on resuming tracking when none of
+#. the remembered targets are there.
+msgid "No remembered targets found"
+msgstr "Žiadne zapamätané ciele sa nenašli"
+
+#. Translators: announced at start-up or on resuming tracking when every
+#. remembered target has been found, and there are few enough to name.
+#. {n} is how many there are, {names} their names, separated by commas.
+#, python-brace-format
+msgid "Found {n} remembered target: {names}"
+msgid_plural "Found {n} remembered targets: {names}"
+msgstr[0] "Nájdený {n} zapamätaný cieľ: {names}"
+msgstr[1] "Nájdené {n} zapamätané ciele: {names}"
+msgstr[2] "Nájdených {n} zapamätaných cieľov: {names}"
+
+#. Translators: announced at start-up or on resuming tracking when every
+#. remembered target has been found. {n} is how many there are.
 #, python-brace-format
 msgid "Found {n} remembered target"
 msgid_plural "Found {n} remembered targets"
@@ -138,9 +153,17 @@ msgstr[0] "Nájdený {n} zapamätaný cieľ"
 msgstr[1] "Nájdené {n} zapamätané ciele"
 msgstr[2] "Nájdených {n} zapamätaných cieľov"
 
-#. Translators: announced at start-up when only some of the remembered targets
-#. have been found; the rest are still being looked for. {found} is how many
-#. are being tracked, {total} how many there are.
+#. Translators: announced at start-up or on resuming tracking when only some
+#. of the remembered targets have been found; the rest are still being looked
+#. for. {found} is how many are being tracked, {total} how many there are,
+#. {names} the names of the ones found, separated by commas.
+#, python-brace-format
+msgid "Found {found} of {total} remembered targets: {names}"
+msgstr "Nájdených {found} z {total} zapamätaných cieľov: {names}"
+
+#. Translators: announced at start-up or on resuming tracking when only some
+#. of the remembered targets have been found; the rest are still being looked
+#. for. {found} is how many are being tracked, {total} how many there are.
 #, python-brace-format
 msgid "Found {found} of {total} remembered targets"
 msgstr "Nájdených {found} z {total} zapamätaných cieľov"
@@ -149,6 +172,12 @@ msgstr "Nájdených {found} z {total} zapamätaných cieľov"
 #, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr "Prestávam sledovať {target}"
+
+#. Translators: announced when a remembered target disappears and is kept in the
+#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
+#, python-brace-format
+msgid "Target disappeared: {target}"
+msgstr "Cieľ zmizol: {target}"
 
 #. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
 #, python-brace-format
@@ -159,9 +188,9 @@ msgstr "Žiadny cieľ v slote {slot}"
 msgid "All targets cleared"
 msgstr "Všetky ciele vymazané"
 
-#. Translators: announced (on resume and at start-up) when there are no valid targets.
-msgid "No remembered targets found"
-msgstr "Žiadne zapamätané ciele sa nenašli"
+#. Translators: announced when a command needs a target and none is being tracked.
+msgid "No targets"
+msgstr "Žiadne ciele"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
@@ -204,8 +233,8 @@ msgid "Background Content Tracker"
 msgstr "Sledovanie obsahu na pozadí"
 
 #. Translators: master switch; enables or disables all tracking.
-msgid "Enable background content &tracking"
-msgstr "Povoliť &sledovanie obsahu na pozadí"
+msgid "Enable &tracking"
+msgstr "Povoliť &sledovanie"
 
 #. Translators: group of options controlling what happens on a change.
 msgid "When target changes"
@@ -229,10 +258,18 @@ msgstr ""
 "ponuke cieľov)"
 
 #. Translators: how many consecutive changes to one target to announce in a
-#. row before you have to refocus it (0 means announce every change).
-msgid "Changes to announce at &once (0 means always announce every change)"
+#. row before you have to refocus it (0 means announce every change). A target
+#. the user is currently working in is never limited.
+msgid ""
+"Changes to announce at &once (background targets only, 0 means always "
+"announce every change)"
 msgstr ""
-"Počet zmien oznamovaných &naraz (0 znamená vždy oznamovať všetky zmeny)"
+"Počet zmien oznamovaných &naraz (len ciele na pozadí, 0 znamená vždy "
+"oznamovať všetky zmeny)"
+
+#. Translators: also track a target while its own application is in the foreground.
+msgid "Trac&k even foreground targets"
+msgstr "S&ledovať aj ciele v popredí"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
@@ -291,21 +328,41 @@ msgstr "Zmenený o&bsah"
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr "Čas do zatvorenia &prekrytia (sekundy, 0 znamená nikdy nezatvárať)"
 
-#. Translators: target sorting option (the default).
-msgid "Oldest first"
-msgstr "Najstaršie prvé"
-
-#. Translators: target sorting option.
-msgid "Newest first"
-msgstr "Najnovšie prvé"
-
-#. Translators: label for the target sorting radio buttons.
+#. Translators: group holding the two target orders, of the number slots and of the target menu.
 msgid "Target sorting"
 msgstr "Zoradenie cieľov"
 
-#. Translators: also track a target while its own application is in the foreground.
-msgid "Trac&k even foreground targets"
-msgstr "S&ledovať aj ciele v popredí"
+#. Translators: a target order; the most recently added target comes first.
+msgid "Newest target first"
+msgstr "Najnovší cieľ prvý"
+
+#. Translators: a target order; the target added longest ago comes first.
+msgid "Oldest target first"
+msgstr "Najstarší cieľ prvý"
+
+#. Translators: a target order; the target that changed last comes first.
+msgid "Most recently changed target first"
+msgstr "Naposledy zmenený cieľ prvý"
+
+#. Translators: a target order; the target that changed longest ago comes first.
+msgid "Least recently changed target first"
+msgstr "Najdlhšie nezmenený cieľ prvý"
+
+#. Translators: a target order; targets by name, A to Z.
+msgid "Alphabetically, A to Z"
+msgstr "Abecedne, A až Z"
+
+#. Translators: a target order; targets by name, Z to A.
+msgid "Alphabetically, Z to A"
+msgstr "Abecedne, Z až A"
+
+#. Translators: the order the targets take the ten number slots in.
+msgid "Target slot sorting"
+msgstr "Zoradenie cieľov v slotoch"
+
+#. Translators: the order the targets are listed in, in the target menu.
+msgid "Target menu sorting"
+msgstr "Zoradenie cieľov v ponuke cieľov"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 msgid "&Remember targets"
@@ -412,6 +469,3 @@ msgstr "Sleduje okná alebo jednotlivé prvky v pozadí a upozorní pri ich zmen
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 msgid "Initial release"
 msgstr "Prvá verzia"
-
-#~ msgid "Ignore &repeatedly changing controls"
-#~ msgstr "Ignorovať &opakovane sa meniace prvky"

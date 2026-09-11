@@ -1,18 +1,7 @@
 # Background Content Tracker: the target menu
 # Copyright (C) 2026 Lukáš Hosnedl
-# This file is covered by the GNU General Public License, version 2.
+# This file is covered by the GNU General Public License, version 2 or later.
 # See the file COPYING.txt for more details.
-
-"""Builds and shows the target menu (the prefix followed by "t"): a real wx
-pop-up menu listing the tracked targets (each a submenu with Stop tracking, Set
-focus and the target's own settings), then the targets that can be started from
-the current location, and finally Stop tracking all targets. Set focus is left
-out for a target that could not take the focus right now
-(:meth:`.TrackedTarget.canTakeFocus`), and for one that already has it
-(:meth:`.TrackedTarget.hasFocus`).
-The current-location sources and the focus are captured before the menu is
-shown, because showing it takes the focus to the menu.
-"""
 
 import contextlib
 from collections.abc import Callable, Sequence
@@ -28,32 +17,17 @@ from . import addonConfig
 from .targets import FocusState, TrackedTarget, safeCall
 
 if TYPE_CHECKING:
-	# NVDA puts the translation lookup into this module's namespace at run time,
-	# which a type checker reading the source has no way of knowing. This says
-	# what it will be; nothing is imported when the add-on is actually running,
-	# which is what the suppression below records.
 	from gettext import gettext as _  # noqa: TC004
 
-	# The plugin the menu acts on. Imported for the annotations alone: it is the
-	# package this module lives in, so importing it for real would be a cycle.
 	from . import GlobalPlugin
 
 addonHandler.initTranslation()
 
-#: A place a target can be started from, as the plugin captured it before the
-#: menu took the focus: the source's key, and whatever was there at the time.
 Source = tuple[str, NVDAObject]
-
-#: How a menu item is tied to what it does. The menu unbinds every item it
-#: bound once the menu is gone, so binding is the one place that records them.
 Bind = Callable[[wx.MenuItem, Callable[[], None]], None]
 
 
 def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
-	"""Entry point, invoked (via ``wx.CallAfter``) on the main thread.
-
-	``focus`` is where the focus was before the menu was asked for.
-	"""
 	try:
 		_buildAndShow(plugin, sources, focus)
 	except Exception:
@@ -78,38 +52,6 @@ def _startLabel(kind: str, obj: NVDAObject) -> str:
 
 
 def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
-	"""This target's local settings, as (key, menu label), in display order.
-
-	One entry per key of :data:`addonConfig.LOCAL_KEYS`, ordered as in the
-	settings panel rather than as in that tuple, so the two read alike — except
-	that the window tracking ones are offered for a whole-window target only. The
-	monitor ignores every one of them unless the target is a window, so on a
-	control they would be switches wired to nothing.
-
-	Those are labelled with the settings panel's own words: they read the same
-	wherever they are set. The rest are worded for the one target they act on
-	here, rather than for every target at once as the panel's wording has it.
-
-	Two of them are offered only while the setting they qualify is on, because
-	that is the only time they decide anything: skipping the focused control,
-	which the monitor consults only in a window it reads while the user is in it,
-	and forgetting the target when it disappears (see
-	:meth:`.TrackedTarget.isForgottenWhenGone`). This is a menu, read from end to
-	end, and it lists the setting each one qualifies a line or two away, so a line
-	that is not there is read as belonging to a switch that is off. The panel
-	leaves both of its counterparts alone instead, because there the two halves of
-	each pair sit at opposite ends of a long panel.
-
-	Interrupting speech is offered only while "Announce" is on, for the same
-	reason: without an announcement there is no speech to interrupt. "Announce"
-	is global only, so it is the one condition here not answered by the target,
-	and the panel does grey its own copy out, because there it sits directly
-	below the switch it follows.
-
-	Built on each call rather than held in a module-level constant, because the
-	labels are translated at the moment they are built and the user can change
-	NVDA's language without restarting the add-on.
-	"""
 	items: list[tuple[str, str]] = []
 	if addonConfig.get("changeAnnounce"):
 		items.append(
@@ -130,21 +72,21 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 				("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
 			)
 		)
-		if target.setting("trackForegroundTargets"):
-			items.append(
-				(
-					"ignoreFocusedControl",
-					# Translators: suppress announcements of the control the user is typing in.
-					_("Ignore the focu&sed control"),
-				),
-			)
-	items.extend(
-		(
-			# Translators: submenu item; read this one target while its own application is in the foreground.
-			("trackForegroundTargets", _("Read this target even when in foreground")),
-			# Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
-			("rememberTargets", _("Remember this target")),
+	items.append(
+		# Translators: submenu item; read this one target while its own application is in the foreground.
+		("trackForegroundTargets", _("Track this target even in the foreground")),
+	)
+	if target.kind == "window" and target.setting("trackForegroundTargets"):
+		items.append(
+			(
+				"ignoreFocusedControl",
+				# Translators: suppress announcements of the control the user is typing in.
+				_("Ignore the focu&sed control"),
+			),
 		)
+	items.append(
+		# Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
+		("rememberTargets", _("Remember this target")),
 	)
 	if target.setting("rememberTargets"):
 		items.append(
@@ -160,20 +102,6 @@ def _appendSettingsSubmenu(
 	target: TrackedTarget,
 	bind: Bind,
 ):
-	"""Append this target's own copy of the local settings, as check items.
-
-	Each box shows the setting's *effective* value — the target's own where it has
-	one, the global everywhere else — so what is ticked is what the target actually
-	does, whether or not it has ever been given an opinion of its own. Ticking or
-	unticking one gives the target its own value there and then, and only for that
-	setting: everything left alone goes on following the global.
-
-	The new value is worked out when the item is chosen rather than read back off
-	the menu item, because by then the menu is being torn down.
-
-	Which settings are offered depends on the target; see
-	:func:`_localSettingItems`.
-	"""
 	settingsMenu = wx.Menu()
 	for key, label in _localSettingItems(target):
 		item = settingsMenu.AppendCheckItem(wx.ID_ANY, label)
@@ -184,7 +112,6 @@ def _appendSettingsSubmenu(
 
 
 def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
-	registry = plugin.registry
 	notifier = plugin.notifier
 	menu = wx.Menu()
 	boundIds: list[int] = []
@@ -193,10 +120,8 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 		gui.mainFrame.Bind(wx.EVT_MENU, lambda evt: func(), item)
 		boundIds.append(item.GetId())
 
-	# Currently tracked targets first, honouring the Target sorting setting.
-	trackedCount = 0
-	for target in registry.sortedTargets():
-		trackedCount += 1
+	tracked = plugin.registry.sortedTargets(str(addonConfig.get("menuSorting")))
+	for target in tracked:
 		submenu = wx.Menu()
 		# Translators: submenu item that stops tracking a single target.
 		stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
@@ -208,22 +133,20 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 		_appendSettingsSubmenu(submenu, plugin, target, bind)
 		menu.AppendSubMenu(submenu, notifier.menuDescription(target))
 
-	# Then the targets that can be started from the current location.
 	if sources:
-		if trackedCount:
+		if tracked:
 			menu.AppendSeparator()
 		for kind, obj in sources:
 			item = menu.Append(wx.ID_ANY, _startLabel(kind, obj))
 			bind(item, lambda o=obj, k=kind: plugin.startTracking(o, k))
 
-	# Finally, stop tracking everything.
-	if trackedCount:
+	if tracked:
 		menu.AppendSeparator()
 		# Translators: menu item that stops tracking every target at once.
 		allItem = menu.Append(wx.ID_ANY, _("Stop tracking all targets"))
 		bind(allItem, lambda: plugin.clearAll())
 
-	if menu.GetMenuItemCount() == 0:
+	if not (tracked or sources):
 		notifier.noTargets()
 		menu.Destroy()
 		return
@@ -234,8 +157,6 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 	finally:
 		gui.mainFrame.postPopup()
 		for itemId in boundIds:
-			# Best effort: the menu is going away either way, and an item that
-			# cannot be unbound is not worth taking the command down for.
 			with contextlib.suppress(Exception):
 				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)
 		menu.Destroy()

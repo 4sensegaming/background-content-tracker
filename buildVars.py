@@ -46,7 +46,7 @@ addon_info = AddonInfo(
 	# Do not change unless you know what you are doing!
 	addon_updateChannel=None,
 	# Add-on license such as GPL 2
-	addon_license="GPL v2",
+	addon_license="GPL v2 or later",
 	# URL for the license document the ad-on is licensed under
 	addon_licenseURL="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html",
 )
@@ -64,7 +64,7 @@ excludedFiles: list[str] = ["*.pyc", "*.pyo"]
 baseLanguage: str = "en"
 
 # Markdown extensions for add-on documentation
-markdownExtensions: list[str] = []
+markdownExtensions: list[str] = ["toc"]
 
 # Custom braille translation tables
 brailleTables: BrailleTables = {}

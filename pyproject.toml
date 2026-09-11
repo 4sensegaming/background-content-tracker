@@ -133,7 +133,6 @@ reportTypedDictNotRequiredAccess = true
 reportUnboundVariable = true
 reportUndefinedVariable = true
 reportUnhashable = true
-reportUninitializedInstanceVariable = true
 reportUnnecessaryCast = true
 reportUnnecessaryComparison = true
 reportUnnecessaryContains = true
@@ -196,6 +195,11 @@ reportUntypedFunctionDecorator = false
 # attribute of the input manager and the only way to capture a keystroke the way
 # Input Help does. See overlay.py.
 reportPrivateUsage = false
+
+# A target's change-detection state is set by one method, which __init__ calls and
+# which starts the target afresh whenever it is taken up again. The checker cannot
+# follow that call, so it reports every attribute the method sets.
+reportUninitializedInstanceVariable = false
 
 # Every module here reaches its siblings through the package it is in
 # (`from . import addonConfig`), which is how a package is ordinarily written and

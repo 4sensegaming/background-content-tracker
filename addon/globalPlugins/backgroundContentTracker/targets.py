@@ -1,18 +1,10 @@
 # Background Content Tracker: tracked targets and the target registry
 # Copyright (C) 2026 Lukáš Hosnedl
-# This file is covered by the GNU General Public License, version 2.
+# This file is covered by the GNU General Public License, version 2 or later.
 # See the file COPYING.txt for more details.
 
-"""The model layer: a :class:`TrackedTarget` wraps one tracked object together
-with the cached content used for change detection, and :class:`TargetRegistry`
-owns the ordered list of targets and maps it onto the ten numbered slots.
-
-Nothing here speaks or beeps; that is the notifier's job. Nothing here polls;
-that is the monitor's job. This keeps the model easy to reason about and test.
-"""
-
+import locale
 import threading
-import time
 from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from typing import Any
@@ -29,35 +21,14 @@ from winBindings import user32
 from . import addonConfig
 from .addonConfig import ConfigValue, Settings
 
-#: What a target is, in the few fields that survive it going away: enough to
-#: recognise it again when it comes back, and JSON-serialisable so that it can
-#: be written to the configuration. The values are strings and numbers, but
-#: one read back from the saved list is only whatever was in the file, so
-#: nothing here promises which a given field holds.
 Identity = dict[str, Any]
 
-#: ``ShowWindow``'s "restore" command: show the window, and put it back to its
-#: previous size and position if it is minimised. Stated here because NVDA's
-#: ``winUser`` names neither this constant nor a ``ShowWindow`` to pass it to;
-#: the call itself goes through ``winBindings``, which is where NVDA binds it.
 _SW_RESTORE = 9
 
-
-#: Handed to :func:`safeCall` as the default where a property that legitimately
-#: answers ``None`` has to be told from one that could not be read at all.
 _UNREADABLE = object()
 
 
 def safeCall(func: Callable[[], Any], default: Any = None) -> Any:
-	"""Call ``func`` and return its result, or ``default`` on any exception.
-
-	Reading properties of a dead or cross-process accessible object frequently
-	raises, so almost every access in this add-on goes through this. The catch is
-	deliberately as wide as it is: the accessibility APIs raise ``COMError``,
-	``OSError``, ``AttributeError`` and more besides, and a property that cannot be
-	read is never worth taking the add-on down for. This is the one place that
-	blanket catch is written, which is why it is the one place it is excused.
-	"""
 	try:
 		return func()
 	except Exception:  # noqa: BLE001
@@ -65,22 +36,6 @@ def safeCall(func: Callable[[], Any], default: Any = None) -> Any:
 
 
 def onThisThread(obj: NVDAObject) -> NVDAObject | None:
-	"""``obj`` as an object the calling thread may ask things of, or ``None``.
-
-	An object another application hands out answers only the thread that
-	obtained it. Asked from any other it fails every question, which this add-on,
-	guarding every question, cannot tell from a control that holds nothing. NVDA's
-	main thread adds targets and speaks about them, the monitor thread reads them,
-	and a relocation thread finds them again, so an object crossing from one to
-	another is fetched again for the thread that is to ask it, through NVDA's own
-	lookup from the winEvent that names it: the window, object and child id NVDA
-	keeps on every IAccessible object as plain numbers.
-
-	An object without them is returned as it is: a window object answers from
-	any thread, and so does UI Automation. ``None`` means one with them could not
-	be fetched — the control is gone, or the application did not answer — and
-	leaves the caller to decide what to do instead.
-	"""
 	event = (
 		getattr(obj, "event_windowHandle", None),
 		getattr(obj, "event_objectID", None),
@@ -92,78 +47,53 @@ def onThisThread(obj: NVDAObject) -> NVDAObject | None:
 
 
 def appNameOf(obj: NVDAObject) -> str:
-	"""The object's application name, or "".
-
-	Split out of :func:`objectIdentity` because it is the one field cheap enough
-	to rule a whole window out with: one cross-process read against the six a full
-	descriptor costs.
-	"""
 	return safeCall(lambda: obj.appModule.appName) or ""
 
 
 def titleOf(obj: NVDAObject) -> str:
-	"""The object's current title (its name), or "".
-
-	Read live from the object rather than taken from the identity descriptor,
-	which records the title the target was *added* with: telling those two apart
-	is the whole point of "Consider changed title a disappeared target".
-	"""
 	return safeCall(lambda: obj.name) or ""
 
 
-def objectIdentity(obj: NVDAObject) -> Identity:
-	"""Return a JSON-serialisable identity descriptor for an NVDAObject.
-
-	Used both to recognise the same target again after it disappears and
-	reappears, and to persist remembered targets across NVDA restarts.
-	"""
+def _roleNumberOf(obj: NVDAObject) -> int:
 	role = safeCall(lambda: obj.role)
-	return {
-		"appName": appNameOf(obj),
-		"windowClassName": safeCall(lambda: obj.windowClassName) or "",
-		"windowControlID": safeCall(lambda: obj.windowControlID) or 0,
-		"role": int(role) if role is not None else 0,
-		"name": safeCall(lambda: obj.name) or "",
-		"automationID": safeCall(lambda: obj.UIAAutomationId) or "",
-	}
+	return int(role) if role is not None else 0
 
 
-def identitiesMatch(a: Identity, b: Identity) -> bool:
-	"""Heuristic equality between two identity descriptors."""
-	if not a or not b:
+_IDENTITY_FIELDS: dict[str, Callable[[NVDAObject], Any]] = {
+	"appName": appNameOf,
+	"windowClassName": lambda obj: safeCall(lambda: obj.windowClassName) or "",
+	"automationID": lambda obj: safeCall(lambda: obj.UIAAutomationId) or "",
+	"role": _roleNumberOf,
+	"name": titleOf,
+}
+
+
+def objectIdentity(obj: NVDAObject) -> Identity:
+	return {field: read(obj) for field, read in _IDENTITY_FIELDS.items()}
+
+
+def matchesIdentity(identity: Identity, obj: NVDAObject) -> bool:
+	if not identity:
 		return False
-	# A stable automation id within the same app is a strong signal on its own.
-	autoA, autoB = a.get("automationID"), b.get("automationID")
-	if autoA and autoA == autoB and a.get("appName") == b.get("appName"):
+	fields = _IDENTITY_FIELDS
+	if fields["appName"](obj) != identity.get("appName"):
+		return False
+	automationID = identity.get("automationID")
+	if automationID and fields["automationID"](obj) == automationID:
 		return True
-	# Otherwise require app, window class and role to match, plus the name.
-	for field in ("appName", "windowClassName", "role", "name"):
-		if a.get(field) != b.get(field):
-			return False
-	return True
+	return all(fields[field](obj) == identity.get(field) for field in ("windowClassName", "role", "name"))
+
+
+def _collationKey(name: str) -> str:
+	folded = name.casefold()
+	return safeCall(lambda: locale.strxfrm(folded), folded)
+
+
+def _rootWindowOf(hwnd: int) -> int | None:
+	return safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT))
 
 
 def isInForegroundApp(obj: NVDAObject | None) -> bool:
-	"""Whether the object's window belongs to the foreground application.
-
-	Such targets are neither read nor announced by the monitor: the whole point of
-	the add-on is to report what you are *not* currently looking at. The query
-	commands use it too, to report "no changes" for a target you are looking at.
-	Both make an exception for a target whose "Track even foreground targets" is
-	on, which is read and announced wherever it is.
-
-	This mirrors NVDA's own foreground test in ``eventHandler.shouldAcceptEvent``.
-	A simple "is it the foreground window" comparison is not enough: an owned
-	dialog, a popup, or a child window such as the Office ribbon is not the
-	foreground window itself, yet it belongs to the foreground application and
-	shares its root owner. A Store app is not caught by any of that at all, and is
-	asked about separately; see :func:`_isInActiveStoreApp`.
-
-	A wrong answer here is not symmetrical. Calling a background target foreground
-	costs an announcement that waits until the user leaves; calling a foreground
-	one background makes the add-on read out the very application the user is
-	working in, which is the one thing it promises never to do.
-	"""
 	if obj is None:
 		return False
 	hwnd = safeCall(lambda: obj.windowHandle)
@@ -179,87 +109,35 @@ def isInForegroundApp(obj: NVDAObject | None) -> bool:
 		if winUser.isDescendantWindow(foreground, hwnd) or winUser.isDescendantWindow(foreground, rootOwner):
 			return True
 		return _isInActiveStoreApp(hwnd)
-	# A window that cannot be placed is background: see the note above on which
-	# way round it is safe to be wrong.
 	except Exception:  # noqa: BLE001
 		return False
 
 
 def _isInActiveStoreApp(hwnd: int) -> bool:
-	"""Whether ``hwnd`` belongs to the Store app the user is working in.
-
-	A UWP or WinUI window is not a descendant of the foreground window and does
-	not share its root owner, so every test above calls it background while the
-	user is typing in it. NVDA meets the same problem in ``shouldAcceptEvent``
-	and settles it the same way (its #6713): such a window is always the active
-	window of the input thread, or a descendant of it.
-
-	Asked only once the cheap tests have all said no, because that is the whole
-	of its cost — two local window-manager calls, no cross-process traffic — and
-	because it can only ever turn a "no" into a "yes".
-	"""
 	if not winUser.getClassName(hwnd).startswith("Windows.UI.Core"):
 		return False
 	active = winUser.getGUIThreadInfo(0).hwndActive
 	return bool(active and winUser.isDescendantWindow(active, hwnd))
 
 
-#: Where the focus is, as NVDA holds it: the focused object, and every object
-#: above it from the desktop down. Taken in one piece by :func:`currentFocus`,
-#: so that everything asked of it is asked of the same moment.
 FocusState = tuple[NVDAObject | None, list[NVDAObject]]
 
 
 def currentFocus() -> FocusState:
-	"""The focus as it stands now, for :meth:`TrackedTarget.hasFocus`.
-
-	NVDA keeps the focus's ancestors itself, updated on every focus change, so
-	asking whether a target holds the focus somewhere inside it costs no walk up
-	the tree. Taken at the moment the answer is about: by the target menu before
-	it takes the focus to itself, and by the press-again-to-focus keys as they are
-	pressed. Main thread only, like NVDA's own bookkeeping of the focus.
-	"""
 	return safeCall(api.getFocusObject), list(safeCall(api.getFocusAncestors) or ())
 
 
 def isReachableWindow(obj: NVDAObject | None) -> bool:
-	"""Whether the window this object lives in is one the user could still get to.
-
-	A window that has been hidden rather than closed — an application minimised
-	to the system tray is the everyday case — still exists, still answers, and
-	still carries a whole accessible tree, so nothing about the object itself says
-	it has gone. What it no longer does is show the user anything or appear in
-	alt+tab, and a target the user cannot get to is not there any more in the only
-	sense that matters: they asked to be told about a window that, as far as they
-	are concerned, has closed.
-
-	Minimising leaves ``WS_VISIBLE`` set, so an ordinary minimised window is
-	reachable and goes on being tracked, exactly as before. Only hiding clears it.
-
-	The question is asked of ``GA_ROOT`` — the top-level window the target lives
-	in — rather than of the target's own window, so that a control on a background
-	tab page is not called gone while the window holding it is still on screen.
-	Note that this is deliberately not the ``GA_ROOTOWNER`` that
-	:func:`isInForegroundApp` and :meth:`TrackedTarget._reactivateWindow` ask for:
-	those want the application window that owns this one, whereas a hidden dialog
-	is unreachable whatever its owner is doing.
-
-	A window that cannot be placed answers True, the way an unreadable state does
-	in the monitor: being wrong that way costs an announcement that comes late,
-	and being wrong the other way throws the target away.
-	"""
 	if obj is None:
 		return False
 	hwnd = safeCall(lambda: obj.windowHandle)
 	if not hwnd:
 		return True
-	root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) or hwnd
+	root = _rootWindowOf(hwnd) or hwnd
 	return safeCall(lambda: winUser.isWindowVisible(root), True) is not False
 
 
 class TrackedTarget:
-	"""One tracked window or control, plus its change-detection state."""
-
 	def __init__(
 		self,
 		uid: int,
@@ -267,105 +145,31 @@ class TrackedTarget:
 		kind: str,
 		overrides: Mapping[str, bool] | None = None,
 	):
-		#: Unique, monotonically increasing id. Also encodes insertion order.
 		self.uid = uid
-		#: The object this target is at, as whichever thread set it, and the copy
-		#: of it each thread has fetched for itself, by thread id. Rebound as one,
-		#: under ``_objectsLock``, never mutated in place. See :attr:`obj`.
 		self._objects: tuple[NVDAObject | None, dict[int, NVDAObject]] = (None, {})
 		self._objectsLock = threading.Lock()
 		self.obj = obj
-		#: How the target was added: "window", "focus", "mouse" or "navigator".
 		self.kind = kind
-		#: This target's own values for the settings in
-		#: :data:`addonConfig.LOCAL_KEYS`. Holds only the ones actually
-		#: overridden: every other setting is inherited from the global
-		#: configuration, so one the user changes later still moves this target.
-		#: Rebound wholesale by :meth:`setOverride`, never mutated in place,
-		#: because it is written on the main thread and read on the monitor one.
 		self.overrides: dict[str, bool] = dict(overrides) if overrides else {}
-		#: Identity descriptor captured at creation, for re-location/persistence.
 		self.identity: Identity = objectIdentity(obj) if obj is not None else {}
-		self.createdTime = time.time()
-		#: Every text this target is known to hold, mapped to how many copies of
-		#: it are known: the multiset the monitor's change detection asks its one
-		#: question of ("four copies now, three known, so one is new"). It records
-		#: content rather than structure, so a control that merely slides around
-		#: the tree as content arrives above it cannot be mistaken for something
-		#: new. Ordered least recently seen first, which is the order the size
-		#: caps evict in. Mutated in place by the monitor thread, which is the
-		#: only thread that ever touches it.
-		self.seenContent: OrderedDict[str, int] = OrderedDict()
-		#: Total length of the keys of ``seenContent``, kept alongside it so the
-		#: cache can be capped by weight without measuring it every poll.
-		self.seenChars = 0
-		#: The texts the previous sweep found. Not a cache and never consulted for
-		#: change detection: it exists so that "Ignore counters, steppers and
-		#: timers" can tell a control that replaced itself (its old text is gone
-		#: this sweep) from a log that appended a line (its old lines are all
-		#: still there).
-		self.prevTexts: frozenset[str] = frozenset()
-		#: Templates (text with numeric runs collapsed) of the controls this
-		#: target has been caught counting: ones that changed in nothing but their
-		#: numbers. They are silenced from the moment they are recognised until
-		#: the target is re-baselined or the option that recognises them moves.
-		#: Rebound wholesale, never added to in place: the monitor thread writes
-		#: it as it learns, and the main thread empties it when the option moves.
-		self.ignoredTemplates: frozenset[str] = frozenset()
-		#: Number of consecutive changes already announced for this target since
-		#: it was last refocused. Capped by the "Changes to announce at once"
-		#: setting; reset on re-baseline.
-		self.announcedRun = 0
-		#: The most recent surfaced content — the whole current text of the
-		#: node(s) that changed, not the bare diff (used by speak-info and the menu).
-		self.lastDelta = ""
-		#: ``time.time()`` of the last detected change, or ``None``.
-		self.lastChangeTime: float | None = None
-		#: The last change that was actually announced, whole, as it was detected
-		#: rather than as it was spoken: the next announcement has this taken out
-		#: of it, and a reply that grows over several polls must be measured
-		#: against everything of it already heard, not against the last fragment.
-		#: Monitor thread only.
-		self.announcedDelta = ""
-		#: Whether the target's application was in the foreground at the previous
-		#: check. Only the previous state: what the monitor does about it depends
-		#: on whether the target is tracked in the foreground as well.
 		self.wasInForeground = False
-		#: Whether the cache predates a spell the monitor did not read — because
-		#: the user was in the target's application, or because the target has not
-		#: been baselined yet. Such a sweep is folded into the cache silently
-		#: instead of being diffed, so that nothing which happened while nobody was
-		#: looking is announced afterwards.
-		#:
-		#: True from the outset, because a target is in the registry — and so in
-		#: front of the monitor thread — from the moment it is constructed, a moment
-		#: before :meth:`.Monitor.onAdded` is reached. A poll landing in between
-		#: would otherwise diff a whole window against an empty cache and read all
-		#: of it out as new content.
-		self.staleCache = True
-		#: The window title this target was added with, or ``None``. Only ever
-		#: set for a target that :meth:`isHeldToItsTitle` — that is, a whole
-		#: window, while "Consider changed title a disappeared target" is on; a
-		#: window that no longer carries it is then treated as gone rather than as
-		#: merely changed. ``None`` for the entire life of anything else, a single
-		#: control included: a title is not part of what such a target is.
+		self.lastSeenInForeground = False
 		self.trackedTitle: str | None = None
+		self.resetTracking()
+
+	def resetTracking(self):
+		self.seenContent: OrderedDict[str, int] = OrderedDict()
+		self.seenChars = 0
+		self.prevTexts: frozenset[str] = frozenset()
+		self.ignoredTemplates: frozenset[str] = frozenset()
+		self.announcedRun = 0
+		self.lastDelta = ""
+		self.lastChangeTime: float | None = None
+		self.announcedDelta = ""
+		self.staleCache = True
 
 	@property
 	def obj(self) -> NVDAObject | None:
-		"""The object this target is at, as one the calling thread may ask things of.
-
-		``None`` while the target is detached (gone). Each thread gets its own copy
-		of the same control (:func:`onThisThread`), fetched the first time it asks
-		and kept until the target is set to another object; the thread that set it
-		keeps the very object it set. A copy that cannot be fetched is not kept, so
-		the next question tries again, and meanwhile the object as it was set is
-		answered, which is all any question got before.
-
-		The fetch itself happens outside the lock: it is a question put to the
-		application, and holding a lock across it would hold up every other thread
-		that wanted this target for as long as the application took to answer.
-		"""
 		found, copies = self._objects
 		if found is None:
 			return None
@@ -377,8 +181,6 @@ class TrackedTarget:
 		if mine is None:
 			return found
 		with self._objectsLock:
-			# Only while the target is still at the object this copy came from:
-			# another thread may have moved it, or detached it, meanwhile.
 			if self._objects[0] is found:
 				self._objects = (found, {**self._objects[1], thread: mine})
 		return mine
@@ -390,20 +192,9 @@ class TrackedTarget:
 
 	@property
 	def isAttached(self) -> bool:
-		"""Whether the target is at an object at all, asked without fetching a copy.
-
-		What the registry asks of every target while it holds its lock, where a
-		fetch — a question put to the application — has no business happening.
-		"""
 		return self._objects[0] is not None
 
 	def setting(self, key: str, settings: Settings | None = None) -> ConfigValue:
-		"""The effective value of a local setting: this target's, or the global.
-
-		``settings`` is a configuration snapshot. The monitor thread always has
-		one to hand and passes it, because reading NVDA's live configuration
-		belongs on the main thread; callers on the main thread can leave it out.
-		"""
 		if key in self.overrides:
 			return self.overrides[key]
 		if settings is None:
@@ -411,12 +202,6 @@ class TrackedTarget:
 		return settings[key]
 
 	def setOverride(self, key: str, value: bool | None):
-		"""Give this target its own value for a setting, or drop the override.
-
-		A ``value`` of ``None`` removes the override, so the target inherits the
-		global setting again. The dictionary is rebound rather than modified in
-		place: it is written here on the main thread and read on the monitor one.
-		"""
 		overrides = dict(self.overrides)
 		if value is None:
 			overrides.pop(key, None)
@@ -425,85 +210,23 @@ class TrackedTarget:
 		self.overrides = overrides
 
 	def forgetIgnoredControls(self):
-		"""Forget which of this target's controls were found to be counting.
-
-		Called wherever "Ignore counters, steppers and timers" moves for this
-		target — on the target itself, or globally for a target that inherits it.
-		What is silenced was decided by the option, so the option moving has to
-		un-decide it: switching off has to let those controls be heard again, and
-		switching on again has to start watching from what they do next rather
-		than from what they were caught doing before.
-		"""
 		self.ignoredTemplates = frozenset()
 
 	def isHeldToItsTitle(self, settings: Settings | None = None) -> bool:
-		"""Whether this target is held to the window title it was added with.
-
-		True only for a whole window with "Consider changed title a disappeared
-		target" in force — its own value for the option where it has one, the
-		global otherwise. A title says nothing about what a single control *is*,
-		so the option is neither offered for one in the target menu nor consulted
-		for one anywhere: this is the single statement of that rule, and the three
-		places that care about a tracked title all ask it rather than restating it.
-
-		Note this asks whether a title *should* be held to, not whether one has
-		been recorded: a window added before the option was switched on globally
-		answers True and still has no :attr:`trackedTitle` to be held to.
-
-		``settings`` is a configuration snapshot, as for :meth:`setting`.
-		"""
 		return self.kind == "window" and bool(self.setting("titleChangeDisappears", settings))
 
 	def isForgottenWhenGone(self, settings: Settings | None = None) -> bool:
-		"""Whether this target is dropped from the list once it disappears.
-
-		"Forget remembered targets when they disappear" only ever qualifies
-		"Remember targets". Keeping a target that is gone is worth something only
-		while something is going to look for it again, and looking for it again is
-		exactly what "Remember targets" asks for: a target that is not remembered
-		would sit in the list reading "not found" for the rest of the session with
-		nothing on its way to find it. It is therefore always dropped, whatever
-		the forgetting option says — which is also why the target menu offers that
-		option only while "Remember targets" is on for the target. The settings
-		panel offers its own copy unconditionally; see
-		:meth:`.BCTSettingsPanel._updateDependentControls`.
-
-		Both options are read per target, so one target may be kept where the
-		global settings would drop it, and the other way round.
-
-		``settings`` is a configuration snapshot, as for :meth:`setting`.
-		"""
 		if not self.setting("rememberTargets", settings):
 			return True
 		return bool(self.setting("forgetOnDisappear", settings))
 
 	def captureTrackedTitle(self, settings: Settings | None = None):
-		"""Take, or drop, the title this target is held to, as things stand now.
-
-		Called wherever the answer may have just moved: when the target is added
-		or re-attached, and when "Consider changed title a disappeared target" is
-		switched for it, on the target itself or globally. A target that is not
-		held to a title keeps none, and neither does one with no object to read a
-		title from — a detached target takes its title when it re-attaches.
-
-		Switching the option off therefore drops the title, and switching it back
-		on takes the title the window carries *then*, not the one it carried
-		before: a rename that happened while the option was off is not one the
-		user asked to be told about, and holding the target to the older title
-		would report it as gone the moment the option came back on.
-
-		``settings`` is a configuration snapshot, as for :meth:`setting`.
-		"""
 		self.trackedTitle = (
 			titleOf(self.obj) if self.obj is not None and self.isHeldToItsTitle(settings) else None
 		)
 
 	@property
 	def name(self) -> str:
-		"""The target's display name, falling back to the remembered name."""
-		# Read once into a local, as everything here that reaches for the object
-		# does: the monitor thread detaches a target that has gone by setting this
-		# to ``None``, so a second read need not find what the first one did.
 		obj = self.obj
 		current = safeCall(lambda: obj.name) if obj is not None else None
 		return current or self.identity.get("name") or ""
@@ -516,55 +239,38 @@ class TrackedTarget:
 		return None
 
 	def roleText(self) -> str:
-		"""NVDA's own localised name for the control type, e.g. "window"."""
 		role = self.role
 		if role is None:
 			return ""
 		return safeCall(lambda: role.displayString) or ""
 
 	def isAlive(self) -> bool:
-		"""Whether the underlying object still exists and is reachable."""
+		return self.liveTitle() is not None
+
+	def liveTitle(self) -> str | None:
 		obj = self.obj
 		if obj is None:
-			return False
+			return None
 		hwnd = safeCall(lambda: obj.windowHandle)
 		if hwnd and not winUser.isWindow(hwnd):
-			return False
-		# A window that has been hidden is gone as far as the user is concerned,
-		# whatever it still answers; see :func:`isReachableWindow`.
+			return None
 		if not isReachableWindow(obj):
-			return False
-		# Touch a cheap property to detect a dead COM object. The sentinel is what
-		# tells a name that is legitimately ``None`` from one that could not be read.
-		return safeCall(lambda: obj.name, _UNREADABLE) is not _UNREADABLE
+			return None
+		name = safeCall(lambda: obj.name, _UNREADABLE)
+		if name is _UNREADABLE:
+			return None
+		return name or ""
 
 	def isInForeground(self) -> bool:
-		"""Whether this target is currently in the foreground application."""
 		return isInForegroundApp(self.obj)
 
 	def canTakeFocus(self) -> bool:
-		"""Whether the focus could be moved to this target right now.
-
-		Not to a target that is not there, or whose window is gone or hidden, or
-		whose object has died (:meth:`isAlive`); not to a single control that is
-		itself invisible, such as one on a tab page that is not showing, which no
-		application lets the focus onto; and not into an application that has
-		stopped responding, where the focus would go nowhere and NVDA would be held
-		up while it tried. A window is held to its visibility by :meth:`isAlive`
-		alone: a minimised one can take the focus, and bringing it back is exactly
-		what moving the focus there does.
-
-		Hung is asked first, and of the window manager alone, because every
-		question after it is put to the application, and one that is not responding
-		answers none of them promptly. A state that cannot be read does not count
-		as invisible.
-		"""
 		obj = self.obj
 		if obj is None:
 			return False
 		hwnd = safeCall(lambda: obj.windowHandle)
 		if hwnd:
-			root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) or hwnd
+			root = _rootWindowOf(hwnd) or hwnd
 			if safeCall(lambda: user32.dll.IsHungAppWindow(root), False):
 				return False
 		if not self.isAlive():
@@ -575,73 +281,30 @@ class TrackedTarget:
 		return not (states and State.INVISIBLE in states)
 
 	def hasFocus(self, focus: FocusState) -> bool:
-		"""Whether the focus, as :func:`currentFocus` captured it, is already at this target.
-
-		The target has it when the focus is on it or anywhere inside it, on however
-		deeply nested a control: moving the focus "to" the target would then only
-		take the user off the control they are working in. A whole window is judged
-		by the top-level window above the focus, so a control in a child window of
-		its own — web content is the everyday case — counts as inside the window
-		around it; a single control, by NVDA's own list of the focus's ancestors.
-
-		Any target also has it while a window owned by the target's own window holds
-		the focus — a dialog, most often. The application hands the focus straight
-		back to such a dialog when anything else in its window is focused, exactly
-		as it does when the user alt+tabs there, so there is nowhere to move it to.
-
-		A question that cannot be answered answers False: an application that has
-		hung, or an object that has gone dead. The callers offer, or carry out, a
-		move of the focus here, and making that move towards a target that already
-		has the focus costs nothing, whereas refusing it to one that does not would
-		leave the user with no way there.
-		"""
 		obj = self.obj
 		focusObj, ancestors = focus
 		if obj is None or focusObj is None:
 			return False
 		hwnd = safeCall(lambda: obj.windowHandle)
 		focusHwnd = safeCall(lambda: focusObj.windowHandle)
-		root = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) if hwnd else None
+		root = _rootWindowOf(hwnd) if hwnd else None
 		if root and focusHwnd:
-			focusRoot = safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOT))
+			focusRoot = _rootWindowOf(focusHwnd)
 			if focusRoot and focusRoot != root:
-				# Another top-level window has the focus. It is still the target's
-				# own if the target's window owns it.
 				return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == root
 			if focusRoot and self.kind == "window":
 				return True
 		if self.kind == "window":
 			return False
-		# Nearest first: a control the user is working inside is most often the
-		# focus itself or only a level or two above it.
 		candidates = (focusObj, *reversed(ancestors))
 		return any(safeCall(lambda c=candidate: obj == c, False) is True for candidate in candidates)
 
 	def hasReportableChange(self) -> bool:
-		"""Whether a manual query should surface a cached change for this target.
-
-		False before the target has changed at all since it was baselined, and —
-		unless it is tracked in the foreground — false while the target is in the
-		foreground, because the user is looking at it and any delta the monitor
-		cached belongs to an earlier spell in the background. In both cases the
-		query commands and the menu report "no changes" instead. A target tracked
-		in the foreground is read while the user is there, so its cached delta
-		describes what is on screen now and is reported like any other.
-		"""
 		if self.lastChangeTime is None:
 			return False
 		return bool(self.setting("trackForegroundTargets")) or not self.isInForeground()
 
 	def _reactivateWindow(self, obj: NVDAObject):
-		"""Un-minimise and bring the target's top-level window to the foreground.
-
-		Best-effort: the OS may reject foregrounding from a background process, so
-		failures here are logged and swallowed rather than treated as fatal.
-
-		The restore and the activation are guarded separately, because they fail
-		separately and a window that cannot be restored is still worth raising.
-		Under one guard, a failure of the first silently cost the second as well.
-		"""
 		hwnd = safeCall(lambda: obj.windowHandle)
 		if not hwnd or not winUser.isWindow(hwnd):
 			return
@@ -657,22 +320,6 @@ class TrackedTarget:
 			log.debugWarning("Could not bring target window to the foreground", exc_info=True)
 
 	def setFocus(self, onFailure: Callable[[], None] | None = None) -> bool:
-		"""Move the system focus to this target.
-
-		The top-level window is reactivated first (restored if minimised and
-		brought to the foreground), then the focus call itself is deferred so the
-		asynchronous restore has settled before it lands — focusing inline would
-		land while the window is still iconic and be dropped. Reactivating alone is
-		not enough even for a window target: it is ``obj.setFocus()`` that actually
-		moves NVDA there, so it is issued for every kind.
-
-		Because the focus call is deferred, its success is only known later and is
-		reported through ``onFailure`` (called with no arguments if it fails); the
-		bool returned here only says the attempt was scheduled against a live
-		object, and a ``False`` return means the object is already gone. Note a
-		*stale* control object still passes as live yet focuses nothing — the
-		caller re-resolves such objects (see the monitor's ``relocate``) first.
-		"""
 		obj = self.obj
 		if obj is None:
 			return False
@@ -684,7 +331,6 @@ class TrackedTarget:
 		return True
 
 	def _doSetFocus(self, obj: NVDAObject, onFailure: Callable[[], None] | None = None):
-		"""Issue the deferred focus call for a control target. Main thread only."""
 		try:
 			obj.setFocus()
 		except Exception:  # noqa: BLE001
@@ -694,25 +340,12 @@ class TrackedTarget:
 
 
 class TargetRegistry:
-	"""The ordered collection of targets, with slot and sort handling.
-
-	Read from two threads: the main thread adds and removes targets, while the
-	monitor thread iterates them once a second. Every access to ``_targets`` is
-	therefore taken under ``_lock``, and the methods that hand targets out return
-	a copy so that a caller can iterate it without holding anything.
-	"""
-
-	#: Number keys address at most this many targets; the menu addresses all.
 	MAX_SLOTS = 10
 
 	def __init__(self):
 		self._targets: list[TrackedTarget] = []
 		self._nextUid = 1
 		self._lock = threading.RLock()
-
-	def __len__(self) -> int:
-		with self._lock:
-			return len(self._targets)
 
 	def __iter__(self) -> Iterator[TrackedTarget]:
 		with self._lock:
@@ -767,31 +400,35 @@ class TargetRegistry:
 				return target
 		return None
 
-	def sortedTargets(self) -> list[TrackedTarget]:
-		"""Targets in the order dictated by the Target sorting setting."""
+	def sortedTargets(self, order: str) -> list[TrackedTarget]:
 		with self._lock:
 			ordered = list(self._targets)
-		if addonConfig.get("targetSorting") == "newest":
+		reverse = order in ("newest", "recentlyChanged", "reverseAlphabetical")
+		if order in ("recentlyChanged", "leastRecentlyChanged"):
+
+			def changed(target: TrackedTarget) -> float:
+				reportable = target.isAttached and target.hasReportableChange()
+				return (target.lastChangeTime or 0.0) if reportable else 0.0
+
+			ordered.sort(key=changed)
+		elif order in ("alphabetical", "reverseAlphabetical"):
+			ordered.sort(key=lambda target: _collationKey(target.name))
+		if reverse:
 			ordered.reverse()
 		return ordered
 
 	def slots(self) -> list[TrackedTarget]:
-		"""The (at most ten) targets addressable by the number keys."""
-		return self.sortedTargets()[: self.MAX_SLOTS]
+		return self.sortedTargets(str(addonConfig.get("slotSorting")))[: self.MAX_SLOTS]
 
 	def slot(self, index: int) -> TrackedTarget | None:
-		"""The target in slot ``index`` (0-based), or ``None`` if empty."""
 		slots = self.slots()
 		if 0 <= index < len(slots):
 			return slots[index]
 		return None
 
 	def newest(self) -> TrackedTarget | None:
-		"""The most recently added target, regardless of sort order."""
 		with self._lock:
-			if not self._targets:
-				return None
-			return max(self._targets, key=lambda t: t.uid)
+			return self._targets[-1] if self._targets else None
 
 	def liveTargets(self) -> list[TrackedTarget]:
 		with self._lock:

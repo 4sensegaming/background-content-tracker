@@ -53,13 +53,13 @@ msgstr "Ignora co&ntatori, progressioni e timer"
 msgid "Consider c&hanged title a disappeared target"
 msgstr "Considera un titolo cambiato come obiettivo &scomparso"
 
+#. Translators: submenu item; read this one target while its own application is in the foreground.
+msgid "Track this target even in the foreground"
+msgstr "Traccia questo obiettivo anche in primo piano"
+
 #. Translators: suppress announcements of the control the user is typing in.
 msgid "Ignore the focu&sed control"
 msgstr "Ignora il controllo con il &focus"
-
-#. Translators: submenu item; read this one target while its own application is in the foreground.
-msgid "Read this target even when in foreground"
-msgstr "Leggi questo obiettivo anche in primo piano"
 
 #. Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
 msgid "Remember this target"
@@ -90,8 +90,8 @@ msgstr "Interrompi il monitoraggio di tutti gli obiettivi"
 msgid "not found"
 msgstr "non trovato"
 
-#. Translators: shown in the target menu when a target has not changed yet.
-#. Translators: on-demand target info when there is nothing new to report.
+#. Translators: shown in the target menu, and spoken on demand, for a target
+#. that has not changed since it was added, or is being looked at right now.
 msgid "no changes yet"
 msgstr "ancora nessuna modifica"
 
@@ -125,17 +125,39 @@ msgstr[1] "{n} ore fa"
 msgid "Tracking {target}"
 msgstr "Monitoraggio di {target}"
 
-#. Translators: announced at start-up when every remembered target has been
-#. found. {n} is how many there are.
+#. Translators: announced at start-up or on resuming tracking when none of
+#. the remembered targets are there.
+msgid "No remembered targets found"
+msgstr "Nessun obiettivo ricordato trovato"
+
+#. Translators: announced at start-up or on resuming tracking when every
+#. remembered target has been found, and there are few enough to name.
+#. {n} is how many there are, {names} their names, separated by commas.
+#, python-brace-format
+msgid "Found {n} remembered target: {names}"
+msgid_plural "Found {n} remembered targets: {names}"
+msgstr[0] "Trovato {n} obiettivo ricordato: {names}"
+msgstr[1] "Trovati {n} obiettivi ricordati: {names}"
+
+#. Translators: announced at start-up or on resuming tracking when every
+#. remembered target has been found. {n} is how many there are.
 #, python-brace-format
 msgid "Found {n} remembered target"
 msgid_plural "Found {n} remembered targets"
 msgstr[0] "Trovato {n} obiettivo ricordato"
 msgstr[1] "Trovati {n} obiettivi ricordati"
 
-#. Translators: announced at start-up when only some of the remembered targets
-#. have been found; the rest are still being looked for. {found} is how many
-#. are being tracked, {total} how many there are.
+#. Translators: announced at start-up or on resuming tracking when only some
+#. of the remembered targets have been found; the rest are still being looked
+#. for. {found} is how many are being tracked, {total} how many there are,
+#. {names} the names of the ones found, separated by commas.
+#, python-brace-format
+msgid "Found {found} of {total} remembered targets: {names}"
+msgstr "Trovati {found} obiettivi ricordati su {total}: {names}"
+
+#. Translators: announced at start-up or on resuming tracking when only some
+#. of the remembered targets have been found; the rest are still being looked
+#. for. {found} is how many are being tracked, {total} how many there are.
 #, python-brace-format
 msgid "Found {found} of {total} remembered targets"
 msgstr "Trovati {found} obiettivi ricordati su {total}"
@@ -144,6 +166,12 @@ msgstr "Trovati {found} obiettivi ricordati su {total}"
 #, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr "Monitoraggio di {target} interrotto"
+
+#. Translators: announced when a remembered target disappears and is kept in the
+#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
+#, python-brace-format
+msgid "Target disappeared: {target}"
+msgstr "Obiettivo scomparso: {target}"
 
 #. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
 #, python-brace-format
@@ -154,9 +182,9 @@ msgstr "Nessun obiettivo nello slot {slot}"
 msgid "All targets cleared"
 msgstr "Tutti gli obiettivi rimossi"
 
-#. Translators: announced (on resume and at start-up) when there are no valid targets.
-msgid "No remembered targets found"
-msgstr "Nessun obiettivo ricordato trovato"
+#. Translators: announced when a command needs a target and none is being tracked.
+msgid "No targets"
+msgstr "Nessun obiettivo"
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 msgid "Could not move focus to the target"
@@ -199,8 +227,8 @@ msgid "Background Content Tracker"
 msgstr "Monitoraggio contenuti in background"
 
 #. Translators: master switch; enables or disables all tracking.
-msgid "Enable background content &tracking"
-msgstr "Attiva il &monitoraggio dei contenuti in background"
+msgid "Enable &tracking"
+msgstr "Attiva il &monitoraggio"
 
 #. Translators: group of options controlling what happens on a change.
 msgid "When target changes"
@@ -224,11 +252,18 @@ msgstr ""
 "mostrare solo nel menu degli obiettivi)"
 
 #. Translators: how many consecutive changes to one target to announce in a
-#. row before you have to refocus it (0 means announce every change).
-msgid "Changes to announce at &once (0 means always announce every change)"
+#. row before you have to refocus it (0 means announce every change). A target
+#. the user is currently working in is never limited.
+msgid ""
+"Changes to announce at &once (background targets only, 0 means always "
+"announce every change)"
 msgstr ""
-"Modifiche da annunciare in una &volta (0 significa annunciare sempre ogni "
-"modifica)"
+"Modifiche da annunciare in una &volta (solo obiettivi in background, 0 "
+"significa annunciare sempre ogni modifica)"
+
+#. Translators: also track a target while its own application is in the foreground.
+msgid "Trac&k even foreground targets"
+msgstr "&Traccia anche gli obiettivi in primo piano"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
@@ -289,21 +324,41 @@ msgstr "Contenuto modi&ficato"
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr "Timeout dell'&overlay (secondi, 0 significa nessun timeout)"
 
-#. Translators: target sorting option (the default).
-msgid "Oldest first"
-msgstr "Prima i più vecchi"
-
-#. Translators: target sorting option.
-msgid "Newest first"
-msgstr "Prima i più recenti"
-
-#. Translators: label for the target sorting radio buttons.
+#. Translators: group holding the two target orders, of the number slots and of the target menu.
 msgid "Target sorting"
 msgstr "Ordinamento degli obiettivi"
 
-#. Translators: also track a target while its own application is in the foreground.
-msgid "Trac&k even foreground targets"
-msgstr "&Traccia anche gli obiettivi in primo piano"
+#. Translators: a target order; the most recently added target comes first.
+msgid "Newest target first"
+msgstr "Prima l'obiettivo più recente"
+
+#. Translators: a target order; the target added longest ago comes first.
+msgid "Oldest target first"
+msgstr "Prima l'obiettivo più vecchio"
+
+#. Translators: a target order; the target that changed last comes first.
+msgid "Most recently changed target first"
+msgstr "Prima l'obiettivo modificato più di recente"
+
+#. Translators: a target order; the target that changed longest ago comes first.
+msgid "Least recently changed target first"
+msgstr "Prima l'obiettivo modificato meno di recente"
+
+#. Translators: a target order; targets by name, A to Z.
+msgid "Alphabetically, A to Z"
+msgstr "In ordine alfabetico, dalla A alla Z"
+
+#. Translators: a target order; targets by name, Z to A.
+msgid "Alphabetically, Z to A"
+msgstr "In ordine alfabetico, dalla Z alla A"
+
+#. Translators: the order the targets take the ten number slots in.
+msgid "Target slot sorting"
+msgstr "Ordinamento degli obiettivi negli slot"
+
+#. Translators: the order the targets are listed in, in the target menu.
+msgid "Target menu sorting"
+msgstr "Ordinamento degli obiettivi nel menu degli obiettivi"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 msgid "&Remember targets"
@@ -415,6 +470,3 @@ msgstr ""
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 msgid "Initial release"
 msgstr "Versione iniziale"
-
-#~ msgid "Ignore &repeatedly changing controls"
-#~ msgstr "Ignora i controlli che cambiano &ripetutamente"

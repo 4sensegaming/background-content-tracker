@@ -1,18 +1,7 @@
 # Background Content Tracker: the settings panel
 # Copyright (C) 2026 Lukáš Hosnedl
-# This file is covered by the GNU General Public License, version 2.
+# This file is covered by the GNU General Public License, version 2 or later.
 # See the file COPYING.txt for more details.
-
-"""The "Background Content Tracker" category in NVDA's multi-category Settings
-dialog. Options are grouped exactly as in the documentation, dependent controls
-are enabled/disabled to match, and values are read from and written to NVDA's
-own configuration.
-
-Everything here is the *global* configuration, which every target inherits. A
-few of these settings (:data:`addonConfig.LOCAL_KEYS`) can also be set on a
-single target, which then follows its own value instead; that is not done from
-this panel, and changing a global here never disturbs a target that has one.
-"""
 
 import contextlib
 from typing import TYPE_CHECKING
@@ -26,10 +15,6 @@ from gui.settingsDialogs import SettingsPanel
 from . import addonConfig
 
 if TYPE_CHECKING:
-	# NVDA puts the translation lookup into this module's namespace at run time,
-	# which a type checker reading the source has no way of knowing. This says
-	# what it will be; nothing is imported when the add-on is actually running,
-	# which is what the suppression below records.
 	from gettext import gettext as _  # noqa: TC004
 
 addonHandler.initTranslation()
@@ -39,203 +24,210 @@ class BCTSettingsPanel(SettingsPanel):
 	# Translators: the title of the add-on's category in NVDA's Settings dialog.
 	title = _("Background Content Tracker")
 
-	#: The master switch, and what a detected change does.
-	enabledCb: wx.CheckBox
 	beepCb: wx.CheckBox
 	announceCb: wx.CheckBox
 	interruptCb: wx.CheckBox
-	intervalCtrl: nvdaControls.SelectOnFocusSpinCtrl
-	changesAtOnceCtrl: nvdaControls.SelectOnFocusSpinCtrl
-	#: What a whole-window target is not to report.
-	ignoreProgressCb: wx.CheckBox
-	ignoreCountersCb: wx.CheckBox
-	titleChangeCb: wx.CheckBox
-	ignoreFocusedCb: wx.CheckBox
-	#: The beep, and the button that plays one with these two values.
 	durationCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	pitchCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	testButton: wx.Button
-	#: What a change announcement carries, and what a menu description does.
 	annTypeCb: wx.CheckBox
 	annContentCb: wx.CheckBox
-	menuTypeCb: wx.CheckBox
-	menuTimeCb: wx.CheckBox
-	menuContentCb: wx.CheckBox
-	#: The overlay, the order the targets are listed in, and the three options
-	#: a single target is most often given on its own account.
-	overlayTimeoutCtrl: nvdaControls.SelectOnFocusSpinCtrl
-	sortRadio: wx.RadioBox
-	trackForegroundCb: wx.CheckBox
-	rememberCb: wx.CheckBox
-	forgetCb: wx.CheckBox
+	_bound: dict[str, wx.CheckBox | nvdaControls.SelectOnFocusSpinCtrl]
+	_sortRadios: dict[str, wx.RadioBox]
+
+	def _group(
+		self, helper: guiHelper.BoxSizerHelper, label: str
+	) -> tuple[wx.StaticBox, guiHelper.BoxSizerHelper]:
+		box = wx.StaticBox(self, label=label)
+		return box, helper.addItem(guiHelper.BoxSizerHelper(box, sizer=wx.StaticBoxSizer(box, wx.VERTICAL)))
+
+	def _checkBox(
+		self,
+		helper: guiHelper.BoxSizerHelper,
+		parent: wx.Window,
+		key: str,
+		label: str,
+	) -> wx.CheckBox:
+		checkBox = helper.addItem(wx.CheckBox(parent, label=label))
+		checkBox.SetValue(bool(addonConfig.get(key)))
+		self._bound[key] = checkBox
+		return checkBox
+
+	def _spinCtrl(
+		self,
+		helper: guiHelper.BoxSizerHelper,
+		key: str,
+		label: str,
+		minimum: int,
+		maximum: int,
+	) -> nvdaControls.SelectOnFocusSpinCtrl:
+		spinCtrl = helper.addLabeledControl(
+			label,
+			nvdaControls.SelectOnFocusSpinCtrl,
+			min=minimum,
+			max=maximum,
+			initial=addonConfig.get(key),
+		)
+		self._bound[key] = spinCtrl
+		return spinCtrl
+
+	def _sortRadio(
+		self,
+		helper: guiHelper.BoxSizerHelper,
+		parent: wx.Window,
+		key: str,
+		label: str,
+		choices: list[str],
+	):
+		radio = helper.addItem(
+			wx.RadioBox(parent, label=label, choices=choices, majorDimension=1, style=wx.RA_SPECIFY_COLS)
+		)
+		radio.SetSelection(addonConfig.SORT_ORDERS.index(str(addonConfig.get(key))))
+		self._sortRadios[key] = radio
 
 	def makeSettings(self, settingsSizer: wx.Sizer):
+		self._bound = {}
+		self._sortRadios = {}
 		sHelper = guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
 
 		# Translators: master switch; enables or disables all tracking.
-		self.enabledCb = sHelper.addItem(wx.CheckBox(self, label=_("Enable background content &tracking")))
-		self.enabledCb.SetValue(addonConfig.get("enabled"))
+		self._checkBox(sHelper, self, "enabled", _("Enable &tracking"))
 
-		# Group: When target changes -----------------------------------------
 		# Translators: group of options controlling what happens on a change.
-		changeBox = wx.StaticBox(self, label=_("When target changes"))
-		changeGroup = sHelper.addItem(
-			guiHelper.BoxSizerHelper(changeBox, sizer=wx.StaticBoxSizer(changeBox, wx.VERTICAL))
-		)
+		changeBox, changeGroup = self._group(sHelper, _("When target changes"))
 		# Translators: play a tone when the target changes.
-		self.beepCb = changeGroup.addItem(wx.CheckBox(changeBox, label=_("&Beep")))
-		self.beepCb.SetValue(addonConfig.get("changeBeep"))
+		self.beepCb = self._checkBox(changeGroup, changeBox, "changeBeep", _("&Beep"))
 		self.beepCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 		# Translators: speak an announcement when the target changes.
-		self.announceCb = changeGroup.addItem(wx.CheckBox(changeBox, label=_("&Announce")))
-		self.announceCb.SetValue(addonConfig.get("changeAnnounce"))
+		self.announceCb = self._checkBox(changeGroup, changeBox, "changeAnnounce", _("&Announce"))
 		self.announceCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
-		self.interruptCb = changeGroup.addItem(
+		self.interruptCb = self._checkBox(
+			changeGroup,
+			changeBox,
+			"interruptSpeech",
 			# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-			wx.CheckBox(changeBox, label=_("I&nterrupt previous speech when announcing a change"))
+			_("I&nterrupt previous speech when announcing a change"),
 		)
-		self.interruptCb.SetValue(addonConfig.get("interruptSpeech"))
-		self.intervalCtrl = changeGroup.addLabeledControl(
+		self._spinCtrl(
+			changeGroup,
+			"trackingInterval",
 			# Translators: how often, in seconds, targets are queried for changes
 			# (0 means only display changes in the target menu, never announce them).
 			_("Tracking &interval (seconds, 0 means never announce, only display in target menu)"),
-			nvdaControls.SelectOnFocusSpinCtrl,
-			min=0,
-			max=3600,
-			initial=addonConfig.get("trackingInterval"),
+			0,
+			3600,
 		)
-		self.changesAtOnceCtrl = changeGroup.addLabeledControl(
+		self._spinCtrl(
+			changeGroup,
+			"changesAtOnce",
 			# Translators: how many consecutive changes to one target to announce in a
-			# row before you have to refocus it (0 means announce every change).
-			_("Changes to announce at &once (0 means always announce every change)"),
-			nvdaControls.SelectOnFocusSpinCtrl,
-			min=0,
-			max=100,
-			initial=addonConfig.get("changesAtOnce"),
+			# row before you have to refocus it (0 means announce every change). A target
+			# the user is currently working in is never limited.
+			_("Changes to announce at &once (background targets only, 0 means always announce every change)"),
+			0,
+			100,
+		)
+		self._checkBox(
+			changeGroup,
+			changeBox,
+			"trackForegroundTargets",
+			# Translators: also track a target while its own application is in the foreground.
+			_("Trac&k even foreground targets"),
 		)
 
-		# Group: Window tracking behavior ------------------------------------
 		# Translators: group of options refining how whole-window targets are announced.
-		windowBox = wx.StaticBox(self, label=_("Window tracking behavior"))
-		windowGroup = sHelper.addItem(
-			guiHelper.BoxSizerHelper(windowBox, sizer=wx.StaticBoxSizer(windowBox, wx.VERTICAL))
-		)
+		windowBox, windowGroup = self._group(sHelper, _("Window tracking behavior"))
 		# Translators: suppress announcements of progress bar controls in a window.
-		self.ignoreProgressCb = windowGroup.addItem(wx.CheckBox(windowBox, label=_("Ignore &progress bars")))
-		self.ignoreProgressCb.SetValue(addonConfig.get("ignoreProgressBars"))
-		# Translators: suppress a control that does nothing but count (e.g. a timer).
-		self.ignoreCountersCb = windowGroup.addItem(
-			wx.CheckBox(windowBox, label=_("Ignore c&ounters, steppers and timers"))
+		self._checkBox(windowGroup, windowBox, "ignoreProgressBars", _("Ignore &progress bars"))
+		self._checkBox(
+			windowGroup,
+			windowBox,
+			"ignoreCounters",
+			# Translators: suppress a control that does nothing but count (e.g. a timer).
+			_("Ignore c&ounters, steppers and timers"),
 		)
-		self.ignoreCountersCb.SetValue(addonConfig.get("ignoreCounters"))
-		# Translators: treat a window that renames itself as a target that has disappeared.
-		self.titleChangeCb = windowGroup.addItem(
-			wx.CheckBox(windowBox, label=_("Consider c&hanged title a disappeared target"))
+		self._checkBox(
+			windowGroup,
+			windowBox,
+			"titleChangeDisappears",
+			# Translators: treat a window that renames itself as a target that has disappeared.
+			_("Consider c&hanged title a disappeared target"),
 		)
-		self.titleChangeCb.SetValue(addonConfig.get("titleChangeDisappears"))
-		self.ignoreFocusedCb = windowGroup.addItem(
+		self._checkBox(
+			windowGroup,
+			windowBox,
+			"ignoreFocusedControl",
 			# Translators: suppress announcements of the control the user is typing in.
-			wx.CheckBox(windowBox, label=_("Ignore the focu&sed control when tracking the foreground window"))
+			_("Ignore the focu&sed control when tracking the foreground window"),
 		)
-		self.ignoreFocusedCb.SetValue(addonConfig.get("ignoreFocusedControl"))
 
-		# Group: Beep parameters ---------------------------------------------
 		# Translators: group of options for the beep, available when Beep is on.
-		beepBox = wx.StaticBox(self, label=_("Beep parameters"))
-		beepGroup = sHelper.addItem(
-			guiHelper.BoxSizerHelper(beepBox, sizer=wx.StaticBoxSizer(beepBox, wx.VERTICAL))
-		)
-		self.durationCtrl = beepGroup.addLabeledControl(
-			# Translators: how long the beep lasts, in milliseconds.
-			_("D&uration (ms)"),
-			nvdaControls.SelectOnFocusSpinCtrl,
-			min=1,
-			max=30000,
-			initial=addonConfig.get("beepDuration"),
-		)
-		self.pitchCtrl = beepGroup.addLabeledControl(
-			# Translators: the frequency of the beep, in hertz.
-			_("&Pitch (Hz)"),
-			nvdaControls.SelectOnFocusSpinCtrl,
-			min=20,
-			max=20000,
-			initial=addonConfig.get("beepPitch"),
-		)
+		beepBox, beepGroup = self._group(sHelper, _("Beep parameters"))
+		# Translators: how long the beep lasts, in milliseconds.
+		self.durationCtrl = self._spinCtrl(beepGroup, "beepDuration", _("D&uration (ms)"), 1, 30000)
+		# Translators: the frequency of the beep, in hertz.
+		self.pitchCtrl = self._spinCtrl(beepGroup, "beepPitch", _("&Pitch (Hz)"), 20, 20000)
 		# Translators: plays a test beep with the current parameters.
 		self.testButton = beepGroup.addItem(wx.Button(beepBox, label=_("&Test")))
 		self.testButton.Bind(wx.EVT_BUTTON, self._onTest)
 
-		# Group: Include in change announcement -------------------------------
 		# Translators: group choosing what a change announcement contains.
-		annBox = wx.StaticBox(self, label=_("Include in change announcement"))
-		annGroup = sHelper.addItem(
-			guiHelper.BoxSizerHelper(annBox, sizer=wx.StaticBoxSizer(annBox, wx.VERTICAL))
-		)
+		annBox, annGroup = self._group(sHelper, _("Include in change announcement"))
 		# Translators: include the target type (role) in change announcements.
-		self.annTypeCb = annGroup.addItem(wx.CheckBox(annBox, label=_("Target t&ype")))
-		self.annTypeCb.SetValue(addonConfig.get("announceTargetType"))
+		self.annTypeCb = self._checkBox(annGroup, annBox, "announceTargetType", _("Target t&ype"))
 		# Translators: include the changed content in change announcements.
-		self.annContentCb = annGroup.addItem(wx.CheckBox(annBox, label=_("Changed &content")))
-		self.annContentCb.SetValue(addonConfig.get("announceChangedContent"))
+		self.annContentCb = self._checkBox(annGroup, annBox, "announceChangedContent", _("Changed &content"))
 
-		# Group: Include in menu descriptions --------------------------------
 		# Translators: group choosing what a target menu description contains.
-		menuBox = wx.StaticBox(self, label=_("Include in menu descriptions"))
-		menuGroup = sHelper.addItem(
-			guiHelper.BoxSizerHelper(menuBox, sizer=wx.StaticBoxSizer(menuBox, wx.VERTICAL))
-		)
+		menuBox, menuGroup = self._group(sHelper, _("Include in menu descriptions"))
 		# Translators: include the target type (role) in menu descriptions.
-		self.menuTypeCb = menuGroup.addItem(wx.CheckBox(menuBox, label=_("Targe&t type")))
-		self.menuTypeCb.SetValue(addonConfig.get("menuTargetType"))
+		self._checkBox(menuGroup, menuBox, "menuTargetType", _("Targe&t type"))
 		# Translators: include the time since the last change in menu descriptions.
-		self.menuTimeCb = menuGroup.addItem(wx.CheckBox(menuBox, label=_("Time since last chan&ge")))
-		self.menuTimeCb.SetValue(addonConfig.get("menuTimeSinceChange"))
+		self._checkBox(menuGroup, menuBox, "menuTimeSinceChange", _("Time since last chan&ge"))
 		# Translators: include the changed content in menu descriptions.
-		self.menuContentCb = menuGroup.addItem(wx.CheckBox(menuBox, label=_("Changed cont&ent")))
-		self.menuContentCb.SetValue(addonConfig.get("menuChangedContent"))
+		self._checkBox(menuGroup, menuBox, "menuChangedContent", _("Changed cont&ent"))
 
-		self.overlayTimeoutCtrl = sHelper.addLabeledControl(
+		self._spinCtrl(
+			sHelper,
+			"overlayTimeout",
 			# Translators: how many seconds of inactivity close the command overlay
 			# (0 means the overlay stays open until it is closed by a command or escape).
 			_("&Overlay timeout (seconds, 0 means never time out)"),
-			nvdaControls.SelectOnFocusSpinCtrl,
-			min=0,
-			max=120,
-			initial=addonConfig.get("overlayTimeout"),
+			0,
+			120,
 		)
 
-		# Group: Target sorting ----------------------------------------------
-		sortChoices = [
-			# Translators: target sorting option (the default).
-			_("Oldest first"),
-			# Translators: target sorting option.
-			_("Newest first"),
-		]
-		self.sortRadio = sHelper.addItem(
-			wx.RadioBox(
-				self,
-				# Translators: label for the target sorting radio buttons.
-				label=_("Target sorting"),
-				choices=sortChoices,
-				majorDimension=1,
-				style=wx.RA_SPECIFY_COLS,
-			)
-		)
-		self.sortRadio.SetSelection(1 if addonConfig.get("targetSorting") == "newest" else 0)
-
-		# Translators: also track a target while its own application is in the foreground.
-		self.trackForegroundCb = sHelper.addItem(wx.CheckBox(self, label=_("Trac&k even foreground targets")))
-		self.trackForegroundCb.SetValue(addonConfig.get("trackForegroundTargets"))
+		# Translators: group holding the two target orders, of the number slots and of the target menu.
+		sortBox, sortGroup = self._group(sHelper, _("Target sorting"))
+		sortLabels = {
+			# Translators: a target order; the most recently added target comes first.
+			"newest": _("Newest target first"),
+			# Translators: a target order; the target added longest ago comes first.
+			"oldest": _("Oldest target first"),
+			# Translators: a target order; the target that changed last comes first.
+			"recentlyChanged": _("Most recently changed target first"),
+			# Translators: a target order; the target that changed longest ago comes first.
+			"leastRecentlyChanged": _("Least recently changed target first"),
+			# Translators: a target order; targets by name, A to Z.
+			"alphabetical": _("Alphabetically, A to Z"),
+			# Translators: a target order; targets by name, Z to A.
+			"reverseAlphabetical": _("Alphabetically, Z to A"),
+		}
+		sortChoices = [sortLabels[order] for order in addonConfig.SORT_ORDERS]
+		# Translators: the order the targets take the ten number slots in.
+		self._sortRadio(sortGroup, sortBox, "slotSorting", _("Target slot sorting"), sortChoices)
+		# Translators: the order the targets are listed in, in the target menu.
+		self._sortRadio(sortGroup, sortBox, "menuSorting", _("Target menu sorting"), sortChoices)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-		self.rememberCb = sHelper.addItem(wx.CheckBox(self, label=_("&Remember targets")))
-		self.rememberCb.SetValue(addonConfig.get("rememberTargets"))
-
-		self.forgetCb = sHelper.addItem(
+		self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))
+		self._checkBox(
+			sHelper,
+			self,
+			"forgetOnDisappear",
 			# Translators: automatically drop remembered targets that no longer exist.
-			wx.CheckBox(self, label=_("&Forget remembered targets when they disappear"))
+			_("&Forget remembered targets when they disappear"),
 		)
-		self.forgetCb.SetValue(addonConfig.get("forgetOnDisappear"))
 
 		self._updateDependentControls()
 
@@ -249,52 +241,15 @@ class BCTSettingsPanel(SettingsPanel):
 		announceOn = self.announceCb.IsChecked()
 		for control in (self.interruptCb, self.annTypeCb, self.annContentCb):
 			control.Enable(announceOn)
-		# Nothing else is greyed out here, and two settings that would qualify are
-		# deliberately left alone: "Forget remembered targets when they disappear",
-		# which decides nothing while "Remember targets" is off, and "Ignore focused
-		# control", which decides nothing while "Track even foreground targets" is
-		# off. Both of those pairs sit at opposite ends of this panel, so a user
-		# reading it one control at a time would toggle the switch at one end and
-		# have no way of noticing that a control at the other end had just gone
-		# unavailable. Greying out belongs to a group that follows its own master
-		# switch, where the switch is right there and the whole group moves with it;
-		# a single global option answering a distant one is only confusing. Each of
-		# these two stays reachable and keeps its value, and simply has no effect
-		# until the setting it qualifies is turned on.
 
 	def _onTest(self, evt: wx.CommandEvent):
-		# The same best-effort tone as a change announcement plays, and silent for
-		# the same reason: a tone that will not play says so by not playing.
 		with contextlib.suppress(Exception):
 			tones.beep(self.pitchCtrl.GetValue(), self.durationCtrl.GetValue())
 
 	def onSave(self):
-		# Written in one go: each individual write re-reads every setting into the
-		# monitor thread's snapshot, so twenty separate writes would cost twenty
-		# full re-reads.
-		addonConfig.setMany(
-			{
-				"enabled": self.enabledCb.IsChecked(),
-				"changeBeep": self.beepCb.IsChecked(),
-				"changeAnnounce": self.announceCb.IsChecked(),
-				"interruptSpeech": self.interruptCb.IsChecked(),
-				"trackingInterval": self.intervalCtrl.GetValue(),
-				"changesAtOnce": self.changesAtOnceCtrl.GetValue(),
-				"ignoreProgressBars": self.ignoreProgressCb.IsChecked(),
-				"ignoreCounters": self.ignoreCountersCb.IsChecked(),
-				"titleChangeDisappears": self.titleChangeCb.IsChecked(),
-				"ignoreFocusedControl": self.ignoreFocusedCb.IsChecked(),
-				"beepDuration": self.durationCtrl.GetValue(),
-				"beepPitch": self.pitchCtrl.GetValue(),
-				"announceTargetType": self.annTypeCb.IsChecked(),
-				"announceChangedContent": self.annContentCb.IsChecked(),
-				"menuTargetType": self.menuTypeCb.IsChecked(),
-				"menuTimeSinceChange": self.menuTimeCb.IsChecked(),
-				"menuChangedContent": self.menuContentCb.IsChecked(),
-				"overlayTimeout": self.overlayTimeoutCtrl.GetValue(),
-				"targetSorting": "newest" if self.sortRadio.GetSelection() == 1 else "oldest",
-				"trackForegroundTargets": self.trackForegroundCb.IsChecked(),
-				"rememberTargets": self.rememberCb.IsChecked(),
-				"forgetOnDisappear": self.forgetCb.IsChecked(),
-			}
-		)
+		values: dict[str, addonConfig.ConfigValue] = {
+			key: control.GetValue() for key, control in self._bound.items()
+		}
+		for key, radio in self._sortRadios.items():
+			values[key] = addonConfig.SORT_ORDERS[radio.GetSelection()]
+		addonConfig.setMany(values)
