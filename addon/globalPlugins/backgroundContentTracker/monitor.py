@@ -175,6 +175,15 @@ def _genericButtonLabels() -> frozenset[str]:
 		# Translators: a wizard's button moving to its next page, never announced while "Ignore known
 		# generic controls" is on.
 		("Next", _("Next")),
+		# Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+		# generic controls" is on.
+		("Previous", _("Previous")),
+		# Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+		# generic controls" is on.
+		("Back", _("Back")),
+		# Translators: a wizard's button closing it on its last page, never announced while "Ignore known
+		# generic controls" is on.
+		("Finish", _("Finish")),
 		# Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
 		# generic controls" is on.
 		("Not now", _("Not now")),

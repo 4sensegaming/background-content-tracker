@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
-"POT-Creation-Date: 2026-09-12 01:32+0200\n"
+"POT-Creation-Date: 2026-09-12 02:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -149,35 +149,53 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
 #. generic controls" is on.
 #: addon\globalPlugins\backgroundContentTracker\monitor.py:180
+msgid "Previous"
+msgstr ""
+
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+#. generic controls" is on.
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:183
+msgid "Back"
+msgstr ""
+
+#. Translators: a wizard's button closing it on its last page, never announced while "Ignore known
+#. generic controls" is on.
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:186
+msgid "Finish"
+msgstr ""
+
+#. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
+#. generic controls" is on.
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:189
 msgid "Not now"
 msgstr ""
 
 #. Translators: a dialog's Yes button, never announced while "Ignore known generic controls" is on.
-#: addon\globalPlugins\backgroundContentTracker\monitor.py:182
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:191
 msgid "Yes"
 msgstr ""
 
 #. Translators: a dialog's No button, never announced while "Ignore known generic controls" is on.
-#: addon\globalPlugins\backgroundContentTracker\monitor.py:184
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:193
 msgid "No"
 msgstr ""
 
 #. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
-#: addon\globalPlugins\backgroundContentTracker\monitor.py:186
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:195
 msgid "Minimize"
 msgstr ""
 
 #. Translators: a window's title bar button, never announced while "Ignore known generic controls" is on.
-#: addon\globalPlugins\backgroundContentTracker\monitor.py:188
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:197
 msgid "Maximize"
 msgstr ""
 
 #. Translators: the title bar button of a maximized window, never announced while "Ignore known
 #. generic controls" is on.
-#: addon\globalPlugins\backgroundContentTracker\monitor.py:191
+#: addon\globalPlugins\backgroundContentTracker\monitor.py:200
 msgid "Restore"
 msgstr ""
 

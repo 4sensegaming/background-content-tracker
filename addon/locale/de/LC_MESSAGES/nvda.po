@@ -120,6 +120,21 @@ msgstr "Fortfahren"
 msgid "Next"
 msgstr "Weiter"
 
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Previous"
+msgstr "Vorheriges"
+
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Back"
+msgstr "Zurück"
+
+#. Translators: a wizard's button closing it on its last page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Finish"
+msgstr "Fertigstellen"
+
 #. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
 #. generic controls" is on.
 msgid "Not now"

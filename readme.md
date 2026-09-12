@@ -76,7 +76,7 @@ Those four commands also take `shift` and `control`, which say how the target yo
 
 The number keys refer to **slots** in your target list, not to fixed targets. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0` — the tenth slot. The [**Target sorting** setting](#settings) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list. If there is currently no valid target in the slot you pressed, the add-on says for example "No target in slot 2" (or "target name not found" for a previously remembered target).
 
-When a target is present, by default the add-on speaks its name and role, and the changed content of the target, for example *Window: Claude, Editing readme.md* or *Listbox: Message list, You said: Okay.*. The level of detail of these announcements can be configured in the add-on's [settings](#settings).
+When a target is present, by default the add-on speaks its role and name, and the changed content of the target, for example *Window: Claude, Editing readme.md* or *Listbox: Message list, You said: Okay.*. The level of detail of these announcements can be configured in the add-on's [settings](#settings).
 
 You can change the prefix from NVDA's Input Gestures dialog (NVDA menu → Preferences → Input Gestures), where the add-on's command appears under the **Background Content Tracker** category. The follow-up keys are part of the layered command itself.
 
@@ -187,7 +187,7 @@ When enabled, this option suppresses announcements of generic controls, like a "
 
 - The applications menu (usually opened with the alt key)
 - The "Minimize", "Restore", "Maximize" and "Close" buttons
-- "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next" and "Not now" buttons
+- "OK", "Cancel", "Close", "Abort", "Retry", "Continue", "Next", "Previous", "Back", "Finish" and "Not now" buttons
 - And "Yes" and "No" buttons.
 
 #### **Ignore the focused control when tracking the foreground window** (checkbox, enabled by default)
@@ -269,7 +269,7 @@ Determines whether a remembered target should be forgotten when it no longer exi
 - **Some apps reveal very little while not in the foreground.** How much an app tells a screen reader about non-focused content is exclusively controlled by the app itself. Modern UIA apps — Terminal, Settings, Calculator, Mail, Photos and most apps from the Microsoft Store — and apps that are rendered as web views — the Claude desktop app, Visual Studio Code, Discord, Slack, Signal, WhatsApp for Windows, Spotify, as well as web browsers themselves — differ considerably in this respect. Where an app does not expose its new content as visible text, the add-on cannot report it.
 - **Only what a window currently reveals counts.** Long lists — chat history, file lists, search results — usually exist only as the handful of rows that happen to be displayed. The add-on cannot see entries that are scrolled out of view, just like sighted users can't, and a minimized window may stop revealing its contents altogether until you restore it, depending on how the app in question is programmed.
 
-If you need to know about frequent updates from an app that you use in the background, it's usually more reliable and straightforward to configure the app itself to send you notifications, if the app can do that. Likewise, if you minimize the app to the system tray, it no longer displays a visible window, so the add-on can't track it anymore. However, if the tray icon does expose useful information as text updates that are accessible, you can in deed track the icon itself.
+If you need to know about frequent updates from an app that you use in the background, it's usually more reliable and straightforward to configure the app itself to send you notifications, if the app can do that. Likewise, if you minimize the app to the system tray, it no longer displays a visible window, so the add-on can't track it anymore. However, if the tray icon does expose useful information as text updates that are accessible, you can indeed track the icon itself.
 
 ## Contributing
 

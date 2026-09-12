@@ -56,7 +56,7 @@ msgstr "Považovat z&měnu názvu za zmizení cíle"
 
 #. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
 msgid "Ignore kno&wn generic controls"
-msgstr "I&gnorovat známé obecné prvky"
+msgstr "I&gnorovat známé generické prvky"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
@@ -119,6 +119,21 @@ msgstr "Pokračovat"
 #. generic controls" is on.
 msgid "Next"
 msgstr "Další"
+
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Previous"
+msgstr "Předchozí"
+
+#. Translators: a wizard's button moving to its previous page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Back"
+msgstr "Zpět"
+
+#. Translators: a wizard's button closing it on its last page, never announced while "Ignore known
+#. generic controls" is on.
+msgid "Finish"
+msgstr "Dokončit"
 
 #. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
 #. generic controls" is on.
@@ -433,7 +448,7 @@ msgid ""
 "Opens the Background Content Tracker command overlay: press and release, "
 "then press a command key (H for help)"
 msgstr ""
-"Otevře příkazové překrytí doplňku Sledování obsahu na pozadí: stiskněte a "
+"Otevře příkazové překrytí doplňku Sledování obsahu na pozadí: Stiskněte a "
 "uvolněte, poté stiskněte klávesu požadovaného příkazu (H pro nápovědu)"
 
 #. Translators: heading of the overlay help.
@@ -442,23 +457,23 @@ msgstr "Příkazy doplňku Sledování obsahu na pozadí"
 
 #. Translators: overlay help line for the H key.
 msgid "H: this help"
-msgstr "H: tato nápověda"
+msgstr "H: Tato nápověda"
 
 #. Translators: overlay help line for the W key.
 msgid "W: start or stop tracking the current window"
-msgstr "W: začne nebo přestane sledovat aktuální okno"
+msgstr "W: Začne nebo přestane sledovat aktuální okno"
 
 #. Translators: overlay help line for the F key.
 msgid "F: start or stop tracking the focused control"
-msgstr "F: začne nebo přestane sledovat prvek pod fokusem"
+msgstr "F: Začne nebo přestane sledovat prvek pod fokusem"
 
 #. Translators: overlay help line for the M key.
 msgid "M: start or stop tracking the control under the mouse pointer"
-msgstr "M: začne nebo přestane sledovat prvek pod ukazatelem myši"
+msgstr "M: Začne nebo přestane sledovat prvek pod ukazatelem myši"
 
 #. Translators: overlay help line for the N key.
 msgid "N: start or stop tracking the navigator object"
-msgstr "N: začne nebo přestane sledovat prohlížený objekt"
+msgstr "N: Začne nebo přestane sledovat prohlížený objekt"
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
@@ -470,14 +485,14 @@ msgstr ""
 
 #. Translators: overlay help line for the T key.
 msgid "T: open the target menu"
-msgstr "T: otevře nabídku cílů"
+msgstr "T: Otevře nabídku cílů"
 
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "set focus to it"
 msgstr ""
-"1 až 0: oznámí informace o cíli v daném slotu; dalším stiskem se na cíl "
+"1 až 0: Oznámí informace o cíli v daném slotu; dalším stiskem se na cíl "
 "přesune fokus"
 
 #. Translators: overlay help line for Space and Enter.
@@ -485,36 +500,36 @@ msgid ""
 "Space or Enter: speak information about the most recently added target; "
 "press again to set focus to it"
 msgstr ""
-"Mezerník nebo Enter: oznámí informace o naposledy přidaném cíli; dalším "
+"Mezerník nebo Enter: Oznámí informace o naposledy přidaném cíli; dalším "
 "stiskem se na cíl přesune fokus"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
-msgstr "Control plus číslo: přestane sledovat cíl v daném slotu"
+msgstr "Control plus číslo: Přestane sledovat cíl v daném slotu"
 
 #. Translators: overlay help line for Backspace.
 msgid "Backspace: stop tracking the most recently added target"
-msgstr "Backspace: přestane sledovat naposledy přidaný cíl"
+msgstr "Backspace: Přestane sledovat naposledy přidaný cíl"
 
 #. Translators: overlay help line for Delete.
 msgid "Delete: stop tracking all targets"
-msgstr "Delete: přestane sledovat všechny cíle"
+msgstr "Delete: Přestane sledovat všechny cíle"
 
 #. Translators: overlay help line for the P key.
 msgid "P: pause or resume all tracking"
-msgstr "P: pozastaví nebo obnoví veškeré sledování"
+msgstr "P: Pozastaví nebo obnoví veškeré sledování"
 
 #. Translators: overlay help line for the S key.
 msgid "S: open the add-on settings"
-msgstr "S: otevře nastavení doplňku"
+msgstr "S: Otevře nastavení doplňku"
 
 #. Translators: overlay help line for the I key.
 msgid "I: open the add-on input gestures"
-msgstr "I: otevře klávesové příkazy doplňku"
+msgstr "I: Otevře klávesové příkazy doplňku"
 
 #. Translators: overlay help line for the Escape key.
 msgid "Escape: close the overlay"
-msgstr "Escape: zavře překrytí"
+msgstr "Escape: Zavře překrytí"
 
 #. Translators: Long description to be shown for this add-on on add-on information from add-on store
 msgid ""
