@@ -448,7 +448,7 @@ msgid ""
 "Opens the Background Content Tracker command overlay: press and release, "
 "then press a command key (H for help)"
 msgstr ""
-"Otvorí príkazové prekrytie doplnku Sledovanie obsahu na pozadí: stlačte a "
+"Otvorí príkazové prekrytie doplnku Sledovanie obsahu na pozadí: Stlačte a "
 "uvoľnite, potom stlačte klávesu príkazu (stlačte H pre nápovedu)"
 
 #. Translators: heading of the overlay help.
@@ -457,23 +457,23 @@ msgstr "Príkazy doplnku Sledovanie obsahu na pozadí"
 
 #. Translators: overlay help line for the H key.
 msgid "H: this help"
-msgstr "H: táto nápoveda"
+msgstr "H: Táto nápoveda"
 
 #. Translators: overlay help line for the W key.
 msgid "W: start or stop tracking the current window"
-msgstr "W: začne alebo prestane sledovať aktuálne okno"
+msgstr "W: Začne alebo prestane sledovať aktuálne okno"
 
 #. Translators: overlay help line for the F key.
 msgid "F: start or stop tracking the focused control"
-msgstr "F: začne alebo prestane sledovať prvok s fokusom"
+msgstr "F: Začne alebo prestane sledovať prvok s fokusom"
 
 #. Translators: overlay help line for the M key.
 msgid "M: start or stop tracking the control under the mouse pointer"
-msgstr "M: začne alebo prestane sledovať prvok pod myšou"
+msgstr "M: Začne alebo prestane sledovať prvok pod myšou"
 
 #. Translators: overlay help line for the N key.
 msgid "N: start or stop tracking the navigator object"
-msgstr "N: začne alebo prestane sledovať navigačný objekt"
+msgstr "N: Začne alebo prestane sledovať navigačný objekt"
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
@@ -485,14 +485,14 @@ msgstr ""
 
 #. Translators: overlay help line for the T key.
 msgid "T: open the target menu"
-msgstr "T: otvorí ponuku cieľov"
+msgstr "T: Otvorí ponuku cieľov"
 
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "set focus to it"
 msgstr ""
-"1 až 0: oznámi informácie o cieli v danom slote; ďalším stlačením sa naň "
+"1 až 0: Oznámi informácie o cieli v danom slote; ďalším stlačením sa naň "
 "presunie fokus"
 
 #. Translators: overlay help line for Space and Enter.
@@ -500,36 +500,36 @@ msgid ""
 "Space or Enter: speak information about the most recently added target; "
 "press again to set focus to it"
 msgstr ""
-"Medzerník alebo Enter: oznámi informácie o naposledy pridanom cieli; ďalším "
+"Medzerník alebo Enter: Oznámi informácie o naposledy pridanom cieli; ďalším "
 "stlačením sa naň presunie fokus"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
-msgstr "Control a číslo: prestane sledovať cieľ v danom slote"
+msgstr "Control a číslo: Prestane sledovať cieľ v danom slote"
 
 #. Translators: overlay help line for Backspace.
 msgid "Backspace: stop tracking the most recently added target"
-msgstr "Backspace: prestane sledovať naposledy pridaný cieľ"
+msgstr "Backspace: Prestane sledovať naposledy pridaný cieľ"
 
 #. Translators: overlay help line for Delete.
 msgid "Delete: stop tracking all targets"
-msgstr "Delete: prestane sledovať všetky ciele"
+msgstr "Delete: Prestane sledovať všetky ciele"
 
 #. Translators: overlay help line for the P key.
 msgid "P: pause or resume all tracking"
-msgstr "P: pozastaví alebo obnoví všetko sledovanie"
+msgstr "P: Pozastaví alebo obnoví všetko sledovanie"
 
 #. Translators: overlay help line for the S key.
 msgid "S: open the add-on settings"
-msgstr "S: otvorí nastavenia doplnku"
+msgstr "S: Otvorí nastavenia doplnku"
 
 #. Translators: overlay help line for the I key.
 msgid "I: open the add-on input gestures"
-msgstr "I: otvorí klávesové skratky doplnku"
+msgstr "I: Otvorí klávesové skratky doplnku"
 
 #. Translators: overlay help line for the Escape key.
 msgid "Escape: close the overlay"
-msgstr "Escape: zatvorí prekrytie"
+msgstr "Escape: Zatvorí prekrytie"
 
 #. Translators: Long description to be shown for this add-on on add-on information from add-on store
 msgid ""

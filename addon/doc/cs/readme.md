@@ -16,15 +16,15 @@ Sledování obsahu na pozadí vám dává přesně tento přehled: Vyberete si, 
 
 Tento doplněk je velmi mocný a přizpůsobitelný nástroj, který dokáže z nepřístupné aplikace podle potřeby udělat mluvící živý region. Překvapivě dobře si rozumí s:
 
-- terminály,
-- krátkými, rychle se měnícími dynamickými zprávami v jediném seznamu, textové oblasti nebo objektu NVDA,
-- a také s velkými okny aplikací postavených na Electronu, jako je Claude, které toho po stránce přístupnosti hodně dluží: Dokážou dlouho mlčet a pak najednou začnou rychle za sebou chrlit spoustu velkých kusů nového textu, které by se jinak hledaly jen těžko.
+- Terminály,
+- Krátkými, rychle se měnícími dynamickými zprávami v jediném seznamu, textové oblasti nebo objektu NVDA,
+- A také s velkými okny aplikací postavených na Electronu, jako je Claude, které toho po stránce přístupnosti hodně dluží: Dokážou dlouho mlčet a pak najednou začnou rychle za sebou chrlit spoustu velkých kusů nového textu, které by se jinak hledaly jen těžko.
 
 Doplněk ale nejspíš ocení jen pokročilí uživatelé, kteří potřebují zrychlit a zefektivnit svou práci, například:
 
-- vývojáři pracující v týmu,
-- ti, kdo běžně používají placené služby AI nebo lokální modely k tvorbě něčeho rozsáhlejšího,
-- nebo ti, kdo pracují v částečně či plně automatizovaných firemních procesech, v nichž běží několik úloh naráz.
+- Vývojáři pracující v týmu,
+- Ti, kdo běžně používají placené služby AI nebo lokální modely k tvorbě něčeho rozsáhlejšího,
+- Nebo ti, kdo pracují v částečně či plně automatizovaných firemních procesech, v nichž běží několik úloh naráz.
 
 Pokud ho potřebujete, poznáte to nejspíš hned po přečtení předchozího popisu. Ostatní se při jeho používání možná budou cítit spíš zahlceni nebo zmateni.
 
@@ -54,21 +54,21 @@ Po stisku hlavní klávesové zkratky doplněk otevře **virtuální překrytí*
 
 Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláves:
 
-- `h` – **nápověda**: Přečte každou klávesu dostupnou v překrytí a stručně vysvětlí, k čemu slouží. Dvojím stiskem této klávesy zobrazíte zprávu s nápovědou v dialogovém okně pro pohodlnější čtení.
-- `w` – začne nebo přestane sledovat aktuální **okno** (jakoukoli změnu v celém okně v popředí).
-- `f` – začne nebo přestane sledovat prvek, který má právě **fokus** klávesnice.
-- `m` – začne nebo přestane sledovat prvek pod ukazatelem **myši**.
-- `n` – začne nebo přestane sledovat aktuální **prohlížený objekt** (tam, kde je prohlížecí kurzor).
-- `t` – otevře **[nabídku cílů](#nabídka-cílů)**.
+- `H` – **nápověda**: Přečte každou klávesu dostupnou v překrytí a stručně vysvětlí, k čemu slouží. Dvojím stiskem této klávesy zobrazíte zprávu s nápovědou v dialogovém okně pro pohodlnější čtení.
+- `W` – začne nebo přestane sledovat aktuální **okno** (jakoukoli změnu v celém okně v popředí).
+- `F` – začne nebo přestane sledovat prvek, který má právě **fokus** klávesnice.
+- `M` – začne nebo přestane sledovat prvek pod ukazatelem **myši**.
+- `N` – začne nebo přestane sledovat aktuální **prohlížený objekt** (tam, kde je prohlížecí kurzor).
+- `T` – otevře **[nabídku cílů](#nabídka-cílů)**.
 - `1` až `0` – **oznámí informace o cíli** podle jeho pořadí v seznamu (viz níže). Dalším stiskem téhož čísla se na daný cíl přesune fokus.
-- `mezerník` nebo `enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus.
-- `control`+číslo (`1` až `0`) – **přestane sledovat** cíl v daném slotu.
-- `backspace` – **přestane sledovat poslední přidaný** cíl.
-- `delete` – **přestane sledovat všechny cíle** (vymaže celý seznam najednou).
-- `p` – **pozastaví nebo obnoví** veškeré sledování (přepíná přepínač *Povolit sledování*, popsaný v části [Nastavení](#nastavení)).
-- `s` – otevře **[nastavení](#nastavení)** doplňku (týž panel jako nabídka NVDA → Možnosti → Nastavení → Sledování obsahu na pozadí).
-- `i` – otevře dialog **Klávesové příkazy** NVDA, kde můžete hlavní klávesovou zkratku přenastavit, aniž byste ji museli hledat v nabídkách.
-- `escape` – **zavře překrytí**, aniž by udělal cokoli jiného.
+- `Mezerník` nebo `Enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus.
+- `Control`+číslo (`1` až `0`) – **přestane sledovat** cíl v daném slotu.
+- `Backspace` – **přestane sledovat poslední přidaný** cíl.
+- `Delete` – **přestane sledovat všechny cíle** (vymaže celý seznam najednou).
+- `P` – **pozastaví nebo obnoví** veškeré sledování (přepíná přepínač *Povolit sledování*, popsaný v části [Nastavení](#nastavení)).
+- `S` – otevře **[nastavení](#nastavení)** doplňku (týž panel jako nabídka NVDA → Možnosti → Nastavení → Sledování obsahu na pozadí).
+- `I` – otevře dialog **Klávesové příkazy** NVDA, kde můžete hlavní klávesovou zkratku přenastavit, aniž byste ji museli hledat v nabídkách.
+- `Escape` – **zavře překrytí**, aniž by udělal cokoli jiného.
 
 Příkazy pro okno, fokus, myš a prohlížený objekt fungují jako přepínače: Prvním stisknutím daný cíl přidáte do seznamu, dalším stisknutím ho odeberete. Sledovat můžete libovolný počet cílů současně.
 
@@ -185,10 +185,10 @@ Pokud je zaškrtnuto a změní se název okna, které sledujete, doplněk ho za�
 
 Pokud je zaškrtnuto, tato možnost potlačí oznamování generických prvků, jako když se tlačítko „Minimalizovat“ změní na „Maximalizovat“ a naopak. Patří sem:
 
-- nabídka aplikace (obvykle se otevírá klávesou alt)
-- tlačítka „Minimalizovat“, „Obnovit“, „Maximalizovat“ a „Zavřít“
-- tlačítka „OK“, „Storno“, „Zavřít“, „Přerušit“, „Opakovat“, „Pokračovat“, „Další“, „Předchozí“, „Zpět“, „Dokončit“ a „Teď ne“
-- a tlačítka „Ano“ a „Ne“.
+- Nabídka aplikace (obvykle se otevírá klávesou alt)
+- Tlačítka „Minimalizovat“, „Obnovit“, „Maximalizovat“ a „Zavřít“
+- Tlačítka „OK“, „Storno“, „Zavřít“, „Přerušit“, „Opakovat“, „Pokračovat“, „Další“, „Předchozí“, „Zpět“, „Dokončit“ a „Teď ne“
+- A tlačítka „Ano“ a „Ne“.
 
 #### **Při sledování okna v popředí ignorovat prvek pod fokusem** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
@@ -261,7 +261,7 @@ Pokud je zaškrtnuto, seznam cílů zůstane zachován i po restartu NVDA a dopl
 
 ### **Zapomínat zapamatované cíle, když přestanou existovat** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Určuje, jestli se má zapamatovaný cíl zapomenout, jakmile přestane existovat (zavřete okno nebo konkrétní prvek z okna zmizí). Pokud je zaškrtnuto, budete muset začít týž cíl sledovat pokaždé znovu ručně, jestliže někdy zmizel, zatímco ho doplněk sledoval. Cíle, které přestanete sledovat ručně, se zapomínají vždy, ať je tato možnost nastavena jakkoli.
+Určuje, jestli se má zapamatovaný cíl zapomenout, jakmile přestane existovat (zavřete okno nebo konkrétní prvek z okna zmizí). Pokud je zaškrtnuto, budete muset začít týž cíl sledovat znovu ručně pokaždé, když zmizí, zatímco ho doplněk sleduje. Cíle, které přestanete sledovat ručně, se zapomínají vždy, ať je tato možnost nastavena jakkoli.
 
 ## Známá omezení
 

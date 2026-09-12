@@ -26,7 +26,7 @@ However, the add-on will most likely be appreciated only by power users who feel
 - Those who routinely use paid AI services or local models to create something substantial,
 - Or those working in partially or fully automated corporate workflows involving several tasks at once.
 
-If you need it, you probably know it right away after reading the above description. It's possible that others might feel overwhelmed or confused when using it instead.
+If you need it, you probably knew it as soon as you read the description above. Others might feel overwhelmed or confused by it instead.
 
 ## Usage
 
@@ -35,7 +35,7 @@ You build a list of targets to track — whole windows, or individual controls s
 ### Example scenarios:
 
 - **Waiting for a long-running task in another app.** You set an AI assistant such as Claude working on a task and, rather than waiting on that window, you switch elsewhere to get on with something else. The add-on tracks the assistant's window and tells you as soon as new output appears, so you know it has replied without having to switch back to check again and again.
-- **Keeping an eye on a web page while you type elsewhere.** You are typing in a chat such as WhatsApp while a web page sits open beside it. When that background page updates, the add-on lets you know — so you catch it just as a sighted person would glance across.
+- **Keeping an eye on a web page while you type elsewhere.** You are typing in a chat such as WhatsApp while a web page sits open beside it. When that background page updates, the add-on lets you know — so you catch it just as a sighted person would.
 
 ### A typical workflow:
 
@@ -48,7 +48,7 @@ You build a list of targets to track — whole windows, or individual controls s
 
 The add-on is operated through a single **layered command**: you press a prefix keystroke, release it, and then press one more key to choose what to do. Nothing happens on the prefix by itself, so the add-on commands never get in the way of NVDA or other apps.
 
-The default prefix is NVDA+; (the semicolon key, to the right of L on the letters row).
+The default prefix is NVDA+; (the semicolon key, to the right of L on the home row).
 
 When you press the prefix, the add-on opens a **virtual overlay** and announces "Overlay opened", followed by "Tracking paused" if tracking is currently paused. While the overlay is open, every key you press is treated as one of the commands below. Opening and closing the overlay never moves focus — it stays exactly where it was, so the add-on commands never disturb what you are doing. Whenever the overlay closes, the add-on announces "Overlay closed".
 
@@ -72,7 +72,7 @@ After pressing the prefix, press one of the following keys:
 
 The window, focus, mouse and navigator commands are toggles: press one once to add that target to the list, and press it again to remove it. You can track any number of targets at the same time.
 
-Those four commands also take `shift` and `control`, which say how the target you are adding is to be tracked: `shift` remembers that one target, `control` reads it even while its own app is in the foreground, and holding both does both. These are [per-target settings](#global-and-per-target-settings), set on that specific target as it is added instead of via inheriting the global [settings](#settings) or via [the target menu](#the-target-menu) later, and they don't change the global setting. A press that *stops* tracking simply ignores the modifiers.
+Those four commands also take `shift` and `control`, which say how the target you are adding is to be tracked: `shift` remembers that one target, `control` reads it even while its own app is in the foreground, and holding both does both. These are [per-target settings](#global-and-per-target-settings), set on that specific target as it is added instead of being inherited from the global [settings](#settings) or set in [the target menu](#the-target-menu) later, and they don't change the global setting. A press that *stops* tracking simply ignores the modifiers.
 
 The number keys refer to **slots** in your target list, not to fixed targets. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0` — the tenth slot. The [**Target sorting** setting](#settings) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list. If there is currently no valid target in the slot you pressed, the add-on says for example "No target in slot 2" (or "target name not found" for a previously remembered target).
 
@@ -86,7 +86,7 @@ The **target menu** (the prefix followed by `t`) lists all current targets as or
 
 Each item names exactly what it acts on, for example *Window: Claude, 3 minutes ago, 3 tasks running*. A target that does not exist at the moment — a remembered one whose window has not been reopened yet — reads *not found* in place of the time and the content, and stays in the menu, because you can still stop it, change its settings, or leave it there and wait for it to come back. The order in which the targets are listed respects the [**Target sorting** setting](#settings).
 
-Every target is a submenu. When you expand it, you can *Stop tracking* it, *Set focus* to it, or change its *Target settings* in a submenu which holds that one target's own copy of the settings that can be [set per target](#global-and-per-target-settings).
+Every target is a submenu. When you expand it, you can *Stop tracking* it, *Set focus* to it, or change its *Target settings* in a submenu that holds that one target's own copy of the settings that can be [set per target](#global-and-per-target-settings).
 
 Each item in *Target settings* is a check box, and what it shows is what the target actually does: its own value where you have given it one, and the global setting everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting still follows the global.
 
@@ -97,21 +97,21 @@ Each item in *Target settings* is a check box, and what it shows is what the tar
 - *Remember this target* is displayed for all targets.
 - *Forget this target when it disappears* is displayed just for a target that is being remembered.
 
-Anything you are already tracking appears first in the menu, so you can move to the target of your interest or stop tracking it quickly. Below that are the targets you can start tracking from your current location (window, focus, mouse pointer, or navigator object). The item to stop tracking all current targets is at the end of the menu.
+Anything you are already tracking appears first in the menu, so you can quickly move to the target you want, or stop tracking it. Below that are the targets you can start tracking from your current location (window, focus, mouse pointer, or navigator object). The item to stop tracking all current targets is at the end of the menu.
 
 ## Important add-on messages
 
 - **Tracking a new target** — for example "Tracking window: Claude". You also hear this whenever a remembered target reappears later, after launch.
-- **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You hear this when you stop tracking a target yourself, and when a target disappears and the add-on stops tracking it as a result: always for a target that is not remembered, and for a remembered one when it is set to be forgotten on disappear.
+- **No longer tracking a target** — for example "Stopped tracking listbox: Message list". You hear this when you stop tracking a target yourself, and when a target disappears and the add-on stops tracking it as a result: always for a target that is not remembered, and for a remembered one that is set to be forgotten when it disappears.
 - **A target disappearing** — for example "Target disappeared: Claude". You hear this when a remembered target disappears but is kept in the list, so it's tracked again as soon as it reappears.
 
-Neither of these is announced for a target that disappears while it's in the foreground, such as when you close its window yourself. The one exception is a remembered target that's set to be forgotten on disappear: you still hear "Stopped tracking target name" in that case, since closing it also means it won't be tracked again, which you may not have intended.
+None of these is announced for a target that disappears while it's in the foreground, such as when you close its window yourself. The one exception is a remembered target that's set to be forgotten when it disappears: you still hear "Stopped tracking target name" in that case, since closing it also means it won't be tracked again, which you may not have intended.
 
 When NVDA starts and every time you resume previously paused tracking, the remembered targets are looked for and reported together, as "Found 7 remembered targets", or as "Found 6 of 9 remembered targets" when the rest have not appeared yet. When fewer than five are found, their names follow, for example "Found 3 remembered targets: Claude, ChatGPT Classic, Gemini" or "Found 1 of 3 remembered targets: Claude". Any that turn up later announce themselves individually. The add-on announces "No remembered targets found" instead if none of the remembered targets are there at the moment.
 
 ## Global and per-target settings
 
-Most of the add-on's options are **global**: you set them in the [settings](#settings) panel, and every target follows them. Nine of them can also be set on a **single target** via [the target menu](#the-target-menu), which then follows its own value for that one setting and keeps following the global for all the rest:
+Most of the add-on's options are **global**: you set them in the [settings](#settings) panel, and every target follows them. Nine of them can also be set on a **single target** via [the target menu](#the-target-menu); that target then follows its own value for that one setting and keeps following the global for all the rest:
 
 - *Interrupt previous speech when announcing a new change*
 - *Ignore progress bars*
@@ -125,13 +125,13 @@ Most of the add-on's options are **global**: you set them in the [settings](#set
 
 There are two ways to give one target its own value. In the [target menu](#the-target-menu), open that target's *Target settings* submenu and tick or untick what you want. Or hold `shift`, `control` or both while adding a target with the [`w`, `f`, `m` or `n` keystrokes](#keystrokes), which gives the target being added its own *Remember this target* and *Track this target even in the foreground* respectively.
 
-Changing a setting affects even existing targets unless that setting has been overridden locally. The settings panel sets globals only: nothing you do there takes a target's own value away from it. Stopping the target and adding it again or forgetting a remembered target is what clears all local values.
+Changing a setting affects even existing targets unless that setting has been overridden locally. The settings panel sets globals only: nothing you do there takes a target's own value away from it. Stopping the target and adding it again, or forgetting a remembered target, is what clears all local values.
 
 ## Settings
 
 The add-on's options live in the **Background Content Tracker** category in NVDA's Settings dialog (NVDA menu → Preferences → Settings). The add-on supports multiple configuration profiles.
 
-Related options are grouped. All available options are described below, in the order they appear on the panel. Top-level options and whole groups are level 3 headings, individual options within groups are level 4 headings.
+Related options are grouped. All available options are described below, in the order they appear on the panel. Top-level options and whole groups are level 3 headings; individual options within groups are level 4 headings.
 
 ### **Enable tracking** (checkbox, enabled by default)
 
@@ -159,7 +159,7 @@ Only accepts whole numbers. Sets how often the add-on should query all existing 
 
 #### **Changes to announce at once (background targets only)** (edit, 5 by default)
 
-Only accepts whole numbers. Sets how many consecutive changes to the same target the add-on should announce in a row before you have to refocus the target and then switch elsewhere again for further changes to be announced. 0 means announce any single change every time. This option never affects foreground targets. If tracking is enabled even for foreground targets, then all changes are always announced for those.
+Only accepts whole numbers. Sets how many consecutive changes to the same target the add-on should announce in a row before you have to refocus the target and then switch elsewhere again for further changes to be announced. 0 means announce any single change every time. This option never affects foreground targets. If foreground targets are tracked as well, all of their changes are always announced.
 
 #### **Track even foreground targets** (checkbox, disabled by default)
 
@@ -171,7 +171,7 @@ The options in this group refine how the add-on should announce changes in targe
 
 #### **Ignore progress bars** (checkbox, enabled by default)
 
-When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to spam you with double-reporting a constantly changing progress bar in a specific app.
+When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to double-report a constantly changing progress bar in a specific app.
 
 #### **Ignore counters, steppers and timers** (checkbox, enabled by default)
 
@@ -183,7 +183,7 @@ When enabled, if the title of a window being tracked changes, the add-on will co
 
 #### **Ignore known generic controls** (checkbox, enabled by default)
 
-When enabled, this option suppresses announcements of generic controls, like a "Minimize" button of a window changing to "Maximize" and vice versa. This includes:
+When enabled, this option suppresses announcements of generic controls, like a window's "Minimize" button changing to "Maximize" and vice versa. This includes:
 
 - The applications menu (usually opened with the alt key)
 - The "Minimize", "Restore", "Maximize" and "Close" buttons
@@ -192,7 +192,7 @@ When enabled, this option suppresses announcements of generic controls, like a "
 
 #### **Ignore the focused control when tracking the foreground window** (checkbox, enabled by default)
 
-This only makes a difference for a window that is read while you are working in it, which is what the option to track even foreground targets allows. In other words, this option affects only a whole window that is also set to be read in the foreground. Background windows or single control targets are not affected either way. When enabled, the control you are focused on is never announced as a change, so for example the characters you type into an edit field are not being read as new content.
+This only makes a difference for a window that is read while you are working in it, which is what the option to track even foreground targets allows. In other words, this option affects only a whole window that is also set to be read in the foreground. Background windows or single-control targets are not affected either way. When enabled, the control you are focused on is never announced as a change, so for example the characters you type into an edit field are not read as new content.
 
 ### **Beep parameters** (group)
 
@@ -212,9 +212,9 @@ Plays a test beep with the currently set parameters, so you can verify whether i
 
 ### **Include in change announcement** (group)
 
-The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the target changed announcement consists of.
+The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the change announcement for a target consists of.
 
-As long as the verbal announcement itself is enabled, the name of the target (for example Claude or Message list) is always included, unless the same target changes very rapidly with no intermittent changes in other targets in between, such as an AI chatbot's gradually growing reply. In these cases, the target name will be omitted, so you can perceive the reply naturally, seemingly as a single continuous utterance, without it being split into chunks by the constantly repeating app name.
+As long as the verbal announcement itself is enabled, the name of the target (for example Claude or Message list) is always included, unless the same target changes very rapidly with no changes to other targets in between, such as an AI chatbot's gradually growing reply. In these cases, the target name will be omitted, so you can perceive the reply naturally, seemingly as a single continuous utterance, without it being split into chunks by the constantly repeating app name.
 
 #### **Target type** (checkbox, enabled by default)
 
@@ -234,7 +234,7 @@ Whether the type of the target (for example **window**, **listbox** or **textbox
 
 #### **Time since last change** (checkbox, enabled by default)
 
-Whether the relative time since the last change occurred in the target (for example 3 minutes ago) is displayed in the description of the respective target's menu item.
+Whether the relative time since the last change occurred in the target (for example 3 minutes ago) is displayed in the description of the target's respective menu item.
 
 #### **Changed content** (checkbox, enabled by default)
 
@@ -246,7 +246,7 @@ Only accepts whole numbers. This determines how many seconds without a key press
 
 ### Target sorting
 
-There are two sets of radio buttons, one after the other: *Target slot sorting* and *Target sorting in the menu*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently from one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
+There are two sets of radio buttons, one after the other: *Target slot sorting* and *Target sorting in the menu*. Both offer the same options listed below, and both can be set to exactly one of the available options at a time, either in sync or independently of one another. They determine in which order new targets are placed into the ten available numbered slots (see [Keystrokes](#keystrokes)) and displayed in the [target menu](#the-target-menu) respectively.
 
 - *Newest target first* (set by default for both sorting types)
 - *Oldest target first*
@@ -261,7 +261,7 @@ When enabled, your target list is kept between NVDA restarts, and the add-on re-
 
 ### **Forget remembered targets when they disappear** (checkbox, enabled by default)
 
-Determines whether a remembered target should be forgotten when it no longer exists (you close the window or the specific control disappears from the window). When enabled, you will have to start tracking the same target manually every time if it ever disappeared while the add-on was tracking it. Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
+Determines whether a remembered target should be forgotten when it no longer exists (you close the window or the specific control disappears from the window). When enabled, you will have to start tracking the same target manually again every time it disappears while the add-on is tracking it. Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
 
 ## Known limitations
 
