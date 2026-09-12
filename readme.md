@@ -26,7 +26,7 @@ However, the add-on will most likely be appreciated only by power users who feel
 - Those who routinely use paid AI services or local models to create something substantial,
 - Or those working in partially or fully automated corporate workflows involving several tasks at once.
 
-If you need it, you probably knew it as soon as you read the description above. Others might feel overwhelmed or confused by it instead.
+If you need it, you probably know it right away after reading the above description. It's possible that others might feel overwhelmed or confused when using it instead.
 
 ## Usage
 
@@ -159,7 +159,7 @@ Only accepts whole numbers. Sets how often the add-on should query all existing 
 
 #### **Changes to announce at once (background targets only)** (edit, 5 by default)
 
-Only accepts whole numbers. Sets how many consecutive changes to the same target the add-on should announce in a row before you have to refocus the target and then switch elsewhere again for further changes to be announced. 0 means announce any single change every time. This option never affects foreground targets. If foreground targets are tracked as well, all of their changes are always announced.
+Only accepts whole numbers. Sets how many consecutive changes to the same target the add-on should announce in a row before you have to refocus the target and then switch elsewhere again for further changes to be announced. 0 means announce any single change every time. This option never affects foreground targets. If tracking is enabled even for foreground targets, then all changes are always announced for those.
 
 #### **Track even foreground targets** (checkbox, disabled by default)
 
@@ -171,7 +171,7 @@ The options in this group refine how the add-on should announce changes in targe
 
 #### **Ignore progress bars** (checkbox, enabled by default)
 
-When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to double-report a constantly changing progress bar in a specific app.
+When enabled, this option suppresses announcements of changing progress bar controls in the window. NVDA itself can speak and/or beep native progress bars, even in the background, so you may not always want this add-on to spam you with double-reporting a constantly changing progress bar in a specific app.
 
 #### **Ignore counters, steppers and timers** (checkbox, enabled by default)
 
@@ -212,7 +212,7 @@ Plays a test beep with the currently set parameters, so you can verify whether i
 
 ### **Include in change announcement** (group)
 
-The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the change announcement for a target consists of.
+The options in this group are only available when the **Announce** checkbox above is enabled. They determine exactly what the target changed announcement consists of.
 
 As long as the verbal announcement itself is enabled, the name of the target (for example Claude or Message list) is always included, unless the same target changes very rapidly with no changes to other targets in between, such as an AI chatbot's gradually growing reply. In these cases, the target name will be omitted, so you can perceive the reply naturally, seemingly as a single continuous utterance, without it being split into chunks by the constantly repeating app name.
 

@@ -500,7 +500,7 @@ msgid ""
 "Space or Enter: speak information about the most recently added target; "
 "press again to set focus to it"
 msgstr ""
-"Medzerník alebo Enter: Oznámi informácie o naposledy pridanom cieli; ďalším "
+"Medzerník alebo enter: Oznámi informácie o naposledy pridanom cieli; ďalším "
 "stlačením sa naň presunie fokus"
 
 #. Translators: overlay help line for Control plus a number.

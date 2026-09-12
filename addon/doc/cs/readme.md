@@ -61,7 +61,7 @@ Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláve
 - `N` – začne nebo přestane sledovat aktuální **prohlížený objekt** (tam, kde je prohlížecí kurzor).
 - `T` – otevře **[nabídku cílů](#nabídka-cílů)**.
 - `1` až `0` – **oznámí informace o cíli** podle jeho pořadí v seznamu (viz níže). Dalším stiskem téhož čísla se na daný cíl přesune fokus.
-- `Mezerník` nebo `Enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus.
+- `Mezerník` nebo `enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus.
 - `Control`+číslo (`1` až `0`) – **přestane sledovat** cíl v daném slotu.
 - `Backspace` – **přestane sledovat poslední přidaný** cíl.
 - `Delete` – **přestane sledovat všechny cíle** (vymaže celý seznam najednou).
