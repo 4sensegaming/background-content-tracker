@@ -34,6 +34,20 @@ def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Foc
 		log.exception("Error showing the target menu")
 
 
+def showTargetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusState):
+	"""
+	Pop up the submenu one target has in the target menu, on its own.
+	@param plugin: The add-on, which carries out the chosen item.
+	@param target: The target the submenu acts on.
+	@param focus: The current focus, deciding whether "Set focus" is offered.
+	"""
+	try:
+		boundIds: list[int] = []
+		_popUp(_targetSubmenu(plugin, target, focus, _binder(boundIds)), boundIds)
+	except Exception:
+		log.exception("Error showing the target menu")
+
+
 def _startLabel(kind: str, obj: NVDAObject) -> str:
 	name = safeCall(lambda: obj.name) or safeCall(lambda: obj.role.displayString) or ""
 	kindLabels = {
@@ -113,27 +127,67 @@ def _appendSettingsSubmenu(
 	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
 
 
-def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
-	notifier = plugin.notifier
-	menu = wx.Menu()
-	boundIds: list[int] = []
+def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusState, bind: Bind) -> wx.Menu:
+	"""
+	Build the submenu of one target.
+	@param plugin: The add-on, which carries out the chosen item.
+	@param target: The target the submenu acts on.
+	@param focus: The current focus, deciding whether "Set focus" is offered.
+	@param bind: Binds each item to what it does.
+	@returns: The submenu.
+	"""
+	submenu = wx.Menu()
+	# Translators: submenu item that stops tracking a single target.
+	stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
+	bind(stopItem, lambda: plugin.stopTracking(target))
+	if target.canTakeFocus() and not target.hasFocus(focus):
+		# Translators: submenu item that moves the focus to a target.
+		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
+		bind(focusItem, lambda: plugin.setFocusToTarget(target))
+	_appendSettingsSubmenu(submenu, plugin, target, bind)
+	return submenu
+
+
+def _binder(boundIds: list[int]) -> Bind:
+	"""
+	Make the function that binds menu items, keeping their ids to unbind once the menu closes.
+	@param boundIds: Receives the id of every item bound.
+	@returns: The binding function.
+	"""
 
 	def bind(item: wx.MenuItem, func: Callable[[], None]):
 		gui.mainFrame.Bind(wx.EVT_MENU, lambda evt: func(), item)
 		boundIds.append(item.GetId())
 
+	return bind
+
+
+def _popUp(menu: wx.Menu, boundIds: Sequence[int]):
+	"""
+	Show a menu until it closes, then unbind its items and destroy it.
+	@param menu: The menu to show.
+	@param boundIds: The ids of the items bound in it.
+	"""
+	gui.mainFrame.prePopup()
+	try:
+		gui.mainFrame.PopupMenu(menu)
+	finally:
+		gui.mainFrame.postPopup()
+		for itemId in boundIds:
+			with contextlib.suppress(Exception):
+				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)
+		menu.Destroy()
+
+
+def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
+	notifier = plugin.notifier
+	menu = wx.Menu()
+	boundIds: list[int] = []
+	bind = _binder(boundIds)
+
 	tracked = plugin.registry.sortedTargets(str(addonConfig.get("menuSorting")))
 	for target in tracked:
-		submenu = wx.Menu()
-		# Translators: submenu item that stops tracking a single target.
-		stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
-		bind(stopItem, lambda t=target: plugin.stopTracking(t))
-		if target.canTakeFocus() and not target.hasFocus(focus):
-			# Translators: submenu item that moves the focus to a target.
-			focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
-			bind(focusItem, lambda t=target: plugin.setFocusToTarget(t))
-		_appendSettingsSubmenu(submenu, plugin, target, bind)
-		menu.AppendSubMenu(submenu, notifier.menuDescription(target))
+		menu.AppendSubMenu(_targetSubmenu(plugin, target, focus, bind), notifier.menuDescription(target))
 
 	if sources:
 		if tracked:
@@ -153,12 +207,4 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 		menu.Destroy()
 		return
 
-	gui.mainFrame.prePopup()
-	try:
-		gui.mainFrame.PopupMenu(menu)
-	finally:
-		gui.mainFrame.postPopup()
-		for itemId in boundIds:
-			with contextlib.suppress(Exception):
-				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)
-		menu.Destroy()
+	_popUp(menu, boundIds)

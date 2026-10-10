@@ -55,6 +55,24 @@ def _noChanges() -> str:
 	return _("no changes yet")
 
 
+def _trackingPaused() -> str:
+	"""
+	The announcement that tracking is paused, also added to the end of target information.
+	@returns: The translated text.
+	"""
+	# Translators: announced when background content tracking is paused, and added to the end
+	# of a target's item in the target menu and of its information spoken on demand while it is.
+	return _("Tracking paused")
+
+
+def _pausedNote() -> str | None:
+	"""
+	The note that ends target information while tracking is paused.
+	@returns: The note, or None while tracking is enabled.
+	"""
+	return None if addonConfig.get("enabled") else _trackingPaused()
+
+
 def relativeTime(when: float | None) -> str:
 	if not when:
 		return _noChanges()
@@ -74,15 +92,32 @@ def relativeTime(when: float | None) -> str:
 	return ngettext("{n} hour ago", "{n} hours ago", hours).format(n=hours)
 
 
+def _speakAll(texts: Sequence[str], priority: Spri):
+	"""
+	Speak announcements one after another.
+	@param texts: The announcements, in the order they are spoken.
+	@param priority: Their speech priority.
+	"""
+	for text in texts:
+		ui.message(text, priority)
+
+
 class Notifier:
 	def __init__(self):
 		self._lastChange: tuple[int, float] | None = None
 
-	def _announce(self, text: str, unprompted: bool, priority: Spri):
+	def _announce(self, texts: Sequence[str], unprompted: bool, priority: Spri):
+		"""
+		Speak announcements one after another, at once or after a short delay.
+		@param texts: The announcements, in the order they are spoken.
+		@param unprompted: Whether they come unasked, which delays them.
+		@param priority: The speech priority of delayed announcements.
+		"""
 		if not unprompted:
-			ui.message(text)
+			for text in texts:
+				ui.message(text)
 			return
-		core.callLater(_UNPROMPTED_DELAY_MS, ui.message, text, priority)
+		core.callLater(_UNPROMPTED_DELAY_MS, _speakAll, texts, priority)
 
 	def _describeTarget(
 		self,
@@ -93,11 +128,24 @@ class Notifier:
 		return _describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
 
 	def _announceTarget(self, template: str, target: TrackedTarget, unprompted: bool):
-		self._announce(template.format(target=self._describeTarget(target)), unprompted, Spri.NEXT)
+		self._announce([template.format(target=self._describeTarget(target))], unprompted, Spri.NEXT)
 
 	def announceTracking(self, target: TrackedTarget, unprompted: bool = False):
 		# Translators: announced when tracking starts, e.g. "Tracking window: Claude".
 		self._announceTarget(_("Tracking {target}"), target, unprompted)
+
+	def announceTrackingInForeground(self, target: TrackedTarget):
+		"""
+		Announce a target just added to be read even while its own application is in the foreground.
+		@param target: The target added.
+		"""
+		self._announceTarget(
+			# Translators: announced when tracking starts for a target added to be read even while
+			# its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground".
+			_("Tracking {target} even in the foreground"),
+			target,
+			unprompted=False,
+		)
 
 	def announceRestored(self, attached: Sequence[TrackedTarget], total: int):
 		found = len(attached)
@@ -105,7 +153,7 @@ class Notifier:
 			# Translators: announced at start-up or on resuming tracking when none of
 			# the remembered targets are there.
 			text = _("No remembered targets found")
-			self._announce(text, unprompted=True, priority=Spri.NORMAL)
+			self._announce([text], unprompted=True, priority=Spri.NORMAL)
 			return
 		named = found < _NAMED_RESTORED_LIMIT
 		names = ", ".join(target.name or target.roleText() for target in attached)
@@ -136,11 +184,15 @@ class Notifier:
 			# for. {found} is how many are being tracked, {total} how many there are.
 			text = _("Found {found} of {total} remembered targets")
 			text = text.format(found=found, total=total)
-		self._announce(text, unprompted=True, priority=Spri.NORMAL)
+		self._announce([text], unprompted=True, priority=Spri.NORMAL)
 
 	def announceStopped(self, target: TrackedTarget, unprompted: bool = False):
 		# Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
-		self._announceTarget(_("Stopped tracking {target}"), target, unprompted)
+		texts = [_("Stopped tracking {target}").format(target=self._describeTarget(target))]
+		if target.setting("rememberTargets"):
+			# Translators: announced right after "Stopped tracking" when the target was remembered.
+			texts.append(_("Target forgotten"))
+		self._announce(texts, unprompted, Spri.NEXT)
 
 	def announceDisappeared(self, target: TrackedTarget):
 		# Translators: announced when a remembered target disappears and is kept in the
@@ -170,26 +222,29 @@ class Notifier:
 		ui.message(text)
 
 	def speakInfo(self, target: TrackedTarget):
+		paused = _pausedNote()
 		if not target.isAlive():
-			ui.message(self._describeTarget(target, [_notFound()]))
+			ui.message(self._describeTarget(target, [_notFound(), paused]))
 			return
 		if not target.hasReportableChange():
-			ui.message(self._describeTarget(target, [_noChanges()]))
+			ui.message(self._describeTarget(target, [_noChanges(), paused]))
 			return
 		content = target.lastDelta if addonConfig.get("announceChangedContent") else None
-		desc = self._describeTarget(target, [content])
+		desc = self._describeTarget(target, [content, paused])
 		if desc:
 			ui.message(desc)
 
 	def menuDescription(self, target: TrackedTarget) -> str:
+		paused = _pausedNote()
 		if not target.isAlive():
-			return self._describeTarget(target, [_notFound()], "menuTargetType")
+			return self._describeTarget(target, [_notFound(), paused], "menuTargetType")
 		reportable = target.hasReportableChange()
-		extras: list[str] = []
+		extras: list[str | None] = []
 		if addonConfig.get("menuTimeSinceChange"):
 			extras.append(relativeTime(target.lastChangeTime if reportable else None))
 		if addonConfig.get("menuChangedContent") and reportable and target.lastDelta:
 			extras.append(target.lastDelta)
+		extras.append(paused)
 		return self._describeTarget(target, extras, "menuTargetType")
 
 	def beep(self):
@@ -214,13 +269,16 @@ class Notifier:
 		# Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
 		ui.message(_("Could not set focus"))
 
+	def remembered(self):
+		# Translators: announced right after "Tracking" when the target was added to be remembered.
+		ui.message(_("Target remembered"))
+
 	def alreadyFocused(self):
 		# Translators: announced when a second press would move the focus to a target that already has it.
 		ui.message(_("This target already has focus"))
 
 	def paused(self):
-		# Translators: announced when background content tracking is paused.
-		ui.message(_("Tracking paused"))
+		ui.message(_trackingPaused())
 
 	def resumed(self):
 		# Translators: announced when background content tracking is resumed.

@@ -171,6 +171,11 @@ msgstr "nicht gefunden"
 msgid "no changes yet"
 msgstr "noch keine Änderungen"
 
+#. Translators: announced when background content tracking is paused, and added to the end
+#. of a target's item in the target menu and of its information spoken on demand while it is.
+msgid "Tracking paused"
+msgstr "Verfolgung pausiert"
+
 #. Translators: relative time for a change that has only just happened.
 msgid "just now"
 msgstr "gerade eben"
@@ -200,6 +205,12 @@ msgstr[1] "vor {n} Stunden"
 #, python-brace-format
 msgid "Tracking {target}"
 msgstr "Verfolge {target}"
+
+#. Translators: announced when tracking starts for a target added to be read even while
+#. its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground".
+#, python-brace-format
+msgid "Tracking {target} even in the foreground"
+msgstr "Verfolge {target} auch im Vordergrund"
 
 #. Translators: announced at start-up or on resuming tracking when none of
 #. the remembered targets are there.
@@ -243,6 +254,10 @@ msgstr "{found} von {total} gemerkten Zielen gefunden"
 msgid "Stopped tracking {target}"
 msgstr "Verfolgung von {target} beendet"
 
+#. Translators: announced right after "Stopped tracking" when the target was remembered.
+msgid "Target forgotten"
+msgstr "Ziel vergessen"
+
 #. Translators: announced when a remembered target disappears and is kept in the
 #. list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
 #, python-brace-format
@@ -266,13 +281,13 @@ msgstr "Keine Ziele"
 msgid "Could not set focus"
 msgstr "Der Fokus konnte nicht gesetzt werden"
 
+#. Translators: announced right after "Tracking" when the target was added to be remembered.
+msgid "Target remembered"
+msgstr "Ziel gemerkt"
+
 #. Translators: announced when a second press would move the focus to a target that already has it.
 msgid "This target already has focus"
 msgstr "Dieses Ziel hat bereits den Fokus"
-
-#. Translators: announced when background content tracking is paused.
-msgid "Tracking paused"
-msgstr "Verfolgung pausiert"
 
 #. Translators: announced when background content tracking is resumed.
 msgid "Tracking resumed"
@@ -502,6 +517,10 @@ msgstr ""
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
 msgstr "Strg plus eine Zahl: Verfolgung des Ziels in diesem Fach stoppen"
+
+#. Translators: overlay help line for Alt plus a number.
+msgid "Alt plus a number: open the target menu for the target in that slot"
+msgstr "Alt plus eine Zahl: das Zielmenü für das Ziel in diesem Fach öffnen"
 
 #. Translators: overlay help line for Backspace.
 msgid "Backspace: stop tracking the most recently added target"

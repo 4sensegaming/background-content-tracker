@@ -215,6 +215,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			),
 			# Translators: overlay help line for Control plus a number.
 			_("Control plus a number: stop tracking the target in that slot"),
+			# Translators: overlay help line for Alt plus a number.
+			_("Alt plus a number: open the target menu for the target in that slot"),
 			# Translators: overlay help line for Backspace.
 			_("Backspace: stop tracking the most recently added target"),
 			# Translators: overlay help line for Delete.
@@ -298,6 +300,18 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		self.stopTracking(target)
 
+	def openSlotMenu(self, index: int):
+		"""
+		Open the target menu of the target in a slot, or say the slot is empty.
+		@param index: The slot, counted from 0.
+		"""
+		target = self.registry.slot(index)
+		if target is None:
+			self.notifier.noTargetInSlot(index + 1)
+			return
+		self.overlay.handOff()
+		wx.CallAfter(menuModule.showTargetSubmenu, self, target, currentFocus())
+
 	def stopNewest(self):
 		target = self.registry.newest()
 		if target is None:
@@ -363,9 +377,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	):
 		if obj is None or self.registry.findByObject(obj) is not None:
 			return
+		overrides = overrides or {}
 		target = self.registry.add(obj, kind, overrides)
 		self.monitor.onAdded(target)
-		self.notifier.announceTracking(target)
+		if overrides.get("trackForegroundTargets"):
+			self.notifier.announceTrackingInForeground(target)
+		else:
+			self.notifier.announceTracking(target)
+		if overrides.get("rememberTargets"):
+			self.notifier.remembered()
 		self._saveRememberedTargets()
 
 	def stopTracking(self, target: TrackedTarget):

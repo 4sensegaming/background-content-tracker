@@ -173,6 +173,9 @@ class Overlay:
 		if held == {"control"} and key in _DIGIT_KEYS:
 			c.stopSlot(_DIGIT_KEYS[key])
 			return True
+		if held == {"alt"} and key in _DIGIT_KEYS:
+			c.openSlotMenu(_DIGIT_KEYS[key])
+			return True
 		if key in _TOGGLE_KEYS and not held - {"control", "shift"}:
 			overrides: dict[str, bool] = {}
 			if "shift" in held:
