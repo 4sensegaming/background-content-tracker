@@ -251,19 +251,36 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			self.startTracking(obj, kind, overrides)
 
-	def slotInfo(self, index: int):
+	def _slotTarget(self, index: int) -> TrackedTarget | None:
+		"""
+		The target in a slot, saying so when the slot is empty.
+		@param index: The slot, counted from 0.
+		@returns: The target, or None.
+		"""
 		target = self.registry.slot(index)
 		if target is None:
 			self.notifier.noTargetInSlot(index + 1)
-			return
-		self._infoOrFocus(("slot", index), target)
+		return target
 
-	def newestInfo(self):
+	def _newestTarget(self) -> TrackedTarget | None:
+		"""
+		The most recently added target, saying so when there is none.
+		@returns: The target, or None.
+		"""
 		target = self.registry.newest()
 		if target is None:
 			self.notifier.noTargets()
-			return
-		self._infoOrFocus(("newest", None), target)
+		return target
+
+	def slotInfo(self, index: int):
+		target = self._slotTarget(index)
+		if target is not None:
+			self._infoOrFocus(("slot", index), target)
+
+	def newestInfo(self):
+		target = self._newestTarget()
+		if target is not None:
+			self._infoOrFocus(("newest", None), target)
 
 	def _infoOrFocus(self, pendingKind: PendingKind, target: TrackedTarget):
 		if self._isSecondPress(pendingKind, target.uid):
@@ -293,30 +310,25 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self.notifier.focusFailed()
 
 	def stopSlot(self, index: int):
-		target = self.registry.slot(index)
-		if target is None:
-			self.notifier.noTargetInSlot(index + 1)
-			return
-		self.stopTracking(target)
+		target = self._slotTarget(index)
+		if target is not None:
+			self.stopTracking(target)
 
 	def openSlotMenu(self, index: int):
 		"""
 		Open the target menu of the target in a slot, or say the slot is empty.
 		@param index: The slot, counted from 0.
 		"""
-		target = self.registry.slot(index)
+		target = self._slotTarget(index)
 		if target is None:
-			self.notifier.noTargetInSlot(index + 1)
 			return
 		self.overlay.handOff()
 		wx.CallAfter(menuModule.showTargetSubmenu, self, target, currentFocus())
 
 	def stopNewest(self):
-		target = self.registry.newest()
-		if target is None:
-			self.notifier.noTargets()
-			return
-		self.stopTracking(target)
+		target = self._newestTarget()
+		if target is not None:
+			self.stopTracking(target)
 
 	def clearAll(self):
 		self.registry.clear()

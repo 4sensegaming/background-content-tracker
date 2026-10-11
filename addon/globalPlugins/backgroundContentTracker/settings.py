@@ -51,6 +51,28 @@ _CHAPTERS = {
 }
 
 
+WINDOW_SETTINGS = ("ignoreProgressBars", "ignoreCounters", "titleChangeDisappears", "ignoreGenericControls")
+
+
+def sharedSettingLabels() -> dict[str, str]:
+	"""
+	The labels of the settings listed both in this panel and in a target's own settings.
+	@returns: The label of each setting.
+	"""
+	return {
+		# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+		"interruptSpeech": _("I&nterrupt previous speech when announcing a new change"),
+		# Translators: suppress announcements of progress bar controls in a window.
+		"ignoreProgressBars": _("Ignore &progress bars"),
+		# Translators: suppress a control that does nothing but count (e.g. a timer).
+		"ignoreCounters": _("Ignore c&ounters, steppers and timers"),
+		# Translators: treat a window that renames itself as a target that has disappeared.
+		"titleChangeDisappears": _("Consider c&hanged title a disappeared target"),
+		# Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+		"ignoreGenericControls": _("Ignore kno&wn generic controls"),
+	}
+
+
 class BCTSettingsPanel(SettingsPanel):
 	# Translators: the title of the add-on's category in NVDA's Settings dialog.
 	title = _("Background Content Tracker")
@@ -137,6 +159,7 @@ class BCTSettingsPanel(SettingsPanel):
 	def makeSettings(self, settingsSizer: wx.Sizer):
 		self._bound = {}
 		self._sortRadios = {}
+		shared = sharedSettingLabels()
 		sHelper = guiHelper.BoxSizerHelper(self, sizer=settingsSizer)
 
 		# Translators: master switch; enables or disables all tracking.
@@ -244,29 +267,8 @@ class BCTSettingsPanel(SettingsPanel):
 
 		# Translators: group of options refining how whole-window targets are announced.
 		windowBox, windowGroup = self._group(sHelper, _("Window tracking behavior"))
-		# Translators: suppress announcements of progress bar controls in a window.
-		self._checkBox(windowGroup, windowBox, "ignoreProgressBars", _("Ignore &progress bars"))
-		self._checkBox(
-			windowGroup,
-			windowBox,
-			"ignoreCounters",
-			# Translators: suppress a control that does nothing but count (e.g. a timer).
-			_("Ignore c&ounters, steppers and timers"),
-		)
-		self._checkBox(
-			windowGroup,
-			windowBox,
-			"titleChangeDisappears",
-			# Translators: treat a window that renames itself as a target that has disappeared.
-			_("Consider c&hanged title a disappeared target"),
-		)
-		self._checkBox(
-			windowGroup,
-			windowBox,
-			"ignoreGenericControls",
-			# Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
-			_("Ignore kno&wn generic controls"),
-		)
+		for key in WINDOW_SETTINGS:
+			self._checkBox(windowGroup, windowBox, key, shared[key])
 		self.ignoreFocusedCb = self._checkBox(
 			windowGroup,
 			windowBox,
@@ -284,11 +286,7 @@ class BCTSettingsPanel(SettingsPanel):
 		self.announceCb = self._checkBox(changeGroup, changeBox, "changeAnnounce", _("&Announce"))
 		self.announceCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 		self.interruptCb = self._checkBox(
-			changeGroup,
-			changeBox,
-			"interruptSpeech",
-			# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-			_("I&nterrupt previous speech when announcing a new change"),
+			changeGroup, changeBox, "interruptSpeech", shared["interruptSpeech"]
 		)
 		self.repeatNameCb = self._checkBox(
 			changeGroup,

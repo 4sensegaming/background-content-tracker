@@ -15,6 +15,7 @@ from NVDAObjects import NVDAObject
 
 from . import addonConfig, dialogs, documentation
 from .notifier import relativeTime
+from .settings import WINDOW_SETTINGS, sharedSettingLabels
 from .targets import FocusState, TrackedTarget, safeCall, sortChanges
 
 if TYPE_CHECKING:
@@ -76,28 +77,12 @@ def _startLabel(kind: str, obj: NVDAObject) -> str:
 
 
 def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
+	shared = sharedSettingLabels()
 	items: list[tuple[str, str]] = []
 	if addonConfig.get("changeAnnounce"):
-		items.append(
-			(
-				"interruptSpeech",
-				# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-				_("I&nterrupt previous speech when announcing a new change"),
-			),
-		)
+		items.append(("interruptSpeech", shared["interruptSpeech"]))
 	if target.kind == "window":
-		items.extend(
-			(
-				# Translators: suppress announcements of progress bar controls in a window.
-				("ignoreProgressBars", _("Ignore &progress bars")),
-				# Translators: suppress a control that does nothing but count (e.g. a timer).
-				("ignoreCounters", _("Ignore c&ounters, steppers and timers")),
-				# Translators: treat a window that renames itself as a target that has disappeared.
-				("titleChangeDisappears", _("Consider c&hanged title a disappeared target")),
-				# Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
-				("ignoreGenericControls", _("Ignore kno&wn generic controls")),
-			)
-		)
+		items.extend((key, shared[key]) for key in WINDOW_SETTINGS)
 	items.append(
 		# Translators: submenu item; read this one target while its own application is in the foreground.
 		("trackForegroundTargets", _("Track this target even in the foreground")),

@@ -59,26 +59,6 @@ msgstr "navigatore ad oggetti"
 msgid "Track {source}: {name}"
 msgstr "Monitora {source}: {name}"
 
-#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-msgid "I&nterrupt previous speech when announcing a new change"
-msgstr "Int&errompi il parlato precedente all'annuncio di una nuova modifica"
-
-#. Translators: suppress announcements of progress bar controls in a window.
-msgid "Ignore &progress bars"
-msgstr "Ignora le barre di &avanzamento"
-
-#. Translators: suppress a control that does nothing but count (e.g. a timer).
-msgid "Ignore c&ounters, steppers and timers"
-msgstr "Ignora co&ntatori, progressioni e timer"
-
-#. Translators: treat a window that renames itself as a target that has disappeared.
-msgid "Consider c&hanged title a disappeared target"
-msgstr "Considera un titolo cambiato come obiettivo &scomparso"
-
-#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
-msgid "Ignore kno&wn generic controls"
-msgstr "Ignora i controlli &generici noti"
-
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
 msgstr "Monitora questo obiettivo anche in primo piano"
@@ -331,6 +311,26 @@ msgid ""
 msgstr ""
 "Comando sconosciuto. Premi H una volta per la guida, due volte per "
 "visualizzare la guida come messaggio esplorabile."
+
+#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+msgid "I&nterrupt previous speech when announcing a new change"
+msgstr "Int&errompi il parlato precedente all'annuncio di una nuova modifica"
+
+#. Translators: suppress announcements of progress bar controls in a window.
+msgid "Ignore &progress bars"
+msgstr "Ignora le barre di &avanzamento"
+
+#. Translators: suppress a control that does nothing but count (e.g. a timer).
+msgid "Ignore c&ounters, steppers and timers"
+msgstr "Ignora co&ntatori, progressioni e timer"
+
+#. Translators: treat a window that renames itself as a target that has disappeared.
+msgid "Consider c&hanged title a disappeared target"
+msgstr "Considera un titolo cambiato come obiettivo &scomparso"
+
+#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+msgid "Ignore kno&wn generic controls"
+msgstr "Ignora i controlli &generici noti"
 
 #. Translators: master switch; enables or disables all tracking.
 msgid "Enable &tracking"

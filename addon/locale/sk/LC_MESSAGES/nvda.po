@@ -60,26 +60,6 @@ msgstr "navigačný objekt"
 msgid "Track {source}: {name}"
 msgstr "Sledovať {source}: {name}"
 
-#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
-msgid "I&nterrupt previous speech when announcing a new change"
-msgstr "Pri oznamovaní novej zmeny p&rerušiť predchádzajúcu reč"
-
-#. Translators: suppress announcements of progress bar controls in a window.
-msgid "Ignore &progress bars"
-msgstr "Ignorovať indikátory priebeh&u"
-
-#. Translators: suppress a control that does nothing but count (e.g. a timer).
-msgid "Ignore c&ounters, steppers and timers"
-msgstr "Ignorovať počítadlá, &krokovače a časovače"
-
-#. Translators: treat a window that renames itself as a target that has disappeared.
-msgid "Consider c&hanged title a disappeared target"
-msgstr "Považovať z&menu názvu za zmiznutie cieľa"
-
-#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
-msgid "Ignore kno&wn generic controls"
-msgstr "I&gnorovať známe generické prvky"
-
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
 msgstr "Sledovať tento cieľ aj v popredí"
@@ -337,6 +317,26 @@ msgid ""
 msgstr ""
 "Neznámy príkaz. Stlačte H raz pre nápovedu, dvakrát pre zobrazenie nápovedy "
 "v dialógovom okne na pohodlnejšie čítanie."
+
+#. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
+msgid "I&nterrupt previous speech when announcing a new change"
+msgstr "Pri oznamovaní novej zmeny p&rerušiť predchádzajúcu reč"
+
+#. Translators: suppress announcements of progress bar controls in a window.
+msgid "Ignore &progress bars"
+msgstr "Ignorovať indikátory priebeh&u"
+
+#. Translators: suppress a control that does nothing but count (e.g. a timer).
+msgid "Ignore c&ounters, steppers and timers"
+msgstr "Ignorovať počítadlá, &krokovače a časovače"
+
+#. Translators: treat a window that renames itself as a target that has disappeared.
+msgid "Consider c&hanged title a disappeared target"
+msgstr "Považovať z&menu názvu za zmiznutie cieľa"
+
+#. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
+msgid "Ignore kno&wn generic controls"
+msgstr "I&gnorovať známe generické prvky"
 
 #. Translators: master switch; enables or disables all tracking.
 msgid "Enable &tracking"

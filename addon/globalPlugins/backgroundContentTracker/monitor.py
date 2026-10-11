@@ -19,18 +19,22 @@ from typing import TYPE_CHECKING, Any
 
 import addonHandler
 import api
+import appModuleHandler
 import queueHandler
 import textInfos
+import winUser
 from controlTypes import Role, State
 from editableText import EditableText
 from logHandler import log
 from NVDAObjects import NVDAObject, NVDAObjectTextInfo
+from NVDAObjects.window import Window
+from winBindings import user32
 
 from . import addonConfig, dialogs
 from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
-from .targets import Identity, TargetRegistry, TrackedTarget, isInForegroundApp, onThisThread, safeCall
+from .targets import Identity, TargetRegistry, TrackedTarget, onThisThread, safeCall, sharesRootWindow
 
 if TYPE_CHECKING:
 	from gettext import gettext as _  # noqa: TC004
@@ -57,7 +61,19 @@ def _hasOwnText(obj: NVDAObject) -> bool:
 
 
 def _ownText(obj: NVDAObject) -> str:
-	return safeCall(lambda: obj.makeTextInfo(textInfos.POSITION_ALL).text, "") or ""
+	"""
+	The end of an object's own text, as much as L{_readableText} keeps.
+	@param obj: The object.
+	@returns: The text, or an empty string when it cannot be read.
+	"""
+
+	def tail() -> str:
+		info = obj.makeTextInfo(textInfos.POSITION_ALL)
+		info.collapse(end=True)
+		info.move(textInfos.UNIT_CHARACTER, -_RAW_TEXT_LIMIT, endPoint="start")
+		return info.text
+
+	return safeCall(tail, "") or ""
 
 
 def _labelOf(obj: NVDAObject, withValue: bool = True) -> str:
@@ -87,6 +103,8 @@ def _childrenOf(obj: NVDAObject, limit: int, fromEnd: bool = True) -> tuple[list
 		return [], 0
 	if _hasFastChildAccess(obj):
 		count = safeCall(lambda: int(obj.childCount), -1)
+		if count == 0:
+			return [], 0
 		if count > limit:
 			indices = range(count - 1, count - limit - 1, -1) if fromEnd else range(limit)
 			picked: list[NVDAObject] = []
@@ -215,13 +233,6 @@ def _isGenericControl(obj: NVDAObject, text: str) -> bool:
 	if role not in (Role.BUTTON, Role.MENUITEM):
 		return False
 	return safeCall(lambda: obj.parent.role) in _FRAME_ROLES
-
-
-def _focusObject() -> NVDAObject | None:
-	focus = safeCall(api.getFocusObject)
-	if focus is None:
-		return None
-	return onThisThread(focus) or focus
 
 
 def _focusedValues(focusObj: NVDAObject) -> frozenset[str]:
@@ -427,6 +438,37 @@ def _joinSurfaced(surfaced: Sequence[Entry]) -> str:
 	return "\n".join(kept).strip()
 
 
+def _topLevelWindows() -> list[int]:
+	"""
+	The handles of every top-level window, frontmost first.
+	@returns: The window handles.
+	"""
+	found: list[int] = []
+
+	def collect(hwnd: int | None, lParam: int) -> bool:
+		if hwnd:
+			found.append(hwnd)
+		return True
+
+	user32.EnumWindows(user32.WNDENUMPROC(collect), 0)
+	return found
+
+
+def _windowObject(hwnd: int) -> NVDAObject | None:
+	"""
+	The object of a top-level window, made as the desktop makes its children.
+	@param hwnd: The window.
+	@returns: The object, or None when it cannot be made.
+	"""
+
+	def make() -> NVDAObject:
+		kwargs = {"windowHandle": hwnd}
+		apiClass = Window.findBestAPIClass(kwargs, relation="parent")
+		return apiClass(**kwargs)
+
+	return safeCall(make)
+
+
 class Monitor:
 	def __init__(
 		self,
@@ -440,6 +482,7 @@ class Monitor:
 		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
 		self._lastAnnouncedUid: int | None = None
+		self._focusCopy: tuple[NVDAObject, NVDAObject] | None = None
 
 	def start(self):
 		if self._thread is not None:
@@ -468,14 +511,15 @@ class Monitor:
 
 	def _refreshIdentity(self, target: TrackedTarget, obj: NVDAObject) -> bool:
 		newIdentity = targetsMod.objectIdentity(obj)
-		if not newIdentity or newIdentity == target.identity:
+		target.title = newIdentity["name"]
+		if newIdentity == target.identity:
 			return False
 		target.identity = newIdentity
 		return True
 
 	def onAdded(self, target: TrackedTarget):
 		target.resetTracking()
-		target.wasInForeground = isInForegroundApp(target.obj)
+		target.wasInForeground = target.isInForeground()
 		target.lastSeenInForeground = target.wasInForeground
 		target.captureTrackedTitle(addonConfig.snapshot())
 
@@ -517,8 +561,11 @@ class Monitor:
 		for target in self.registry.liveTargets():
 			if self._stop.is_set():
 				return
+			if target.isHung():
+				continue
 			title = target.liveTitle()
 			if title is not None and self._keptItsTitle(target, title, settings):
+				target.title = title
 				target.lastSeenInForeground = target.isInForeground()
 				continue
 			if self._handleDisappeared(target, settings):
@@ -555,7 +602,7 @@ class Monitor:
 
 	def _checkTargetContent(self, target: TrackedTarget, settings: Settings, announce: bool):
 		obj = target.obj
-		if obj is None:
+		if obj is None or target.isHung():
 			return
 		isWindow = target.kind == "window"
 		ignorePB = bool(target.setting("ignoreProgressBars", settings)) and isWindow
@@ -569,7 +616,7 @@ class Monitor:
 		focusObj = None
 		typedBefore: frozenset[str] = frozenset()
 		if inForeground and isWindow and target.setting("ignoreFocusedControl", settings):
-			focusObj = _focusObject()
+			focusObj = self._focusIn(obj)
 			if focusObj is not None:
 				typedBefore = _focusedValues(focusObj)
 		entries, whole, nodes = _sweepEntries(obj, ignorePB)
@@ -607,6 +654,22 @@ class Monitor:
 		target.announcedRun += 1
 		self._lastAnnouncedUid = target.uid
 		self._callOnMainThread(self.notifier.announceChange, target, spoken, sameTarget, immediate=True)
+
+	def _focusIn(self, root: NVDAObject) -> NVDAObject | None:
+		"""
+		The focused control, if it is inside the window of ``root``, made once per focus change.
+		@param root: The tracked window.
+		@returns: This thread's copy of the focused control, or None.
+		"""
+		focus = safeCall(api.getFocusObject)
+		if focus is None or not sharesRootWindow(focus, root):
+			return None
+		cached = self._focusCopy
+		if cached is not None and cached[0] is focus:
+			return cached[1]
+		copy = onThisThread(focus) or focus
+		self._focusCopy = (focus, copy)
+		return copy
 
 	def _collectDelta(
 		self,
@@ -765,25 +828,46 @@ class Monitor:
 				continue
 			self._attach(target, obj, announce)
 
-	def _desktopWindows(self) -> list[tuple[str, NVDAObject]]:
-		topWindows = safeCall(lambda: list(api.getDesktopObject().children))
-		if not topWindows:
-			return []
-		return [
-			(targetsMod.appNameOf(window), window)
-			for window in topWindows
-			if targetsMod.isReachableWindow(window)
-		]
+	def _desktopWindows(self) -> list[tuple[str, int]]:
+		"""
+		Every top-level window, with the name of its application.
+		@returns: The application names and window handles, frontmost first.
+		"""
+		appNames: dict[int, str] = {}
+		windows: list[tuple[str, int]] = []
+		for hwnd in _topLevelWindows():
+			processID = safeCall(lambda h=hwnd: winUser.getWindowThreadProcessID(h)[0], 0)
+			if processID not in appNames:
+				appNames[processID] = (
+					safeCall(lambda p=processID: appModuleHandler.getAppModuleFromProcessID(p).appName) or ""
+				)
+			windows.append((appNames[processID], hwnd))
+		return windows
 
 	def _candidateWindows(
 		self,
-		windows: Sequence[tuple[str, NVDAObject]],
+		windows: Sequence[tuple[str, int]],
 		identity: Identity,
 	) -> list[NVDAObject]:
+		"""
+		The windows a target may be in: its application's, visible and responding.
+		@param windows: Every top-level window, with its application's name.
+		@param identity: The target's identity.
+		@returns: The objects of those windows, in the order given.
+		"""
 		if not identity:
 			return []
 		wantedApp = identity.get("appName")
-		return [window for appName, window in windows if not wantedApp or appName == wantedApp]
+		candidates: list[NVDAObject] = []
+		for appName, hwnd in windows:
+			if wantedApp and appName != wantedApp:
+				continue
+			if not targetsMod.isShownWindow(hwnd) or targetsMod.isHungWindow(hwnd):
+				continue
+			window = _windowObject(hwnd)
+			if window is not None:
+				candidates.append(window)
+		return candidates
 
 	def _locateAmong(
 		self,

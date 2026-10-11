@@ -116,14 +116,26 @@ def sortChanges(changes: Iterable[Change], order: str) -> list[Change]:
 	return ordered
 
 
-def _rootWindowOf(hwnd: int) -> int | None:
-	return safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT))
+def windowHandleOf(obj: NVDAObject | None) -> int | None:
+	"""
+	An object's window, as NVDA stored it when it made the object.
+	@param obj: The object, or None.
+	@returns: The window handle, or None.
+	"""
+	return safeCall(lambda: obj.windowHandle) if obj is not None else None
+
+
+def _rootWindowOf(hwnd: int) -> int:
+	"""
+	The top-level window a window is in.
+	@param hwnd: The window.
+	@returns: The top-level window, or the window itself when it cannot be found.
+	"""
+	return safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT)) or hwnd
 
 
 def isInForegroundApp(obj: NVDAObject | None) -> bool:
-	if obj is None:
-		return False
-	hwnd = safeCall(lambda: obj.windowHandle)
+	hwnd = windowHandleOf(obj)
 	if not hwnd:
 		return False
 	try:
@@ -138,6 +150,32 @@ def isInForegroundApp(obj: NVDAObject | None) -> bool:
 		return _isInActiveStoreApp(hwnd)
 	except Exception:  # noqa: BLE001
 		return False
+
+
+def isHungWindow(hwnd: int | None) -> bool:
+	"""
+	Whether the application owning a window has stopped responding.
+	@param hwnd: The window, or None.
+	@returns: False when there is no window.
+	"""
+	if not hwnd:
+		return False
+	root = _rootWindowOf(hwnd)
+	return bool(safeCall(lambda: user32.dll.IsHungAppWindow(root), False))
+
+
+def sharesRootWindow(first: NVDAObject, second: NVDAObject) -> bool:
+	"""
+	Whether two objects are in the same top-level window.
+	@param first: One object.
+	@param second: The other object.
+	@returns: True also when either has no window to tell by.
+	"""
+	firstHwnd = windowHandleOf(first)
+	secondHwnd = windowHandleOf(second)
+	if not firstHwnd or not secondHwnd:
+		return True
+	return _rootWindowOf(firstHwnd) == _rootWindowOf(secondHwnd)
 
 
 def _isInActiveStoreApp(hwnd: int) -> bool:
@@ -157,10 +195,17 @@ def currentFocus() -> FocusState:
 def isReachableWindow(obj: NVDAObject | None) -> bool:
 	if obj is None:
 		return False
-	hwnd = safeCall(lambda: obj.windowHandle)
-	if not hwnd:
-		return True
-	root = _rootWindowOf(hwnd) or hwnd
+	hwnd = windowHandleOf(obj)
+	return not hwnd or isShownWindow(hwnd)
+
+
+def isShownWindow(hwnd: int) -> bool:
+	"""
+	Whether a window's top-level window is visible.
+	@param hwnd: The window.
+	@returns: True also when visibility cannot be read.
+	"""
+	root = _rootWindowOf(hwnd)
 	return safeCall(lambda: winUser.isWindowVisible(root), True) is not False
 
 
@@ -179,6 +224,7 @@ class TrackedTarget:
 		self.kind = kind
 		self.overrides: dict[str, bool] = dict(overrides) if overrides else {}
 		self.identity: Identity = objectIdentity(obj) if obj is not None else {}
+		self.title: str = self.identity.get("name") or ""
 		self.wasInForeground = False
 		self.lastSeenInForeground = False
 		self.trackedTitle: str | None = None
@@ -277,21 +323,14 @@ class TrackedTarget:
 		return bool(self.setting("forgetOnDisappear", settings))
 
 	def captureTrackedTitle(self, settings: Settings | None = None):
-		self.trackedTitle = (
-			titleOf(self.obj) if self.obj is not None and self.isHeldToItsTitle(settings) else None
-		)
+		self.trackedTitle = self.title if self.isAttached and self.isHeldToItsTitle(settings) else None
 
 	@property
 	def name(self) -> str:
-		obj = self.obj
-		current = safeCall(lambda: obj.name) if obj is not None else None
-		return current or self.identity.get("name") or ""
+		return (self.title if self.isAttached else "") or self.identity.get("name") or ""
 
 	@property
 	def role(self) -> Role | None:
-		obj = self.obj
-		if obj is not None:
-			return safeCall(lambda: obj.role)
 		remembered = self.identity.get("role")
 		return safeCall(lambda: Role(remembered)) if remembered else None
 
@@ -302,16 +341,21 @@ class TrackedTarget:
 		return safeCall(lambda: role.displayString) or ""
 
 	def isAlive(self) -> bool:
-		return self.liveTitle() is not None
+		"""
+		Whether the target was there at the last check and its window still is.
+		@returns: False for a target that is not attached.
+		"""
+		found = self._objects[0]
+		if found is None:
+			return False
+		hwnd = windowHandleOf(found)
+		if hwnd and not winUser.isWindow(hwnd):
+			return False
+		return isReachableWindow(found)
 
 	def liveTitle(self) -> str | None:
 		obj = self.obj
-		if obj is None:
-			return None
-		hwnd = safeCall(lambda: obj.windowHandle)
-		if hwnd and not winUser.isWindow(hwnd):
-			return None
-		if not isReachableWindow(obj):
+		if obj is None or not self.isAlive():
 			return None
 		name = safeCall(lambda: obj.name, _UNREADABLE)
 		if name is _UNREADABLE:
@@ -319,39 +363,48 @@ class TrackedTarget:
 		return name or ""
 
 	def isInForeground(self) -> bool:
-		return isInForegroundApp(self.obj)
+		return isInForegroundApp(self._objects[0])
+
+	def isHung(self) -> bool:
+		return isHungWindow(windowHandleOf(self._objects[0]))
 
 	def canTakeFocus(self) -> bool:
-		obj = self.obj
-		if obj is None:
-			return False
-		hwnd = safeCall(lambda: obj.windowHandle)
-		if hwnd:
-			root = _rootWindowOf(hwnd) or hwnd
-			if safeCall(lambda: user32.dll.IsHungAppWindow(root), False):
-				return False
-		if not self.isAlive():
+		if self.isHung() or not self.isAlive():
 			return False
 		if self.kind == "window":
 			return True
-		states = safeCall(lambda: obj.states)
+		obj = self.obj
+		states = safeCall(lambda: obj.states) if obj is not None else None
 		return not (states and State.INVISIBLE in states)
 
-	def hasFocus(self, focus: FocusState) -> bool:
-		obj = self.obj
-		focusObj, ancestors = focus
-		if obj is None or focusObj is None:
+	def isObject(self, obj: NVDAObject) -> bool:
+		"""
+		Whether an object is this target's, asking its application only when it is in the same top-level window.
+		@param obj: The object.
+		@returns: False while the target is not attached.
+		"""
+		found = self._objects[0]
+		if found is None or not sharesRootWindow(found, obj):
 			return False
-		hwnd = safeCall(lambda: obj.windowHandle)
-		focusHwnd = safeCall(lambda: focusObj.windowHandle)
-		root = _rootWindowOf(hwnd) if hwnd else None
-		if root and focusHwnd:
-			focusRoot = _rootWindowOf(focusHwnd)
-			if focusRoot and focusRoot != root:
+		mine = self.obj
+		return mine is not None and bool(safeCall(lambda: mine == obj, False))
+
+	def hasFocus(self, focus: FocusState) -> bool:
+		focusObj, ancestors = focus
+		if not self.isAttached or focusObj is None:
+			return False
+		hwnd = windowHandleOf(self._objects[0])
+		focusHwnd = windowHandleOf(focusObj)
+		if hwnd and focusHwnd:
+			root = _rootWindowOf(hwnd)
+			if _rootWindowOf(focusHwnd) != root:
 				return safeCall(lambda: winUser.getAncestor(focusHwnd, winUser.GA_ROOTOWNER)) == root
-			if focusRoot and self.kind == "window":
+			if self.kind == "window":
 				return True
 		if self.kind == "window":
+			return False
+		obj = self.obj
+		if obj is None:
 			return False
 		candidates = (focusObj, *reversed(ancestors))
 		return any(safeCall(lambda c=candidate: obj == c, False) is True for candidate in candidates)
@@ -362,7 +415,7 @@ class TrackedTarget:
 		return bool(self.setting("trackForegroundTargets")) or not self.isInForeground()
 
 	def _reactivateWindow(self, obj: NVDAObject):
-		hwnd = safeCall(lambda: obj.windowHandle)
+		hwnd = windowHandleOf(obj)
 		if not hwnd or not winUser.isWindow(hwnd):
 			return
 		topHwnd = safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOTOWNER)) or hwnd
@@ -380,7 +433,7 @@ class TrackedTarget:
 		obj = self.obj
 		if obj is None:
 			return False
-		hwnd = safeCall(lambda: obj.windowHandle)
+		hwnd = windowHandleOf(obj)
 		if hwnd and not winUser.isWindow(hwnd):
 			return False
 		self._reactivateWindow(obj)
@@ -453,7 +506,7 @@ class TargetRegistry:
 		with self._lock:
 			candidates = list(self._targets)
 		for target in candidates:
-			if target.obj is not None and safeCall(lambda t=target: t.obj == obj, False):
+			if target.isObject(obj):
 				return target
 		return None
 
