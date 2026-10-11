@@ -26,7 +26,7 @@ from editableText import EditableText
 from logHandler import log
 from NVDAObjects import NVDAObject, NVDAObjectTextInfo
 
-from . import addonConfig
+from . import addonConfig, dialogs
 from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
@@ -589,6 +589,9 @@ class Monitor:
 			return
 		target.lastDelta = delta
 		target.lastChangeTime = time.time()
+		change = target.recordChange(delta, target.lastChangeTime, int(settings["historySize"]))
+		if change is not None:
+			self._callOnMainThread(dialogs.changeRecorded, target, change)
 		if not announce:
 			return
 		sameTarget = self._lastAnnouncedUid == target.uid

@@ -3,12 +3,13 @@
 # This file is covered by the GNU General Public License, version 2 or later.
 # See the file COPYING.txt for more details.
 
+import itertools
 import locale
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Callable, Iterator, Mapping
-from typing import Any
+from collections.abc import Callable, Iterable, Iterator, Mapping
+from typing import Any, NamedTuple
 
 import api
 import core
@@ -90,6 +91,31 @@ def _collationKey(name: str) -> str:
 	return safeCall(lambda: locale.strxfrm(folded), folded)
 
 
+class Change(NamedTuple):
+	serial: int
+	time: float
+	text: str
+
+
+_changeSerials = itertools.count(1)
+
+
+def sortChanges(changes: Iterable[Change], order: str) -> list[Change]:
+	"""
+	Put changes in the order of a history sorting setting.
+	@param changes: The changes, oldest first.
+	@param order: One of L{addonConfig.HISTORY_SORT_ORDERS}.
+	@returns: The changes in that order.
+	"""
+	if order in ("alphabetical", "reverseAlphabetical"):
+		ordered = sorted(changes, key=lambda change: _collationKey(change.text))
+	else:
+		ordered = list(changes)
+	if order in ("newest", "reverseAlphabetical"):
+		ordered.reverse()
+	return ordered
+
+
 def _rootWindowOf(hwnd: int) -> int | None:
 	return safeCall(lambda: winUser.getAncestor(hwnd, winUser.GA_ROOT))
 
@@ -156,6 +182,7 @@ class TrackedTarget:
 		self.wasInForeground = False
 		self.lastSeenInForeground = False
 		self.trackedTitle: str | None = None
+		self.history: tuple[Change, ...] = ()
 		self.resetTracking()
 
 	def resetTracking(self):
@@ -169,6 +196,27 @@ class TrackedTarget:
 		self.announcedDelta = ""
 		self.staleCache = True
 		self.settleUntil: float | None = None
+
+	def recordChange(self, text: str, when: float, limit: int) -> Change | None:
+		"""
+		Add a change to the history, dropping the oldest beyond the limit.
+		@param text: The new content.
+		@param when: When the change was found, as from time.time().
+		@param limit: How many changes the history keeps.
+		@returns: The change recorded, or None while the history is off.
+		"""
+		if limit <= 0:
+			return None
+		change = Change(next(_changeSerials), when, text)
+		self.history = (*self.history, change)[-limit:]
+		return change
+
+	def trimHistory(self, limit: int):
+		"""
+		Drop the oldest changes beyond a new limit.
+		@param limit: How many changes the history keeps.
+		"""
+		self.history = self.history[-limit:] if limit > 0 else ()
 
 	def settleFor(self, seconds: float):
 		self.settleUntil = time.monotonic() + seconds
@@ -244,7 +292,8 @@ class TrackedTarget:
 		obj = self.obj
 		if obj is not None:
 			return safeCall(lambda: obj.role)
-		return None
+		remembered = self.identity.get("role")
+		return safeCall(lambda: Role(remembered)) if remembered else None
 
 	def roleText(self) -> str:
 		role = self.role

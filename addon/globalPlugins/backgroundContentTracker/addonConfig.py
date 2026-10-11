@@ -23,7 +23,12 @@ SORT_ORDERS: tuple[str, ...] = (
 	"alphabetical",
 	"reverseAlphabetical",
 )
-_SORT_SPEC = f"option({', '.join(repr(order) for order in SORT_ORDERS)}, default='newest')"
+HISTORY_SORT_ORDERS: tuple[str, ...] = ("newest", "oldest", "alphabetical", "reverseAlphabetical")
+
+
+def _sortSpec(orders: tuple[str, ...]) -> str:
+	return f"option({', '.join(repr(order) for order in orders)}, default='newest')"
+
 
 confspec: dict[str, str] = {
 	"changeBeep": "boolean(default=True)",
@@ -32,6 +37,7 @@ confspec: dict[str, str] = {
 	"repeatTargetName": "boolean(default=True)",
 	"trackingInterval": "integer(default=1,min=0,max=3600)",
 	"changesAtOnce": "integer(default=5,min=0,max=100)",
+	"historySize": "integer(default=50,min=0,max=1000)",
 	"ignoreProgressBars": "boolean(default=True)",
 	"ignoreCounters": "boolean(default=True)",
 	"titleChangeDisappears": "boolean(default=False)",
@@ -45,8 +51,9 @@ confspec: dict[str, str] = {
 	"menuTimeSinceChange": "boolean(default=True)",
 	"menuChangedContent": "boolean(default=True)",
 	"overlayTimeout": "integer(default=10,min=0,max=120)",
-	"slotSorting": _SORT_SPEC,
-	"menuSorting": _SORT_SPEC,
+	"slotSorting": _sortSpec(SORT_ORDERS),
+	"menuSorting": _sortSpec(SORT_ORDERS),
+	"historySorting": _sortSpec(HISTORY_SORT_ORDERS),
 	"trackForegroundTargets": "boolean(default=False)",
 	"rememberTargets": "boolean(default=False)",
 	"forgetOnDisappear": "boolean(default=False)",

@@ -1,8 +1,8 @@
 # Monitoraggio contenuti in background
 
 * Autore: Lukáš Hosnedl
-* Versione minima di NVDA: 2026.1
-* Ultima versione di NVDA testata: 2026.2
+* Versione minima di NVDA: 2026.3
+* Ultima versione di NVDA testata: 2027.1
 
 **Creato dall'IA, progettato e testato a fondo da esseri umani.**
 

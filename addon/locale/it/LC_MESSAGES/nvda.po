@@ -16,6 +16,28 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+#. Translators: the button copying the text of a browseable message to the clipboard.
+msgid "&Copy"
+msgstr "&Copia"
+
+#. Translators: announced when the text of a browseable message is copied to the clipboard.
+msgid "Copied to clipboard"
+msgstr "Copiato negli appunti"
+
+#. Translators: the title of the dialog showing a target's recent changes.
+#. Translators: submenu of a target's menu, listing the target's recent changes.
+msgid "Recent changes"
+msgstr "Modifiche recenti"
+
+#. Translators: the title of the dialog showing the overlay help.
+#. Translators: the title of the add-on's category in NVDA's Settings dialog.
+#. Translators: the category for this add-on's commands in the Input Gestures
+#. dialog, and its title in the Settings dialog.
+#. Translators: Summary/title for this add-on
+#. to be shown on installation and add-on information found in add-on store
+msgid "Background Content Tracker"
+msgstr "Monitoraggio contenuti in background"
+
 #. Translators: the "window" source in the target menu's start-tracking items.
 msgid "window"
 msgstr "finestra"
@@ -218,7 +240,8 @@ msgstr "Nessun obiettivo ricordato trovato"
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found, and there are few enough to name.
-#. {n} is how many there are, {names} their names, separated by commas.
+#. {n} is how many there are, {names} their names, each with its type if
+#. announced (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
 msgid "Found {n} remembered target: {names}"
 msgid_plural "Found {n} remembered targets: {names}"
@@ -236,7 +259,8 @@ msgstr[1] "Trovati {n} obiettivi ricordati"
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
 #. for. {found} is how many are being tracked, {total} how many there are,
-#. {names} the names of the ones found, separated by commas.
+#. {names} the names of the ones found, each with its type if announced
+#. (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
 msgid "Found {found} of {total} remembered targets: {names}"
 msgstr "Trovati {found} obiettivi ricordati su {total}: {names}"
@@ -308,36 +332,9 @@ msgstr ""
 "Comando sconosciuto. Premi H una volta per la guida, due volte per "
 "visualizzare la guida come messaggio esplorabile."
 
-#. Translators: the title of the add-on's category in NVDA's Settings dialog.
-#. Translators: the category for this add-on's commands in the Input Gestures
-#. dialog, and its title in the Settings dialog.
-#. Translators: Summary/title for this add-on
-#. to be shown on installation and add-on information found in add-on store
-msgid "Background Content Tracker"
-msgstr "Monitoraggio contenuti in background"
-
 #. Translators: master switch; enables or disables all tracking.
 msgid "Enable &tracking"
 msgstr "Attiva il &monitoraggio"
-
-#. Translators: group of options controlling what happens on a change.
-msgid "When target changes"
-msgstr "Quando l'obiettivo cambia"
-
-#. Translators: play a tone when the target changes.
-msgid "&Beep"
-msgstr "&Bip"
-
-#. Translators: speak an announcement when the target changes.
-msgid "&Announce"
-msgstr "&Annuncia"
-
-#. Translators: say the target's name in every change announcement, even when the same
-#. target changes several times in a row.
-msgid "Repeat target na&me for consecutive changes in the same target"
-msgstr ""
-"Ripeti i&l nome dell'obiettivo per modifiche consecutive nello stesso "
-"obiettivo"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
@@ -358,9 +355,72 @@ msgstr ""
 "Modifiche da annunciare in una &volta (solo obiettivi in background, 0 "
 "significa annunciare sempre ogni modifica)"
 
+#. Translators: how many recent changes the target menu keeps for each target (0 means none).
+msgid "Keep &history of recent changes per target (0 means no history)"
+msgstr ""
+"Conserva la &cronologia delle modifiche recenti per obiettivo (0 significa "
+"nessuna cronologia)"
+
+#. Translators: how many seconds of inactivity close the command overlay
+#. (0 means the overlay stays open until it is closed by a command or escape).
+msgid "&Overlay timeout (seconds, 0 means never time out)"
+msgstr "Timeout dell'&overlay (secondi, 0 significa nessun timeout)"
+
 #. Translators: also track a target while its own application is in the foreground.
 msgid "Trac&k even foreground targets"
 msgstr "Moni&tora anche gli obiettivi in primo piano"
+
+#. Translators: a target order; the most recently added target comes first.
+msgid "Newest target first"
+msgstr "Prima l'obiettivo più recente"
+
+#. Translators: a target order; the target added longest ago comes first.
+msgid "Oldest target first"
+msgstr "Prima l'obiettivo più vecchio"
+
+#. Translators: a target order; the target that changed last comes first.
+msgid "Most recently changed target first"
+msgstr "Prima l'obiettivo modificato più di recente"
+
+#. Translators: a target order; the target that changed longest ago comes first.
+msgid "Least recently changed target first"
+msgstr "Prima l'obiettivo modificato meno di recente"
+
+#. Translators: a target order; targets by name, A to Z.
+msgid "Alphabetically, A to Z"
+msgstr "In ordine alfabetico, dalla A alla Z"
+
+#. Translators: a target order; targets by name, Z to A.
+msgid "Alphabetically, Z to A"
+msgstr "In ordine alfabetico, dalla Z alla A"
+
+#. Translators: an order of a target's recent changes; the most recent change comes first.
+msgid "Newest change first"
+msgstr "Prima la modifica più recente"
+
+#. Translators: an order of a target's recent changes; the oldest change comes first.
+msgid "Oldest change first"
+msgstr "Prima la modifica più vecchia"
+
+#. Translators: the order the targets take the ten number slots in.
+msgid "Target slot sorting"
+msgstr "Ordinamento degli obiettivi negli slot"
+
+#. Translators: the order the targets are listed in, in the target menu.
+msgid "Target menu sorting"
+msgstr "Ordinamento degli obiettivi nel menu"
+
+#. Translators: the order a target's recent changes are listed in, in the target menu.
+msgid "Change history sorting"
+msgstr "Ordinamento della cronologia delle modifiche"
+
+#. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
+msgid "&Remember targets"
+msgstr "&Ricorda gli obiettivi"
+
+#. Translators: automatically drop remembered targets that no longer exist.
+msgid "&Forget remembered targets when they disappear"
+msgstr "&Dimentica gli obiettivi ricordati quando scompaiono"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
@@ -371,6 +431,25 @@ msgid "Ignore the focu&sed control when tracking the foreground window"
 msgstr ""
 "Ignora il controllo con il &focus durante il monitoraggio della finestra in "
 "primo piano"
+
+#. Translators: group of options controlling what happens on a change.
+msgid "When target changes"
+msgstr "Quando l'obiettivo cambia"
+
+#. Translators: play a tone when the target changes.
+msgid "&Beep"
+msgstr "&Bip"
+
+#. Translators: speak an announcement when the target changes.
+msgid "&Announce"
+msgstr "&Annuncia"
+
+#. Translators: say the target's name in every change announcement, even when the same
+#. target changes several times in a row.
+msgid "Repeat target na&me for consecutive changes in the same target"
+msgstr ""
+"Ripeti i&l nome dell'obiettivo per modifiche consecutive nello stesso "
+"obiettivo"
 
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
@@ -416,50 +495,13 @@ msgstr "Tempo dall'ultima &modifica"
 msgid "Changed cont&ent"
 msgstr "Contenuto modi&ficato"
 
-#. Translators: how many seconds of inactivity close the command overlay
-#. (0 means the overlay stays open until it is closed by a command or escape).
-msgid "&Overlay timeout (seconds, 0 means never time out)"
-msgstr "Timeout dell'&overlay (secondi, 0 significa nessun timeout)"
+#. Translators: sets every option on this panel back to its default value.
+msgid "Restore &default add-on settings"
+msgstr "Ripristina le impostazioni predefinite del componente aggiuntivo"
 
-#. Translators: a target order; the most recently added target comes first.
-msgid "Newest target first"
-msgstr "Prima l'obiettivo più recente"
-
-#. Translators: a target order; the target added longest ago comes first.
-msgid "Oldest target first"
-msgstr "Prima l'obiettivo più vecchio"
-
-#. Translators: a target order; the target that changed last comes first.
-msgid "Most recently changed target first"
-msgstr "Prima l'obiettivo modificato più di recente"
-
-#. Translators: a target order; the target that changed longest ago comes first.
-msgid "Least recently changed target first"
-msgstr "Prima l'obiettivo modificato meno di recente"
-
-#. Translators: a target order; targets by name, A to Z.
-msgid "Alphabetically, A to Z"
-msgstr "In ordine alfabetico, dalla A alla Z"
-
-#. Translators: a target order; targets by name, Z to A.
-msgid "Alphabetically, Z to A"
-msgstr "In ordine alfabetico, dalla Z alla A"
-
-#. Translators: the order the targets take the ten number slots in.
-msgid "Target slot sorting"
-msgstr "Ordinamento degli obiettivi negli slot"
-
-#. Translators: the order the targets are listed in, in the target menu.
-msgid "Target menu sorting"
-msgstr "Ordinamento degli obiettivi nel menu"
-
-#. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-msgid "&Remember targets"
-msgstr "&Ricorda gli obiettivi"
-
-#. Translators: automatically drop remembered targets that no longer exist.
-msgid "&Forget remembered targets when they disappear"
-msgstr "&Dimentica gli obiettivi ricordati quando scompaiono"
+#. Translators: announced when the add-on's settings panel is set back to the default values.
+msgid "Default settings restored"
+msgstr "Impostazioni predefinite ripristinate"
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""

@@ -13,8 +13,9 @@ import wx
 from logHandler import log
 from NVDAObjects import NVDAObject
 
-from . import addonConfig
-from .targets import FocusState, TrackedTarget, safeCall
+from . import addonConfig, dialogs
+from .notifier import relativeTime
+from .targets import FocusState, TrackedTarget, safeCall, sortChanges
 
 if TYPE_CHECKING:
 	from gettext import gettext as _  # noqa: TC004
@@ -46,6 +47,15 @@ def showTargetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: Focu
 		_popUp(_targetSubmenu(plugin, target, focus, _binder(boundIds)), boundIds)
 	except Exception:
 		log.exception("Error showing the target menu")
+
+
+def _plain(text: str) -> str:
+	"""
+	Keep the ampersands of a menu label from marking its accelerator.
+	@param text: The label.
+	@returns: The label as the menu takes it.
+	"""
+	return text.replace("&", "&&")
 
 
 def _startLabel(kind: str, obj: NVDAObject) -> str:
@@ -145,7 +155,24 @@ def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusSt
 		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
 		bind(focusItem, lambda: plugin.setFocusToTarget(target))
 	_appendSettingsSubmenu(submenu, plugin, target, bind)
+	if target.history and addonConfig.get("menuChangedContent"):
+		_appendHistorySubmenu(submenu, target, bind)
 	return submenu
+
+
+def _appendHistorySubmenu(submenu: wx.Menu, target: TrackedTarget, bind: Bind):
+	"""
+	Add the submenu listing a target's recent changes.
+	@param submenu: The target's submenu.
+	@param target: The target.
+	@param bind: Binds each item to what it does.
+	"""
+	historyMenu = wx.Menu()
+	for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
+		item = historyMenu.Append(wx.ID_ANY, _plain(f"{relativeTime(change.time)}, {change.text}"))
+		bind(item, lambda serial=change.serial: dialogs.showHistory(target, serial))
+	# Translators: submenu of a target's menu, listing the target's recent changes.
+	submenu.AppendSubMenu(historyMenu, _("Recent changes"))
 
 
 def _binder(boundIds: list[int]) -> Bind:
@@ -187,13 +214,15 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 
 	tracked = plugin.registry.sortedTargets(str(addonConfig.get("menuSorting")))
 	for target in tracked:
-		menu.AppendSubMenu(_targetSubmenu(plugin, target, focus, bind), notifier.menuDescription(target))
+		menu.AppendSubMenu(
+			_targetSubmenu(plugin, target, focus, bind), _plain(notifier.menuDescription(target))
+		)
 
 	if sources:
 		if tracked:
 			menu.AppendSeparator()
 		for kind, obj in sources:
-			item = menu.Append(wx.ID_ANY, _startLabel(kind, obj))
+			item = menu.Append(wx.ID_ANY, _plain(_startLabel(kind, obj)))
 			bind(item, lambda o=obj, k=kind: plugin.startTracking(o, k))
 
 	if tracked:

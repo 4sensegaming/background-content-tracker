@@ -1,8 +1,8 @@
 # Hintergrund-Inhaltsverfolgung
 
 * Autor: Lukáš Hosnedl
-* Mindestens erforderliche NVDA-Version: 2026.1
-* Zuletzt getestete NVDA-Version: 2026.2
+* Mindestens erforderliche NVDA-Version: 2026.3
+* Zuletzt getestete NVDA-Version: 2027.1
 
 **Von KI erstellt, von Menschen entworfen und gründlich getestet.**
 

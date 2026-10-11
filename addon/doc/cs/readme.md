@@ -1,8 +1,8 @@
 # Sledování obsahu na pozadí
 
 * Autor: Lukáš Hosnedl
-* Minimální verze NVDA: 2026.1
-* Poslední testovaná verze NVDA: 2026.2
+* Minimální verze NVDA: 2026.3
+* Poslední testovaná verze NVDA: 2027.1
 
 **Vytvořeno umělou inteligencí, navrženo a důkladně otestováno lidmi.**
 
@@ -96,7 +96,7 @@ Každý cíl je podnabídkou. Když ji rozbalíte, můžete:
 - Cíl *Přestat sledovat*,
 - *Přesunout fokus* na něj (pokud ho už nemá),
 - Změnit jeho [*Nastavení cíle*](#nastavení-cíle),
-- Nebo procházet jeho [**historii nedávných změn**](#historie-nedávných-změn).
+- Nebo procházet jeho [historii **nedávných změn**](#historie-nedávných-změn).
 
 Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný cíl můžete rychle přesunout nebo ho přestat sledovat. Dále se zobrazí cíle, které můžete začít sledovat ze své aktuální pozice (okno, fokus, ukazatel myši nebo prohlížený objekt). Položka pro ukončení sledování všech aktuálních cílů je na konci nabídky.
 

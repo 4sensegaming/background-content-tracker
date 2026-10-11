@@ -7,8 +7,7 @@
 
 import contextlib
 import json
-from collections.abc import Callable, Mapping, Sequence
-from html import escape
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 import addonHandler
@@ -24,7 +23,7 @@ from logHandler import log
 from NVDAObjects import NVDAObject
 from scriptHandler import script
 
-from . import addonConfig
+from . import addonConfig, dialogs
 from . import menu as menuModule
 from . import settings as settingsModule
 from .addonConfig import ChangedKeys
@@ -46,11 +45,6 @@ _SOURCES: dict[str, Callable[[], NVDAObject | None]] = {
 }
 
 PendingKind = tuple[str, int | None]
-
-
-def _helpDocument(heading: str, commands: Sequence[str]) -> str:
-	items = "\n".join(f"\t<li>{escape(line)}</li>" for line in commands)
-	return f"<h1>{escape(heading)}</h1>\n<ul>\n{items}\n</ul>"
 
 
 class _InputGesturesAtCategory(InputGesturesDialog):
@@ -113,6 +107,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if "rememberTargets" in changed:
 			self._dropUnkeptDetachedTargets()
 			self._saveRememberedTargets()
+		if "historySize" in changed:
+			limit = int(addonConfig.get("historySize"))
+			for target in self.registry:
+				target.trimHistory(limit)
 
 	def _recaptureTrackedTitles(self):
 		for target in self.registry:
@@ -232,12 +230,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		]
 		if self._isSecondPress(("help", None), None):
 			self.overlay.handOff()
-			ui.browseableMessage(
-				_helpDocument(heading, commands),
-				_("Background Content Tracker"),
-				isHtml=True,
-				copyButton=True,
-			)
+			dialogs.showHelp(heading, commands)
 		else:
 			ui.message("\n".join([heading] + commands))
 			self._awaitSecondPress(("help", None), None)

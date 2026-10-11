@@ -31,7 +31,15 @@ _NAMED_RESTORED_LIMIT = 5
 Extras = Sequence[str | None]
 
 
-def _describe(roleText: str, name: str, includeType: bool, extras: Extras) -> str:
+def describe(roleText: str, name: str, includeType: bool, extras: Extras) -> str:
+	"""
+	Describe a target, e.g. "Window: Claude, 3 minutes ago".
+	@param roleText: The target's type.
+	@param name: The target's name.
+	@param includeType: Whether the type is part of the description.
+	@param extras: What follows the name; empty pieces are left out.
+	@returns: The description.
+	"""
 	if includeType and roleText:
 		base = f"{roleText}: {name}" if name else roleText
 	else:
@@ -120,7 +128,7 @@ class Notifier:
 		extras: Extras = (),
 		typeSetting: str = "announceTargetType",
 	) -> str:
-		return _describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
+		return describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
 
 	def _announceTarget(self, template: str, target: TrackedTarget, unprompted: bool):
 		self._announce([template.format(target=self._describeTarget(target))], unprompted, Spri.NEXT)
@@ -151,12 +159,13 @@ class Notifier:
 			self._announce([text], unprompted=True, priority=Spri.NORMAL)
 			return
 		named = found < _NAMED_RESTORED_LIMIT
-		names = ", ".join(target.name or target.roleText() for target in attached)
+		names = ", ".join(self._describeTarget(target) for target in attached)
 		if found >= total and named:
 			text = ngettext(
 				# Translators: announced at start-up or on resuming tracking when every
 				# remembered target has been found, and there are few enough to name.
-				# {n} is how many there are, {names} their names, separated by commas.
+				# {n} is how many there are, {names} their names, each with its type if
+				# announced (e.g. "window: Claude"), separated by commas.
 				"Found {n} remembered target: {names}",
 				"Found {n} remembered targets: {names}",
 				found,
@@ -170,7 +179,8 @@ class Notifier:
 			# Translators: announced at start-up or on resuming tracking when only some
 			# of the remembered targets have been found; the rest are still being looked
 			# for. {found} is how many are being tracked, {total} how many there are,
-			# {names} the names of the ones found, separated by commas.
+			# {names} the names of the ones found, each with its type if announced
+			# (e.g. "window: Claude"), separated by commas.
 			text = _("Found {found} of {total} remembered targets: {names}")
 			text = text.format(found=found, total=total, names=names)
 		else:

@@ -1,8 +1,8 @@
 # Sledovanie obsahu na pozadí
 
 * Autor: Lukáš Hosnedl
-* Minimálna verzia NVDA: 2026.1
-* Posledná testovaná verzia NVDA: 2026.2
+* Minimálna verzia NVDA: 2026.3
+* Posledná testovaná verzia NVDA: 2027.1
 
 **Vytvorené umelou inteligenciou, navrhnuté a dôkladne otestované ľuďmi.**
 

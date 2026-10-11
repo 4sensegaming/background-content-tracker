@@ -17,6 +17,28 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 "X-Generator: Poedit 3.8\n"
 
+#. Translators: the button copying the text of a browseable message to the clipboard.
+msgid "&Copy"
+msgstr "&Kopírovať"
+
+#. Translators: announced when the text of a browseable message is copied to the clipboard.
+msgid "Copied to clipboard"
+msgstr "Skopírované do schránky"
+
+#. Translators: the title of the dialog showing a target's recent changes.
+#. Translators: submenu of a target's menu, listing the target's recent changes.
+msgid "Recent changes"
+msgstr "Nedávne zmeny"
+
+#. Translators: the title of the dialog showing the overlay help.
+#. Translators: the title of the add-on's category in NVDA's Settings dialog.
+#. Translators: the category for this add-on's commands in the Input Gestures
+#. dialog, and its title in the Settings dialog.
+#. Translators: Summary/title for this add-on
+#. to be shown on installation and add-on information found in add-on store
+msgid "Background Content Tracker"
+msgstr "Sledovanie obsahu na pozadí"
+
 #. Translators: the "window" source in the target menu's start-tracking items.
 msgid "window"
 msgstr "okno"
@@ -222,7 +244,8 @@ msgstr "Žiadne zapamätané ciele sa nenašli"
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found, and there are few enough to name.
-#. {n} is how many there are, {names} their names, separated by commas.
+#. {n} is how many there are, {names} their names, each with its type if
+#. announced (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
 msgid "Found {n} remembered target: {names}"
 msgid_plural "Found {n} remembered targets: {names}"
@@ -242,7 +265,8 @@ msgstr[2] "Nájdených {n} zapamätaných cieľov"
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
 #. for. {found} is how many are being tracked, {total} how many there are,
-#. {names} the names of the ones found, separated by commas.
+#. {names} the names of the ones found, each with its type if announced
+#. (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
 msgid "Found {found} of {total} remembered targets: {names}"
 msgstr "Nájdených {found} z {total} zapamätaných cieľov: {names}"
@@ -314,34 +338,9 @@ msgstr ""
 "Neznámy príkaz. Stlačte H raz pre nápovedu, dvakrát pre zobrazenie nápovedy "
 "v dialógovom okne na pohodlnejšie čítanie."
 
-#. Translators: the title of the add-on's category in NVDA's Settings dialog.
-#. Translators: the category for this add-on's commands in the Input Gestures
-#. dialog, and its title in the Settings dialog.
-#. Translators: Summary/title for this add-on
-#. to be shown on installation and add-on information found in add-on store
-msgid "Background Content Tracker"
-msgstr "Sledovanie obsahu na pozadí"
-
 #. Translators: master switch; enables or disables all tracking.
 msgid "Enable &tracking"
 msgstr "Povoliť &sledovanie"
-
-#. Translators: group of options controlling what happens on a change.
-msgid "When target changes"
-msgstr "Pri zmene cieľa"
-
-#. Translators: play a tone when the target changes.
-msgid "&Beep"
-msgstr "&Pípnuť"
-
-#. Translators: speak an announcement when the target changes.
-msgid "&Announce"
-msgstr "&Oznámiť"
-
-#. Translators: say the target's name in every change announcement, even when the same
-#. target changes several times in a row.
-msgid "Repeat target na&me for consecutive changes in the same target"
-msgstr "Op&akovať názov cieľa pri po sebe idúcich zmenách v rovnakom cieli"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
@@ -362,9 +361,71 @@ msgstr ""
 "Počet zmien oznamovaných &naraz (len ciele na pozadí, 0 znamená vždy "
 "oznamovať všetky zmeny)"
 
+#. Translators: how many recent changes the target menu keeps for each target (0 means none).
+msgid "Keep &history of recent changes per target (0 means no history)"
+msgstr ""
+"Uchovávať pri každom cieli &históriu nedávnych zmien (0 znamená bez histórie)"
+
+#. Translators: how many seconds of inactivity close the command overlay
+#. (0 means the overlay stays open until it is closed by a command or escape).
+msgid "&Overlay timeout (seconds, 0 means never time out)"
+msgstr "Čas do zatvorenia &prekrytia (sekundy, 0 znamená nikdy nezatvárať)"
+
 #. Translators: also track a target while its own application is in the foreground.
 msgid "Trac&k even foreground targets"
 msgstr "S&ledovať aj ciele v popredí"
+
+#. Translators: a target order; the most recently added target comes first.
+msgid "Newest target first"
+msgstr "Najnovší cieľ prvý"
+
+#. Translators: a target order; the target added longest ago comes first.
+msgid "Oldest target first"
+msgstr "Najstarší cieľ prvý"
+
+#. Translators: a target order; the target that changed last comes first.
+msgid "Most recently changed target first"
+msgstr "Naposledy zmenený cieľ prvý"
+
+#. Translators: a target order; the target that changed longest ago comes first.
+msgid "Least recently changed target first"
+msgstr "Najdlhšie nezmenený cieľ prvý"
+
+#. Translators: a target order; targets by name, A to Z.
+msgid "Alphabetically, A to Z"
+msgstr "Abecedne, A až Z"
+
+#. Translators: a target order; targets by name, Z to A.
+msgid "Alphabetically, Z to A"
+msgstr "Abecedne, Z až A"
+
+#. Translators: an order of a target's recent changes; the most recent change comes first.
+msgid "Newest change first"
+msgstr "Najnovšia zmena prvá"
+
+#. Translators: an order of a target's recent changes; the oldest change comes first.
+msgid "Oldest change first"
+msgstr "Najstaršia zmena prvá"
+
+#. Translators: the order the targets take the ten number slots in.
+msgid "Target slot sorting"
+msgstr "Zoradenie cieľov v slotoch"
+
+#. Translators: the order the targets are listed in, in the target menu.
+msgid "Target menu sorting"
+msgstr "Zoradenie cieľov v ponuke"
+
+#. Translators: the order a target's recent changes are listed in, in the target menu.
+msgid "Change history sorting"
+msgstr "Zoradenie histórie zmien"
+
+#. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
+msgid "&Remember targets"
+msgstr "&Pamätať si ciele"
+
+#. Translators: automatically drop remembered targets that no longer exist.
+msgid "&Forget remembered targets when they disappear"
+msgstr "&Zabudnúť zapamätané ciele, keď prestanú existovať"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
@@ -373,6 +434,23 @@ msgstr "Správanie pri sledovaní okna"
 #. Translators: suppress announcements of the control the user is typing in.
 msgid "Ignore the focu&sed control when tracking the foreground window"
 msgstr "Ignorovať prvok pod &fokusom pri sledovaní okna v popredí"
+
+#. Translators: group of options controlling what happens on a change.
+msgid "When target changes"
+msgstr "Pri zmene cieľa"
+
+#. Translators: play a tone when the target changes.
+msgid "&Beep"
+msgstr "&Pípnuť"
+
+#. Translators: speak an announcement when the target changes.
+msgid "&Announce"
+msgstr "&Oznámiť"
+
+#. Translators: say the target's name in every change announcement, even when the same
+#. target changes several times in a row.
+msgid "Repeat target na&me for consecutive changes in the same target"
+msgstr "Op&akovať názov cieľa pri po sebe idúcich zmenách v rovnakom cieli"
 
 #. Translators: group of options for the beep, available when Beep is on.
 msgid "Beep parameters"
@@ -418,50 +496,13 @@ msgstr "Čas od poslednej &zmeny"
 msgid "Changed cont&ent"
 msgstr "Zmenený o&bsah"
 
-#. Translators: how many seconds of inactivity close the command overlay
-#. (0 means the overlay stays open until it is closed by a command or escape).
-msgid "&Overlay timeout (seconds, 0 means never time out)"
-msgstr "Čas do zatvorenia &prekrytia (sekundy, 0 znamená nikdy nezatvárať)"
+#. Translators: sets every option on this panel back to its default value.
+msgid "Restore &default add-on settings"
+msgstr "Obnoviť pr&edvolené nastavenia doplnku"
 
-#. Translators: a target order; the most recently added target comes first.
-msgid "Newest target first"
-msgstr "Najnovší cieľ prvý"
-
-#. Translators: a target order; the target added longest ago comes first.
-msgid "Oldest target first"
-msgstr "Najstarší cieľ prvý"
-
-#. Translators: a target order; the target that changed last comes first.
-msgid "Most recently changed target first"
-msgstr "Naposledy zmenený cieľ prvý"
-
-#. Translators: a target order; the target that changed longest ago comes first.
-msgid "Least recently changed target first"
-msgstr "Najdlhšie nezmenený cieľ prvý"
-
-#. Translators: a target order; targets by name, A to Z.
-msgid "Alphabetically, A to Z"
-msgstr "Abecedne, A až Z"
-
-#. Translators: a target order; targets by name, Z to A.
-msgid "Alphabetically, Z to A"
-msgstr "Abecedne, Z až A"
-
-#. Translators: the order the targets take the ten number slots in.
-msgid "Target slot sorting"
-msgstr "Zoradenie cieľov v slotoch"
-
-#. Translators: the order the targets are listed in, in the target menu.
-msgid "Target menu sorting"
-msgstr "Zoradenie cieľov v ponuke"
-
-#. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-msgid "&Remember targets"
-msgstr "&Pamätať si ciele"
-
-#. Translators: automatically drop remembered targets that no longer exist.
-msgid "&Forget remembered targets when they disappear"
-msgstr "&Zabudnúť zapamätané ciele, keď prestanú existovať"
+#. Translators: announced when the add-on's settings panel is set back to the default values.
+msgid "Default settings restored"
+msgstr "Predvolené nastavenia obnovené"
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""
