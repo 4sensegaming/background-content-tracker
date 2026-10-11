@@ -254,7 +254,7 @@ msgstr "Nalezeno {found} z {total} zapamatovaných cílů: {names}"
 msgid "Found {found} of {total} remembered targets"
 msgstr "Nalezeno {found} z {total} zapamatovaných cílů"
 
-#. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
+#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
 #, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr "Přestávám sledovat {target}"
@@ -337,6 +337,11 @@ msgstr "&Pípnout"
 #. Translators: speak an announcement when the target changes.
 msgid "&Announce"
 msgstr "&Oznámit"
+
+#. Translators: say the target's name in every change announcement, even when the same
+#. target changes several times in a row.
+msgid "Repeat target na&me for consecutive changes in the same target"
+msgstr "Op&akovat název cíle u po sobě jdoucích změn ve stejném cíli"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
@@ -447,7 +452,7 @@ msgid "Target slot sorting"
 msgstr "Řazení cílů ve slotech"
 
 #. Translators: the order the targets are listed in, in the target menu.
-msgid "Target sorting in the menu"
+msgid "Target menu sorting"
 msgstr "Řazení cílů v nabídce"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.

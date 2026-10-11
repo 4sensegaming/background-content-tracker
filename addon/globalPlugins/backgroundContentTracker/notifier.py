@@ -26,8 +26,6 @@ addonHandler.initTranslation()
 
 _UNPROMPTED_DELAY_MS = 400
 
-_SAME_TARGET_INTERVALS = 10
-
 _NAMED_RESTORED_LIMIT = 5
 
 Extras = Sequence[str | None]
@@ -103,9 +101,6 @@ def _speakAll(texts: Sequence[str], priority: Spri):
 
 
 class Notifier:
-	def __init__(self):
-		self._lastChange: tuple[int, float] | None = None
-
 	def _announce(self, texts: Sequence[str], unprompted: bool, priority: Spri):
 		"""
 		Speak announcements one after another, at once or after a short delay.
@@ -187,7 +182,7 @@ class Notifier:
 		self._announce([text], unprompted=True, priority=Spri.NORMAL)
 
 	def announceStopped(self, target: TrackedTarget, unprompted: bool = False):
-		# Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
+		# Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
 		texts = [_("Stopped tracking {target}").format(target=self._describeTarget(target))]
 		if target.setting("rememberTargets"):
 			# Translators: announced right after "Stopped tracking" when the target was remembered.
@@ -199,19 +194,20 @@ class Notifier:
 		# list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
 		self._announceTarget(_("Target disappeared: {target}"), target, unprompted=True)
 
-	def announceChange(self, target: TrackedTarget, delta: str):
+	def announceChange(self, target: TrackedTarget, delta: str, sameTarget: bool):
+		"""
+		Beep and speak a change in a target, as the settings ask.
+		@param target: The target that changed.
+		@param delta: The new content of the target.
+		@param sameTarget: Whether the change announced before this one was in the same target.
+		"""
 		if addonConfig.get("changeBeep"):
 			self.beep()
 		if not addonConfig.get("changeAnnounce"):
 			return
-		now = time.monotonic()
-		window = _SAME_TARGET_INTERVALS * int(addonConfig.get("trackingInterval"))
-		last = self._lastChange
-		sameRun = last is not None and last[0] == target.uid and now - last[1] < window
-		self._lastChange = (target.uid, now)
 		if not addonConfig.get("announceChangedContent"):
 			text = self._describeTarget(target)
-		elif sameRun:
+		elif sameTarget and not addonConfig.get("repeatTargetName"):
 			text = delta
 		else:
 			text = self._describeTarget(target, [delta])

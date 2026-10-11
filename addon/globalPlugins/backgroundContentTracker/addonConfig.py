@@ -30,6 +30,7 @@ confspec: dict[str, str] = {
 	"changeBeep": "boolean(default=True)",
 	"changeAnnounce": "boolean(default=True)",
 	"interruptSpeech": "boolean(default=False)",
+	"repeatTargetName": "boolean(default=True)",
 	"trackingInterval": "integer(default=1,min=0,max=3600)",
 	"changesAtOnce": "integer(default=5,min=0,max=100)",
 	"ignoreProgressBars": "boolean(default=True)",
@@ -49,7 +50,7 @@ confspec: dict[str, str] = {
 	"menuSorting": _SORT_SPEC,
 	"trackForegroundTargets": "boolean(default=False)",
 	"rememberTargets": "boolean(default=False)",
-	"forgetOnDisappear": "boolean(default=True)",
+	"forgetOnDisappear": "boolean(default=False)",
 	"savedTargets": "string(default='')",
 }
 

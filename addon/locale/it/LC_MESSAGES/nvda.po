@@ -248,7 +248,7 @@ msgstr "Trovati {found} obiettivi ricordati su {total}: {names}"
 msgid "Found {found} of {total} remembered targets"
 msgstr "Trovati {found} obiettivi ricordati su {total}"
 
-#. Translators: announced when tracking stops, e.g. "Stopped tracking listbox: Message list".
+#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
 #, python-brace-format
 msgid "Stopped tracking {target}"
 msgstr "Monitoraggio di {target} interrotto"
@@ -331,6 +331,13 @@ msgstr "&Bip"
 #. Translators: speak an announcement when the target changes.
 msgid "&Announce"
 msgstr "&Annuncia"
+
+#. Translators: say the target's name in every change announcement, even when the same
+#. target changes several times in a row.
+msgid "Repeat target na&me for consecutive changes in the same target"
+msgstr ""
+"Ripeti i&l nome dell'obiettivo per modifiche consecutive nello stesso "
+"obiettivo"
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
@@ -443,7 +450,7 @@ msgid "Target slot sorting"
 msgstr "Ordinamento degli obiettivi negli slot"
 
 #. Translators: the order the targets are listed in, in the target menu.
-msgid "Target sorting in the menu"
+msgid "Target menu sorting"
 msgstr "Ordinamento degli obiettivi nel menu"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.

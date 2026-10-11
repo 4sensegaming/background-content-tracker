@@ -439,6 +439,7 @@ class Monitor:
 		self._onListChanged = onListChanged
 		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
+		self._lastAnnouncedUid: int | None = None
 
 	def start(self):
 		if self._thread is not None:
@@ -590,6 +591,9 @@ class Monitor:
 		target.lastChangeTime = time.time()
 		if not announce:
 			return
+		sameTarget = self._lastAnnouncedUid == target.uid
+		if not sameTarget:
+			target.announcedRun = 0
 		cap = int(settings["changesAtOnce"])
 		if cap and not inForeground and target.announcedRun >= cap:
 			return
@@ -598,7 +602,8 @@ class Monitor:
 			return
 		target.announcedDelta = delta
 		target.announcedRun += 1
-		self._callOnMainThread(self.notifier.announceChange, target, spoken, immediate=True)
+		self._lastAnnouncedUid = target.uid
+		self._callOnMainThread(self.notifier.announceChange, target, spoken, sameTarget, immediate=True)
 
 	def _collectDelta(
 		self,

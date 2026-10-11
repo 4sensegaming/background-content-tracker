@@ -27,6 +27,7 @@ class BCTSettingsPanel(SettingsPanel):
 	beepCb: wx.CheckBox
 	announceCb: wx.CheckBox
 	interruptCb: wx.CheckBox
+	repeatNameCb: wx.CheckBox
 	durationCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	pitchCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	testButton: wx.Button
@@ -107,6 +108,14 @@ class BCTSettingsPanel(SettingsPanel):
 			"interruptSpeech",
 			# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
 			_("I&nterrupt previous speech when announcing a new change"),
+		)
+		self.repeatNameCb = self._checkBox(
+			changeGroup,
+			changeBox,
+			"repeatTargetName",
+			# Translators: say the target's name in every change announcement, even when the same
+			# target changes several times in a row.
+			_("Repeat target na&me for consecutive changes in the same target"),
 		)
 		self._spinCtrl(
 			changeGroup,
@@ -222,7 +231,7 @@ class BCTSettingsPanel(SettingsPanel):
 		# Translators: the order the targets take the ten number slots in.
 		self._sortRadio(sHelper, self, "slotSorting", _("Target slot sorting"), sortChoices)
 		# Translators: the order the targets are listed in, in the target menu.
-		self._sortRadio(sHelper, self, "menuSorting", _("Target sorting in the menu"), sortChoices)
+		self._sortRadio(sHelper, self, "menuSorting", _("Target menu sorting"), sortChoices)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 		self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))
@@ -244,7 +253,7 @@ class BCTSettingsPanel(SettingsPanel):
 		for control in (self.durationCtrl, self.pitchCtrl, self.testButton):
 			control.Enable(beepOn)
 		announceOn = self.announceCb.IsChecked()
-		for control in (self.interruptCb, self.annTypeCb, self.annContentCb):
+		for control in (self.interruptCb, self.repeatNameCb, self.annTypeCb, self.annContentCb):
 			control.Enable(announceOn)
 
 	def _onTest(self, evt: wx.CommandEvent):
