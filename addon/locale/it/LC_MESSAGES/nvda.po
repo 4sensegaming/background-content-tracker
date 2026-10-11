@@ -26,11 +26,11 @@ msgstr "focus"
 
 #. Translators: the "mouse" source in the target menu's start-tracking items.
 msgid "mouse pointer"
-msgstr "mouse"
+msgstr "puntatore del mouse"
 
 #. Translators: the "navigator object" source in the target menu's start-tracking items.
 msgid "navigator object"
-msgstr "oggetto navigatore"
+msgstr "navigatore ad oggetti"
 
 #. Translators: a start-tracking item in the target menu, e.g. "Track window: Claude".
 #, python-brace-format
@@ -59,7 +59,7 @@ msgstr "Ignora i controlli &generici noti"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
-msgstr "Traccia questo obiettivo anche in primo piano"
+msgstr "Monitora questo obiettivo anche in primo piano"
 
 #. Translators: suppress announcements of the control the user is typing in.
 msgid "Ignore the focu&sed control"
@@ -270,7 +270,7 @@ msgstr "Nessun obiettivo nello slot {slot}"
 
 #. Translators: announced when the whole target list is cleared at once.
 msgid "All targets cleared"
-msgstr "Tutti gli obiettivi rimossi"
+msgstr "Tutti gli obiettivi cancellati"
 
 #. Translators: announced when a command needs a target and none is being tracked.
 msgid "No targets"
@@ -360,7 +360,7 @@ msgstr ""
 
 #. Translators: also track a target while its own application is in the foreground.
 msgid "Trac&k even foreground targets"
-msgstr "&Traccia anche gli obiettivi in primo piano"
+msgstr "Moni&tora anche gli obiettivi in primo piano"
 
 #. Translators: group of options refining how whole-window targets are announced.
 msgid "Window tracking behavior"
@@ -483,15 +483,17 @@ msgstr "W: avvia o interrompe il monitoraggio della finestra corrente"
 
 #. Translators: overlay help line for the F key.
 msgid "F: start or stop tracking the focused control"
-msgstr "F: avvia o interrompe il monitoraggio del controllo con focus"
+msgstr "F: avvia o interrompe il monitoraggio del controllo con il focus"
 
 #. Translators: overlay help line for the M key.
 msgid "M: start or stop tracking the control under the mouse pointer"
-msgstr "M: avvia o interrompe il monitoraggio del controllo sotto il mouse"
+msgstr ""
+"M: avvia o interrompe il monitoraggio del controllo sotto il puntatore del "
+"mouse"
 
 #. Translators: overlay help line for the N key.
 msgid "N: start or stop tracking the navigator object"
-msgstr "N: avvia o interrompe il monitoraggio dell'oggetto navigatore"
+msgstr "N: avvia o interrompe il monitoraggio del navigatore ad oggetti"
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
@@ -499,7 +501,7 @@ msgid ""
 "even in the foreground, or both"
 msgstr ""
 "Con Maiusc, W, F, M o N ricorda proprio quell'obiettivo, con Control lo "
-"monitora anche in primo piano, con entrambi entrambe le cose"
+"legge anche in primo piano, con entrambi entrambe le cose"
 
 #. Translators: overlay help line for the T key.
 msgid "T: open the target menu"

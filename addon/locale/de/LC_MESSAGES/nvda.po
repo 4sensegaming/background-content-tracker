@@ -26,11 +26,11 @@ msgstr "Fokus"
 
 #. Translators: the "mouse" source in the target menu's start-tracking items.
 msgid "mouse pointer"
-msgstr "Maus"
+msgstr "Mauszeiger"
 
 #. Translators: the "navigator object" source in the target menu's start-tracking items.
 msgid "navigator object"
-msgstr "Navigatorobjekt"
+msgstr "Navigator-Objekt"
 
 #. Translators: a start-tracking item in the target menu, e.g. "Track window: Claude".
 #, python-brace-format
@@ -252,7 +252,7 @@ msgstr "{found} von {total} gemerkten Zielen gefunden"
 #. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
 #, python-brace-format
 msgid "Stopped tracking {target}"
-msgstr "Verfolgung von {target} beendet"
+msgstr "Verfolgung von {target} gestoppt"
 
 #. Translators: announced right after "Stopped tracking" when the target was remembered.
 msgid "Target forgotten"
@@ -271,7 +271,7 @@ msgstr "Kein Ziel in Fach {slot}"
 
 #. Translators: announced when the whole target list is cleared at once.
 msgid "All targets cleared"
-msgstr "Alle Ziele entfernt"
+msgstr "Alle Ziele gelöscht"
 
 #. Translators: announced when a command needs a target and none is being tracked.
 msgid "No targets"
@@ -486,11 +486,12 @@ msgstr "F: Verfolgung des fokussierten Steuerelements starten oder stoppen"
 
 #. Translators: overlay help line for the M key.
 msgid "M: start or stop tracking the control under the mouse pointer"
-msgstr "M: Verfolgung des Steuerelements unter der Maus starten oder stoppen"
+msgstr ""
+"M: Verfolgung des Steuerelements unter dem Mauszeiger starten oder stoppen"
 
 #. Translators: overlay help line for the N key.
 msgid "N: start or stop tracking the navigator object"
-msgstr "N: Verfolgung des Navigatorobjekts starten oder stoppen"
+msgstr "N: Verfolgung des Navigator-Objekts starten oder stoppen"
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
@@ -498,7 +499,7 @@ msgid ""
 "even in the foreground, or both"
 msgstr ""
 "Mit Umschalt merkt sich W, F, M oder N genau dieses eine Ziel, mit Strg wird "
-"es auch im Vordergrund verfolgt, mit beiden beides"
+"es auch im Vordergrund gelesen, mit beiden beides"
 
 #. Translators: overlay help line for the T key.
 msgid "T: open the target menu"

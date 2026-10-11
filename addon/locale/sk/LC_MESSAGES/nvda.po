@@ -27,7 +27,7 @@ msgstr "fokus"
 
 #. Translators: the "mouse" source in the target menu's start-tracking items.
 msgid "mouse pointer"
-msgstr "myš"
+msgstr "ukazovateľ myši"
 
 #. Translators: the "navigator object" source in the target menu's start-tracking items.
 msgid "navigator object"
@@ -44,7 +44,7 @@ msgstr "Pri oznamovaní novej zmeny p&rerušiť predchádzajúcu reč"
 
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
-msgstr "Ignorovať &ukazovatele priebehu"
+msgstr "Ignorovať indikátory priebeh&u"
 
 #. Translators: suppress a control that does nothing but count (e.g. a timer).
 msgid "Ignore c&ounters, steppers and timers"
@@ -312,7 +312,7 @@ msgid ""
 "browseable message."
 msgstr ""
 "Neznámy príkaz. Stlačte H raz pre nápovedu, dvakrát pre zobrazenie nápovedy "
-"v dialógu."
+"v dialógovom okne na pohodlnejšie čítanie."
 
 #. Translators: the title of the add-on's category in NVDA's Settings dialog.
 #. Translators: the category for this add-on's commands in the Input Gestures
@@ -485,11 +485,11 @@ msgstr "W: Začne alebo prestane sledovať aktuálne okno"
 
 #. Translators: overlay help line for the F key.
 msgid "F: start or stop tracking the focused control"
-msgstr "F: Začne alebo prestane sledovať prvok s fokusom"
+msgstr "F: Začne alebo prestane sledovať prvok pod fokusom"
 
 #. Translators: overlay help line for the M key.
 msgid "M: start or stop tracking the control under the mouse pointer"
-msgstr "M: Začne alebo prestane sledovať prvok pod myšou"
+msgstr "M: Začne alebo prestane sledovať prvok pod ukazovateľom myši"
 
 #. Translators: overlay help line for the N key.
 msgid "N: start or stop tracking the navigator object"
@@ -559,7 +559,8 @@ msgstr "Escape: Zatvorí prekrytie"
 msgid ""
 "Tracks windows or individual controls in the background and notifies you "
 "when they change."
-msgstr "Sleduje okná alebo jednotlivé prvky v pozadí a upozorní pri ich zmene."
+msgstr ""
+"Sleduje okná alebo jednotlivé prvky na pozadí a upozorní pri ich zmene."
 
 #. Translators: what's new content for the add-on version to be shown in the add-on store
 msgid "Initial release"
