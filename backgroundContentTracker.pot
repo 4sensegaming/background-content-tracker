@@ -7,7 +7,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
-"POT-Creation-Date: 2026-10-11 20:03+0200\n"
+"POT-Creation-Date: 2026-10-11 20:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,19 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #. Translators: the button copying the text of a browseable message to the clipboard.
-#: addon\globalPlugins\backgroundContentTracker\dialogs.py:69
+#: addon\globalPlugins\backgroundContentTracker\dialogs.py:81
 msgid "&Copy"
 msgstr ""
 
 #. Translators: announced when the text of a browseable message is copied to the clipboard.
-#: addon\globalPlugins\backgroundContentTracker\dialogs.py:78
+#: addon\globalPlugins\backgroundContentTracker\dialogs.py:91
 msgid "Copied to clipboard"
 msgstr ""
 
 #. Translators: the title of the dialog showing a target's recent changes.
 #. Translators: submenu of a target's menu, listing the target's recent changes.
-#: addon\globalPlugins\backgroundContentTracker\dialogs.py:124
-#: addon\globalPlugins\backgroundContentTracker\menu.py:175
+#: addon\globalPlugins\backgroundContentTracker\dialogs.py:137
+#: addon\globalPlugins\backgroundContentTracker\menu.py:179
 msgid "Recent changes"
 msgstr ""
 
@@ -39,8 +39,8 @@ msgstr ""
 #. dialog, and its title in the Settings dialog.
 #. Translators: Summary/title for this add-on
 #. to be shown on installation and add-on information found in add-on store
-#: addon\globalPlugins\backgroundContentTracker\dialogs.py:158
-#: addon\globalPlugins\backgroundContentTracker\settings.py:26
+#: addon\globalPlugins\backgroundContentTracker\dialogs.py:172
+#: addon\globalPlugins\backgroundContentTracker\settings.py:56
 #: addon\globalPlugins\backgroundContentTracker\__init__.py:72 buildVars.py:21
 msgid "Background Content Tracker"
 msgstr ""
@@ -73,31 +73,31 @@ msgstr ""
 
 #. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
 #: addon\globalPlugins\backgroundContentTracker\menu.py:85
-#: addon\globalPlugins\backgroundContentTracker\settings.py:260
+#: addon\globalPlugins\backgroundContentTracker\settings.py:291
 msgid "I&nterrupt previous speech when announcing a new change"
 msgstr ""
 
 #. Translators: suppress announcements of progress bar controls in a window.
 #: addon\globalPlugins\backgroundContentTracker\menu.py:92
-#: addon\globalPlugins\backgroundContentTracker\settings.py:217
+#: addon\globalPlugins\backgroundContentTracker\settings.py:248
 msgid "Ignore &progress bars"
 msgstr ""
 
 #. Translators: suppress a control that does nothing but count (e.g. a timer).
 #: addon\globalPlugins\backgroundContentTracker\menu.py:94
-#: addon\globalPlugins\backgroundContentTracker\settings.py:223
+#: addon\globalPlugins\backgroundContentTracker\settings.py:254
 msgid "Ignore c&ounters, steppers and timers"
 msgstr ""
 
 #. Translators: treat a window that renames itself as a target that has disappeared.
 #: addon\globalPlugins\backgroundContentTracker\menu.py:96
-#: addon\globalPlugins\backgroundContentTracker\settings.py:230
+#: addon\globalPlugins\backgroundContentTracker\settings.py:261
 msgid "Consider c&hanged title a disappeared target"
 msgstr ""
 
 #. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
 #: addon\globalPlugins\backgroundContentTracker\menu.py:98
-#: addon\globalPlugins\backgroundContentTracker\settings.py:237
+#: addon\globalPlugins\backgroundContentTracker\settings.py:268
 msgid "Ignore kno&wn generic controls"
 msgstr ""
 
@@ -122,22 +122,22 @@ msgid "Forget this target when it disappears"
 msgstr ""
 
 #. Translators: submenu of a target's menu, holding that target's own settings.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:137
+#: addon\globalPlugins\backgroundContentTracker\menu.py:141
 msgid "Target settings"
 msgstr ""
 
 #. Translators: submenu item that stops tracking a single target.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:151
+#: addon\globalPlugins\backgroundContentTracker\menu.py:155
 msgid "Stop tracking"
 msgstr ""
 
 #. Translators: submenu item that moves the focus to a target.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:155
+#: addon\globalPlugins\backgroundContentTracker\menu.py:159
 msgid "Set focus"
 msgstr ""
 
 #. Translators: menu item that stops tracking every target at once.
-#: addon\globalPlugins\backgroundContentTracker\menu.py:231
+#: addon\globalPlugins\backgroundContentTracker\menu.py:242
 msgid "Stop tracking all targets"
 msgstr ""
 
@@ -404,13 +404,13 @@ msgid ""
 msgstr ""
 
 #. Translators: master switch; enables or disables all tracking.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:112
+#: addon\globalPlugins\backgroundContentTracker\settings.py:143
 msgid "Enable &tracking"
 msgstr ""
 
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
-#: addon\globalPlugins\backgroundContentTracker\settings.py:118
+#: addon\globalPlugins\backgroundContentTracker\settings.py:149
 msgid ""
 "Tracking &interval (seconds, 0 means never announce, only display in target "
 "menu)"
@@ -419,186 +419,186 @@ msgstr ""
 #. Translators: how many consecutive changes to one target to announce in a
 #. row before you have to refocus it (0 means announce every change). A target
 #. the user is currently working in is never limited.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:128
+#: addon\globalPlugins\backgroundContentTracker\settings.py:159
 msgid ""
 "Changes to announce at &once (background targets only, 0 means always "
 "announce every change)"
 msgstr ""
 
 #. Translators: how many recent changes the target menu keeps for each target (0 means none).
-#: addon\globalPlugins\backgroundContentTracker\settings.py:136
+#: addon\globalPlugins\backgroundContentTracker\settings.py:167
 msgid "Keep &history of recent changes per target (0 means no history)"
 msgstr ""
 
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
-#: addon\globalPlugins\backgroundContentTracker\settings.py:145
+#: addon\globalPlugins\backgroundContentTracker\settings.py:176
 msgid "&Overlay timeout (seconds, 0 means never time out)"
 msgstr ""
 
 #. Translators: also track a target while its own application is in the foreground.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:154
+#: addon\globalPlugins\backgroundContentTracker\settings.py:185
 msgid "Trac&k even foreground targets"
 msgstr ""
 
 #. Translators: a target order; the most recently added target comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:160
+#: addon\globalPlugins\backgroundContentTracker\settings.py:191
 msgid "Newest target first"
 msgstr ""
 
 #. Translators: a target order; the target added longest ago comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:162
+#: addon\globalPlugins\backgroundContentTracker\settings.py:193
 msgid "Oldest target first"
 msgstr ""
 
 #. Translators: a target order; the target that changed last comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:164
+#: addon\globalPlugins\backgroundContentTracker\settings.py:195
 msgid "Most recently changed target first"
 msgstr ""
 
 #. Translators: a target order; the target that changed longest ago comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:166
+#: addon\globalPlugins\backgroundContentTracker\settings.py:197
 msgid "Least recently changed target first"
 msgstr ""
 
 #. Translators: a target order; targets by name, A to Z.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:168
+#: addon\globalPlugins\backgroundContentTracker\settings.py:199
 msgid "Alphabetically, A to Z"
 msgstr ""
 
 #. Translators: a target order; targets by name, Z to A.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:170
+#: addon\globalPlugins\backgroundContentTracker\settings.py:201
 msgid "Alphabetically, Z to A"
 msgstr ""
 
 #. Translators: an order of a target's recent changes; the most recent change comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:175
+#: addon\globalPlugins\backgroundContentTracker\settings.py:206
 msgid "Newest change first"
 msgstr ""
 
 #. Translators: an order of a target's recent changes; the oldest change comes first.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:177
+#: addon\globalPlugins\backgroundContentTracker\settings.py:208
 msgid "Oldest change first"
 msgstr ""
 
 #. Translators: the order the targets take the ten number slots in.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:183
+#: addon\globalPlugins\backgroundContentTracker\settings.py:214
 msgid "Target slot sorting"
 msgstr ""
 
 #. Translators: the order the targets are listed in, in the target menu.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:191
+#: addon\globalPlugins\backgroundContentTracker\settings.py:222
 msgid "Target menu sorting"
 msgstr ""
 
 #. Translators: the order a target's recent changes are listed in, in the target menu.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:199
+#: addon\globalPlugins\backgroundContentTracker\settings.py:230
 msgid "Change history sorting"
 msgstr ""
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:205
+#: addon\globalPlugins\backgroundContentTracker\settings.py:236
 msgid "&Remember targets"
 msgstr ""
 
 #. Translators: automatically drop remembered targets that no longer exist.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:211
+#: addon\globalPlugins\backgroundContentTracker\settings.py:242
 msgid "&Forget remembered targets when they disappear"
 msgstr ""
 
 #. Translators: group of options refining how whole-window targets are announced.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:215
+#: addon\globalPlugins\backgroundContentTracker\settings.py:246
 msgid "Window tracking behavior"
 msgstr ""
 
 #. Translators: suppress announcements of the control the user is typing in.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:244
+#: addon\globalPlugins\backgroundContentTracker\settings.py:275
 msgid "Ignore the focu&sed control when tracking the foreground window"
 msgstr ""
 
 #. Translators: group of options controlling what happens on a change.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:248
+#: addon\globalPlugins\backgroundContentTracker\settings.py:279
 msgid "When target changes"
 msgstr ""
 
 #. Translators: play a tone when the target changes.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:250
+#: addon\globalPlugins\backgroundContentTracker\settings.py:281
 msgid "&Beep"
 msgstr ""
 
 #. Translators: speak an announcement when the target changes.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:253
+#: addon\globalPlugins\backgroundContentTracker\settings.py:284
 msgid "&Announce"
 msgstr ""
 
 #. Translators: say the target's name in every change announcement, even when the same
 #. target changes several times in a row.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:268
+#: addon\globalPlugins\backgroundContentTracker\settings.py:299
 msgid "Repeat target na&me for consecutive changes in the same target"
 msgstr ""
 
 #. Translators: group of options for the beep, available when Beep is on.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:272
+#: addon\globalPlugins\backgroundContentTracker\settings.py:303
 msgid "Beep parameters"
 msgstr ""
 
 #. Translators: how long the beep lasts, in milliseconds.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:274
+#: addon\globalPlugins\backgroundContentTracker\settings.py:305
 msgid "D&uration (ms)"
 msgstr ""
 
 #. Translators: the frequency of the beep, in hertz.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:276
+#: addon\globalPlugins\backgroundContentTracker\settings.py:307
 msgid "&Pitch (Hz)"
 msgstr ""
 
 #. Translators: plays a test beep with the current parameters.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:278
+#: addon\globalPlugins\backgroundContentTracker\settings.py:309
 msgid "&Test"
 msgstr ""
 
 #. Translators: group choosing what a change announcement contains.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:282
+#: addon\globalPlugins\backgroundContentTracker\settings.py:313
 msgid "Include in change announcement"
 msgstr ""
 
 #. Translators: include the target type (role) in change announcements.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:284
+#: addon\globalPlugins\backgroundContentTracker\settings.py:315
 msgid "Target t&ype"
 msgstr ""
 
 #. Translators: include the changed content in change announcements.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:286
+#: addon\globalPlugins\backgroundContentTracker\settings.py:317
 msgid "Changed &content"
 msgstr ""
 
 #. Translators: group choosing what a target menu description contains.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:289
+#: addon\globalPlugins\backgroundContentTracker\settings.py:320
 msgid "Include in menu descriptions"
 msgstr ""
 
 #. Translators: include the target type (role) in menu descriptions.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:291
+#: addon\globalPlugins\backgroundContentTracker\settings.py:322
 msgid "Targe&t type"
 msgstr ""
 
 #. Translators: include the time since the last change in menu descriptions.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:293
+#: addon\globalPlugins\backgroundContentTracker\settings.py:324
 msgid "Time since last chan&ge"
 msgstr ""
 
 #. Translators: include the changed content in menu descriptions.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:295
+#: addon\globalPlugins\backgroundContentTracker\settings.py:326
 msgid "Changed cont&ent"
 msgstr ""
 
 #. Translators: sets every option on this panel back to its default value.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:298
+#: addon\globalPlugins\backgroundContentTracker\settings.py:329
 msgid "Restore &default add-on settings"
 msgstr ""
 
 #. Translators: announced when the add-on's settings panel is set back to the default values.
-#: addon\globalPlugins\backgroundContentTracker\settings.py:326
+#: addon\globalPlugins\backgroundContentTracker\settings.py:374
 msgid "Default settings restored"
 msgstr ""
 
@@ -619,89 +619,94 @@ msgstr ""
 msgid "H: this help"
 msgstr ""
 
-#. Translators: overlay help line for the W key.
+#. Translators: overlay help line for the F1 key.
 #: addon\globalPlugins\backgroundContentTracker\__init__.py:193
+msgid "F1: open the add-on documentation"
+msgstr ""
+
+#. Translators: overlay help line for the W key.
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:195
 msgid "W: start or stop tracking the current window"
 msgstr ""
 
 #. Translators: overlay help line for the F key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:195
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:197
 msgid "F: start or stop tracking the focused control"
 msgstr ""
 
 #. Translators: overlay help line for the M key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:197
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:199
 msgid "M: start or stop tracking the control under the mouse pointer"
 msgstr ""
 
 #. Translators: overlay help line for the N key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:199
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:201
 msgid "N: start or stop tracking the navigator object"
 msgstr ""
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:202
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:204
 msgid ""
 "Add shift to W, F, M or N to remember that one target, control to read it "
 "even in the foreground, or both"
 msgstr ""
 
 #. Translators: overlay help line for the T key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:205
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:207
 msgid "T: open the target menu"
 msgstr ""
 
 #. Translators: overlay help line for the number keys.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:208
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:210
 msgid ""
 "1 through 0: speak information about the target in that slot; press again to "
 "set focus to it"
 msgstr ""
 
 #. Translators: overlay help line for Space and Enter.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:212
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:214
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
 "press again to set focus to it"
 msgstr ""
 
 #. Translators: overlay help line for Control plus a number.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:215
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:217
 msgid "Control plus a number: stop tracking the target in that slot"
 msgstr ""
 
 #. Translators: overlay help line for Alt plus a number.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:217
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:219
 msgid "Alt plus a number: open the target menu for the target in that slot"
 msgstr ""
 
 #. Translators: overlay help line for Backspace.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:219
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:221
 msgid "Backspace: stop tracking the most recently added target"
 msgstr ""
 
 #. Translators: overlay help line for Delete.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:221
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:223
 msgid "Delete: stop tracking all targets"
 msgstr ""
 
 #. Translators: overlay help line for the P key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:223
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:225
 msgid "P: pause or resume all tracking"
 msgstr ""
 
 #. Translators: overlay help line for the S key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:225
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:227
 msgid "S: open the add-on settings"
 msgstr ""
 
 #. Translators: overlay help line for the I key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:227
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:229
 msgid "I: open the add-on input gestures"
 msgstr ""
 
 #. Translators: overlay help line for the Escape key.
-#: addon\globalPlugins\backgroundContentTracker\__init__.py:229
+#: addon\globalPlugins\backgroundContentTracker\__init__.py:231
 msgid "Escape: close the overlay"
 msgstr ""
 

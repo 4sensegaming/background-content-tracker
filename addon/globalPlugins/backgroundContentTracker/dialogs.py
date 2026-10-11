@@ -17,7 +17,7 @@ import ui
 import wx
 from gui.message import HtmlMessageDialog
 
-from . import addonConfig
+from . import addonConfig, documentation
 from .notifier import describe, relativeTime
 from .targets import Change, TrackedTarget, sortChanges
 
@@ -54,12 +54,24 @@ if (start) {
 """
 
 
+_HELP_SCRIPT = """
+document.addEventListener("keydown", function (e) {
+	if (e.key === "F1") {
+		e.preventDefault();
+		window.location.href = "nvda-action://help";
+	}
+});
+"""
+
+
 class BrowseableDialog(HtmlMessageDialog):
-	def __init__(self, title: str, body: str):
+	def __init__(self, title: str, body: str, chapter: str):
 		"""
 		@param title: The window title.
 		@param body: The HTML of the message.
+		@param chapter: The chapter of the documentation F1 opens.
 		"""
+		body = f"{body}\n<script>{_HELP_SCRIPT}</script>"
 		with open(os.path.join(globalVars.appDir, "message.html"), encoding="utf-8") as f:
 			page = f.read().replace("{{TITLE}}", escape(title)).replace("{{MESSAGE}}", body)
 		super().__init__(None, page, title, buttons=None)
@@ -71,6 +83,7 @@ class BrowseableDialog(HtmlMessageDialog):
 			closesDialog=False,
 		)
 		self.registerAction("copy", self._copy)
+		self.registerAction("help", lambda: documentation.openChapter(chapter))
 
 	def _copy(self):
 		api.copyToClip(self._messageControl.GetPageText())
@@ -123,6 +136,7 @@ class HistoryDialog(BrowseableDialog):
 			# Translators: the title of the dialog showing a target's recent changes.
 			_("Recent changes"),
 			f'<h1>{heading}</h1>\n<div id="bctChanges">{entries}</div>\n<script>{_HISTORY_SCRIPT}</script>',
+			documentation.HISTORY,
 		)
 
 	def addChange(self, change: Change):
@@ -157,6 +171,7 @@ def showHelp(heading: str, commands: list[str]):
 		# Translators: the title of the dialog showing the overlay help.
 		_("Background Content Tracker"),
 		f"<h1>{escape(heading)}</h1>\n<ul>\n{items}\n</ul>",
+		documentation.KEYSTROKES,
 	).present()
 
 

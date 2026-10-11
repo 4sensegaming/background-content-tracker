@@ -518,6 +518,10 @@ msgstr "Befehle der Hintergrund-Inhaltsverfolgung"
 msgid "H: this help"
 msgstr "H: diese Hilfe"
 
+#. Translators: overlay help line for the F1 key.
+msgid "F1: open the add-on documentation"
+msgstr "F1: die Add-on-Dokumentation öffnen"
+
 #. Translators: overlay help line for the W key.
 msgid "W: start or stop tracking the current window"
 msgstr "W: Verfolgung des aktuellen Fensters starten oder stoppen"

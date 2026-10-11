@@ -519,6 +519,10 @@ msgstr "Comandi di Monitoraggio contenuti in background"
 msgid "H: this help"
 msgstr "H: questa guida"
 
+#. Translators: overlay help line for the F1 key.
+msgid "F1: open the add-on documentation"
+msgstr "F1: apre la documentazione del componente aggiuntivo"
+
 #. Translators: overlay help line for the W key.
 msgid "W: start or stop tracking the current window"
 msgstr "W: avvia o interrompe il monitoraggio della finestra corrente"

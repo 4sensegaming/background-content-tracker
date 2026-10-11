@@ -189,6 +189,8 @@ class Overlay:
 
 		if key == "h":
 			c.help()
+		elif key == "f1":
+			c.openDocumentation()
 		elif key == "t":
 			c.openMenu()
 		elif key == "p":

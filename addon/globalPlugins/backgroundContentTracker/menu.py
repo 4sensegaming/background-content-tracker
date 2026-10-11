@@ -4,7 +4,7 @@
 # See the file COPYING.txt for more details.
 
 import contextlib
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING
 
 import addonHandler
@@ -13,7 +13,7 @@ import wx
 from logHandler import log
 from NVDAObjects import NVDAObject
 
-from . import addonConfig, dialogs
+from . import addonConfig, dialogs, documentation
 from .notifier import relativeTime
 from .targets import FocusState, TrackedTarget, safeCall, sortChanges
 
@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 addonHandler.initTranslation()
 
 Source = tuple[str, NVDAObject]
-Bind = Callable[[wx.MenuItem, Callable[[], None]], None]
+Bind = Callable[[wx.MenuItem, Callable[[], None], str], None]
 
 
 def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
@@ -43,8 +43,8 @@ def showTargetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: Focu
 	@param focus: The current focus, deciding whether "Set focus" is offered.
 	"""
 	try:
-		boundIds: list[int] = []
-		_popUp(_targetSubmenu(plugin, target, focus, _binder(boundIds)), boundIds)
+		chapters: dict[int, str] = {}
+		_popUp(_targetSubmenu(plugin, target, focus, _binder(chapters)), chapters)
 	except Exception:
 		log.exception("Error showing the target menu")
 
@@ -132,7 +132,11 @@ def _appendSettingsSubmenu(
 	for key, label in _localSettingItems(target):
 		item = settingsMenu.AppendCheckItem(wx.ID_ANY, label)
 		item.Check(bool(target.setting(key)))
-		bind(item, lambda k=key, t=target: plugin.setTargetOverride(t, k, not t.setting(k)))
+		bind(
+			item,
+			lambda k=key, t=target: plugin.setTargetOverride(t, k, not t.setting(k)),
+			documentation.TARGET_SETTINGS,
+		)
 	# Translators: submenu of a target's menu, holding that target's own settings.
 	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
 
@@ -149,11 +153,11 @@ def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusSt
 	submenu = wx.Menu()
 	# Translators: submenu item that stops tracking a single target.
 	stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
-	bind(stopItem, lambda: plugin.stopTracking(target))
+	bind(stopItem, lambda: plugin.stopTracking(target), documentation.TARGET_MENU)
 	if target.canTakeFocus() and not target.hasFocus(focus):
 		# Translators: submenu item that moves the focus to a target.
 		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
-		bind(focusItem, lambda: plugin.setFocusToTarget(target))
+		bind(focusItem, lambda: plugin.setFocusToTarget(target), documentation.TARGET_MENU)
 	_appendSettingsSubmenu(submenu, plugin, target, bind)
 	if target.history and addonConfig.get("menuChangedContent"):
 		_appendHistorySubmenu(submenu, target, bind)
@@ -170,37 +174,44 @@ def _appendHistorySubmenu(submenu: wx.Menu, target: TrackedTarget, bind: Bind):
 	historyMenu = wx.Menu()
 	for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
 		item = historyMenu.Append(wx.ID_ANY, _plain(f"{relativeTime(change.time)}, {change.text}"))
-		bind(item, lambda serial=change.serial: dialogs.showHistory(target, serial))
+		bind(item, lambda serial=change.serial: dialogs.showHistory(target, serial), documentation.HISTORY)
 	# Translators: submenu of a target's menu, listing the target's recent changes.
 	submenu.AppendSubMenu(historyMenu, _("Recent changes"))
 
 
-def _binder(boundIds: list[int]) -> Bind:
+def _binder(chapters: dict[int, str]) -> Bind:
 	"""
 	Make the function that binds menu items, keeping their ids to unbind once the menu closes.
-	@param boundIds: Receives the id of every item bound.
+	@param chapters: Receives the id of every item bound, with the chapter of the documentation F1 opens on it.
 	@returns: The binding function.
 	"""
 
-	def bind(item: wx.MenuItem, func: Callable[[], None]):
+	def bind(item: wx.MenuItem, func: Callable[[], None], chapter: str):
 		gui.mainFrame.Bind(wx.EVT_MENU, lambda evt: func(), item)
-		boundIds.append(item.GetId())
+		chapters[item.GetId()] = chapter
 
 	return bind
 
 
-def _popUp(menu: wx.Menu, boundIds: Sequence[int]):
+def _popUp(menu: wx.Menu, chapters: Mapping[int, str]):
 	"""
 	Show a menu until it closes, then unbind its items and destroy it.
 	@param menu: The menu to show.
-	@param boundIds: The ids of the items bound in it.
+	@param chapters: The ids of the items bound in it, with the chapter of the documentation F1 opens on each.
 	"""
+	byMenuId = {itemId & 0xFFFF: chapter for itemId, chapter in chapters.items()}
+
+	def onHelp(evt: wx.HelpEvent):
+		documentation.openChapter(byMenuId.get(evt.GetId() & 0xFFFF, documentation.TARGET_MENU))
+
+	gui.mainFrame.Bind(wx.EVT_HELP, onHelp)
 	gui.mainFrame.prePopup()
 	try:
 		gui.mainFrame.PopupMenu(menu)
 	finally:
 		gui.mainFrame.postPopup()
-		for itemId in boundIds:
+		gui.mainFrame.Unbind(wx.EVT_HELP, handler=onHelp)
+		for itemId in chapters:
 			with contextlib.suppress(Exception):
 				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)
 		menu.Destroy()
@@ -209,8 +220,8 @@ def _popUp(menu: wx.Menu, boundIds: Sequence[int]):
 def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
 	notifier = plugin.notifier
 	menu = wx.Menu()
-	boundIds: list[int] = []
-	bind = _binder(boundIds)
+	chapters: dict[int, str] = {}
+	bind = _binder(chapters)
 
 	tracked = plugin.registry.sortedTargets(str(addonConfig.get("menuSorting")))
 	for target in tracked:
@@ -223,17 +234,17 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 			menu.AppendSeparator()
 		for kind, obj in sources:
 			item = menu.Append(wx.ID_ANY, _plain(_startLabel(kind, obj)))
-			bind(item, lambda o=obj, k=kind: plugin.startTracking(o, k))
+			bind(item, lambda o=obj, k=kind: plugin.startTracking(o, k), documentation.TARGET_MENU)
 
 	if tracked:
 		menu.AppendSeparator()
 		# Translators: menu item that stops tracking every target at once.
 		allItem = menu.Append(wx.ID_ANY, _("Stop tracking all targets"))
-		bind(allItem, lambda: plugin.clearAll())
+		bind(allItem, lambda: plugin.clearAll(), documentation.TARGET_MENU)
 
 	if not (tracked or sources):
 		notifier.noTargets()
 		menu.Destroy()
 		return
 
-	_popUp(menu, boundIds)
+	_popUp(menu, chapters)

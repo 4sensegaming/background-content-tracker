@@ -13,12 +13,42 @@ import wx
 from gui import guiHelper, nvdaControls
 from gui.settingsDialogs import SettingsPanel
 
-from . import addonConfig
+from . import addonConfig, documentation
 
 if TYPE_CHECKING:
 	from gettext import gettext as _  # noqa: TC004
 
 addonHandler.initTranslation()
+
+_CHAPTERS = {
+	"enabled": "enable-tracking-checkbox-enabled-by-default",
+	"trackingInterval": "tracking-interval-edit-1-by-default",
+	"changesAtOnce": "changes-to-announce-at-once-background-targets-only-edit-5-by-default",
+	"historySize": "keep-history-of-recent-changes-per-target-edit-50-by-default",
+	"overlayTimeout": "overlay-timeout-edit-10-by-default",
+	"trackForegroundTargets": "track-even-foreground-targets-checkbox-disabled-by-default",
+	"slotSorting": "target-sorting",
+	"menuSorting": "target-sorting",
+	"historySorting": "target-sorting",
+	"rememberTargets": "remember-targets-checkbox-disabled-by-default",
+	"forgetOnDisappear": "forget-remembered-targets-when-they-disappear-checkbox-disabled-by-default",
+	"ignoreProgressBars": "ignore-progress-bars-checkbox-enabled-by-default",
+	"ignoreCounters": "ignore-counters-steppers-and-timers-checkbox-enabled-by-default",
+	"titleChangeDisappears": "consider-changed-title-a-disappeared-target-checkbox-disabled-by-default",
+	"ignoreGenericControls": "ignore-known-generic-controls-checkbox-enabled-by-default",
+	"ignoreFocusedControl": "ignore-the-focused-control-when-tracking-the-foreground-window-checkbox-enabled-by-default",
+	"changeBeep": "beep-checkbox-enabled-by-default",
+	"changeAnnounce": "announce-checkbox-enabled-by-default",
+	"interruptSpeech": "interrupt-previous-speech-when-announcing-a-new-change-checkbox-disabled-by-default",
+	"repeatTargetName": "repeat-target-name-for-consecutive-changes-in-the-same-target-checkbox-enabled-by-default",
+	"beepDuration": "duration-edit-50-by-default",
+	"beepPitch": "pitch-edit-440-by-default",
+	"announceTargetType": "target-type-checkbox-enabled-by-default",
+	"announceChangedContent": "changed-content-checkbox-enabled-by-default",
+	"menuTargetType": "target-type-checkbox-enabled-by-default_1",
+	"menuTimeSinceChange": "time-since-last-change-checkbox-enabled-by-default",
+	"menuChangedContent": "changed-content-checkbox-enabled-by-default_1",
+}
 
 
 class BCTSettingsPanel(SettingsPanel):
@@ -38,6 +68,7 @@ class BCTSettingsPanel(SettingsPanel):
 	annContentCb: wx.CheckBox
 	_bound: dict[str, wx.CheckBox | nvdaControls.SelectOnFocusSpinCtrl]
 	_sortRadios: dict[str, tuple[wx.RadioBox, tuple[str, ...]]]
+	_chapters: dict[int, str]
 
 	def _group(
 		self, helper: guiHelper.BoxSizerHelper, label: str
@@ -298,7 +329,26 @@ class BCTSettingsPanel(SettingsPanel):
 		restoreButton = sHelper.addItem(wx.Button(self, label=_("Restore &default add-on settings")))
 		restoreButton.Bind(wx.EVT_BUTTON, self._onRestoreDefaults)
 
+		self._chapters = {control.GetId(): _CHAPTERS[key] for key, control in self._bound.items()}
+		for key, (radio, _orders) in self._sortRadios.items():
+			self._chapters[radio.GetId()] = _CHAPTERS[key]
+		self._chapters[self.testButton.GetId()] = "test-button"
+		self.GetTopLevelParent().Bind(wx.EVT_CHAR_HOOK, self._onCharHook)
+
 		self._updateDependentControls()
+
+	def _onCharHook(self, evt: wx.KeyEvent):
+		if evt.GetKeyCode() != wx.WXK_F1 or evt.HasAnyModifiers() or not self.IsShown():
+			evt.Skip()
+			return
+		chapter = documentation.GLOBAL_SETTINGS
+		window = wx.Window.FindFocus()
+		while window:
+			if window.GetId() in self._chapters:
+				chapter = self._chapters[window.GetId()]
+				break
+			window = window.GetParent()
+		documentation.openChapter(chapter)
 
 	def _onDependencyChanged(self, evt: wx.CommandEvent):
 		self._updateDependentControls()

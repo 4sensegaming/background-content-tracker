@@ -520,6 +520,10 @@ msgstr "Príkazy doplnku Sledovanie obsahu na pozadí"
 msgid "H: this help"
 msgstr "H: Táto nápoveda"
 
+#. Translators: overlay help line for the F1 key.
+msgid "F1: open the add-on documentation"
+msgstr "F1: Otvorí dokumentáciu doplnku"
+
 #. Translators: overlay help line for the W key.
 msgid "W: start or stop tracking the current window"
 msgstr "W: Začne alebo prestane sledovať aktuálne okno"

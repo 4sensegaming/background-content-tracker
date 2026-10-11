@@ -23,7 +23,7 @@ from logHandler import log
 from NVDAObjects import NVDAObject
 from scriptHandler import script
 
-from . import addonConfig, dialogs
+from . import addonConfig, dialogs, documentation
 from . import menu as menuModule
 from . import settings as settingsModule
 from .addonConfig import ChangedKeys
@@ -189,6 +189,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		commands = [
 			# Translators: overlay help line for the H key.
 			_("H: this help"),
+			# Translators: overlay help line for the F1 key.
+			_("F1: open the add-on documentation"),
 			# Translators: overlay help line for the W key.
 			_("W: start or stop tracking the current window"),
 			# Translators: overlay help line for the F key.
@@ -234,6 +236,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		else:
 			ui.message("\n".join([heading] + commands))
 			self._awaitSecondPress(("help", None), None)
+
+	def openDocumentation(self):
+		self.overlay.handOff()
+		documentation.openChapter(documentation.KEYSTROKES)
 
 	def toggleSource(self, kind: str, overrides: Mapping[str, bool] | None = None):
 		obj = _SOURCES[kind]()
