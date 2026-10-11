@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
 "POT-Creation-Date: 2026-09-07 08:55+0200\n"
-"PO-Revision-Date: 2026-08-02 18:26+0200\n"
-"Last-Translator: Lukáš Hosnedl <lukas@4sensegaming.cz>\n"
+"PO-Revision-Date: 2026-10-11 05:14+0200\n"
+"Last-Translator: 4Sense Gaming <lukas@4sensegaming.cz>\n"
 "Language-Team: Slovak\n"
 "Language: sk\n"
 "MIME-Version: 1.0\n"
@@ -56,7 +56,7 @@ msgstr "Považovať z&menu názvu za zmiznutie cieľa"
 
 #. Translators: suppress standard controls such as Minimize, OK or Cancel buttons in a window.
 msgid "Ignore kno&wn generic controls"
-msgstr "I&gnorovať známe všeobecné prvky"
+msgstr "I&gnorovať známe generické prvky"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
 msgid "Track this target even in the foreground"
@@ -349,7 +349,7 @@ msgid ""
 "Tracking &interval (seconds, 0 means never announce, only display in target "
 "menu)"
 msgstr ""
-"&Interval sledovania (sekundy, 0 znamená nikdy neoznamovať, iba zobrazovať v "
+"&Interval sledovania (sekundy, 0 znamená nikdy neoznamovať, iba zobraziť v "
 "ponuke cieľov)"
 
 #. Translators: how many consecutive changes to one target to announce in a
@@ -457,7 +457,7 @@ msgstr "Zoradenie cieľov v ponuke"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 msgid "&Remember targets"
-msgstr "&Zapamätať si ciele"
+msgstr "&Pamätať si ciele"
 
 #. Translators: automatically drop remembered targets that no longer exist.
 msgid "&Forget remembered targets when they disappear"

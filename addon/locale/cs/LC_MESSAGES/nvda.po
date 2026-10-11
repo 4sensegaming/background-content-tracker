@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: backgroundContentTracker 1.0\n"
 "POT-Creation-Date: 2026-09-07 08:55+0200\n"
-"PO-Revision-Date: 2026-09-07 13:13+0200\n"
+"PO-Revision-Date: 2026-10-11 05:07+0200\n"
 "Last-Translator: 4Sense Gaming <lukas@4sensegaming.cz>\n"
 "Language-Team: Czech\n"
 "Language: cs\n"
@@ -138,7 +138,7 @@ msgstr "Dokončit"
 #. Translators: a button declining an offer or a prompt for now, never announced while "Ignore known
 #. generic controls" is on.
 msgid "Not now"
-msgstr "Teď ne"
+msgstr "Nyní ne"
 
 #. Translators: a dialog's Yes button, never announced while "Ignore known generic controls" is on.
 msgid "Yes"
@@ -350,7 +350,7 @@ msgid ""
 "menu)"
 msgstr ""
 "&Interval sledování (v sekundách, 0 znamená nikdy neoznamovat, pouze "
-"zobrazovat v nabídce cílů)"
+"zobrazit v nabídce cílů)"
 
 #. Translators: how many consecutive changes to one target to announce in a
 #. row before you have to refocus it (0 means announce every change). A target
