@@ -350,7 +350,7 @@ msgid ""
 "menu)"
 msgstr ""
 "&Interval sledování (v sekundách, 0 znamená nikdy neoznamovat, pouze "
-"zobrazovat v nabídce cíle)"
+"zobrazovat v nabídce cílů)"
 
 #. Translators: how many consecutive changes to one target to announce in a
 #. row before you have to refocus it (0 means announce every change). A target
