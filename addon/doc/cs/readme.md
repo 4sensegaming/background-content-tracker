@@ -10,22 +10,26 @@
 
 Doplněk Sledování obsahu na pozadí sleduje okno nebo jednotlivý prvek a dá vám vědět, jakmile se v něm objeví nový obsah. Můžete tak dál pracovat v jednom okně, zatímco doplněk hlídá jiné.
 
-Když vidící lidé pracují v jednom okně, okamžitě zachytí koutkem oka, že ve vedlejším okně něco vyskočilo nebo se změnilo, a dokážou odhadnout, jestli to vyžaduje pozornost hned, nebo až za chvíli. NVDA umí oznamovat upozornění a živé regiony, ale obvykle jen ve chvíli, kdy je dané okno v popředí, takže změny, ke kterým došlo, zatímco jste pracovali jinde, vám mohou snadno uniknout.
+Když vidící lidé pracují v jednom okně, okamžitě zaznamenají, že ve vedlejším okně něco vyskočilo nebo se změnilo, a dokážou odhadnout, jestli to vyžaduje pozornost hned, nebo až za chvíli. NVDA umí oznamovat upozornění a živé regiony, ale obvykle jen ve chvíli, kdy je dané okno v popředí, takže změny, ke kterým došlo, zatímco jste pracovali jinde, vám mohou snadno uniknout.
 
 Sledování obsahu na pozadí vám dává přesně tento přehled: Vyberete si, co se má sledovat a jak chcete být upozorněni, a NVDA vás na změnu obsahu upozorní, aniž byste museli opustit to, co právě děláte.
 
 Tento doplněk je velmi silný a přizpůsobitelný nástroj, který dokáže z nepřístupných oken nebo prvků v podstatě udělat mluvící živé regiony, které fungují všude. Překvapivě dobře si rozumí například s:
 
+- Terminály běžícími na pozadí,
 - Krátkými, rychle se měnícími dynamickými zprávami v jediném seznamu, textové oblasti nebo objektu NVDA,
-- A také s aplikacemi postavenými na Electronu, jako je nový ChatGPT pro Windows, které po stránce přístupnosti mají dost co dohánět: Dokážou dlouho mlčet a pak začnou chrlit velké kusy textu, které by se jinak hledaly jen těžko.
+- Nepřístupnými webovými stránkami s dynamickými změnami,
+- Komunikačními aplikacemi, které samy nečtou nově příchozí zprávy,
+- A také s aplikacemi postavenými na Electronu, jako je nový ChatGPT, které po stránce přístupnosti mají dost co dohánět: Dokážou dlouho mlčet a pak začnou chrlit velké kusy textu na místě, které se posouvá a může být těžké ho najít.
 
 Doplněk ale nejspíš ocení jen pokročilí uživatelé, kteří potřebují zrychlit a zefektivnit svou práci, například:
 
-- Vývojáři pracující v týmu,
-- Ti, kdo běžně používají placené služby AI nebo lokální modely k tvorbě něčeho rozsáhlejšího,
-- Nebo ti, kdo pracují v částečně či plně automatizovaných firemních procesech, v nichž běží několik úloh naráz.
+- Ti, kdo běžně používají AI k tvorbě něčeho rozsáhlejšího,
+- Ti, kdo často spouštějí dlouhotrvající automatizované úlohy a potřebují v reálném čase sledovat jejich výstup,
+- Ti, kdo musí často přepínat mezi několika různými okny s dynamickým výstupem,
+- Nebo ti, kdo se podílejí na částečně či plně automatizovaných procesech, v nichž běží několik úloh naráz.
 
-Pokud ho potřebujete, nejspíš to už víte. Ostatním může připadat zahlcující nebo matoucí.
+Pokud ho potřebujete, nejspíš to už víte. Ostatním může připadat zahlcující, přeplácaný nebo matoucí.
 
 ## Použití
 
@@ -67,51 +71,51 @@ Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláve
 - `Backspace` – **přestane sledovat naposledy přidaný** cíl.
 - `Delete` – **přestane sledovat všechny cíle** (vymaže celý seznam najednou).
 - `P` – **pozastaví nebo obnoví** veškeré sledování (přepíná přepínač [*Povolit sledování*](#povolit-sledování-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto)).
-- `S` – otevře **[nastavení](#globální-nastavení)** doplňku (týž panel jako nabídka NVDA → Možnosti → Nastavení → Sledování obsahu na pozadí).
+- `S` – otevře **[nastavení](#globální-nastavení)** doplňku (stejnou kartu jako nabídka NVDA → Možnosti → Nastavení → Sledování obsahu na pozadí).
 - `I` – otevře dialog **Klávesové příkazy** NVDA přímo na kategorii Sledování obsahu na pozadí, takže můžete hlavní klávesovou zkratku přenastavit, aniž byste ji museli hledat.
 - `Escape` – **zavře překrytí** a neprovede nic jiného.
 
 Příkazy pro okno, fokus, myš a prohlížený objekt fungují jako přepínače: Prvním stisknutím daný cíl přidáte do seznamu, dalším stisknutím ho odeberete, pokud je to pořád aktuální okno, prvek s fokusem a podobně. Sledovat můžete libovolný počet cílů současně.
 
-Tyto čtyři příkazy přijímají i klávesy `shift` a `control`, které určují, jak se má přidávaný cíl sledovat: `shift` si tento jeden cíl zapamatuje, `control` ho nechá číst i ve chvíli, kdy je jeho aplikace v popředí, a s oběma klávesami najednou platí obojí. Jde o [nastavení pro jednotlivý cíl](#nastavení-cíle), zadaná přímo tomuto cíli při jeho přidání místo toho, aby se přejala z [globálního nastavení](#globální-nastavení) nebo dodatečně změněná v [nabídce cílů](#nabídka-cílů). Globální nastavení se přitom nezmění. Příkaz, který sledování cíle *ukončuje*, místo aby ho přidal, tyto modifikační klávesy prostě ignoruje. Hodí se jen tehdy, když máte možnost [**Pamatovat si cíle**](#pamatovat-si-cíle-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto) nebo [**Sledovat i cíle v popředí**](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto) globálně vypnutou, ale pro tento konkrétní cíl dané chování potřebujete.
+Tyto čtyři příkazy zohledňují i klávesy `shift` a `control`, které určují, jak se má přidávaný cíl sledovat: `shift` si tento jeden cíl zapamatuje, `control` ho nechá číst i ve chvíli, kdy je jeho aplikace v popředí, a s oběma klávesami najednou platí obojí. Jde o [volby pro jednotlivý cíl](#nastavení-cíle) zadané přímo tomuto cíli při jeho přidání místo toho, aby se přejaly z [globálních nastavení](#globální-nastavení) nebo dodatečně ručně měnily v [nabídce cílů](#nabídka-cílů). Globální nastavení se přitom nezmění. Příkaz, který sledování cíle *ukončuje*, místo aby ho přidal, tyto modifikační klávesy prostě ignoruje. Hodí se jen tehdy, když máte možnost [**Pamatovat si cíle**](#pamatovat-si-cíle-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto) nebo [**Sledovat i cíle v popředí**](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto) globálně vypnutou, ale pro tento konkrétní cíl dané chování potřebujete.
 
 Číselné zkratky odkazují na **sloty** v seznamu cílů, nikoli na pevně dané cíle. Ve výchozím nastavení je `1` naposledy přidaný cíl, `2` ten předposlední a tak dál až po `0` – desátý slot. [Nastavení **Řazení cílů ve slotech**](#řazení-cílů) může sloty seřadit jinak, třeba od nejstaršího cíle, od naposledy změněného cíle nebo abecedně. Když některý cíl zmizí – protože jste ho přestali sledovat, nebo přestal existovat – cíle za ním se posunou a mezeru zaplní, takže číslo `2` vždy oznámí ten cíl, který je právě teď v seznamu jako druhý.
 
-Pokud cíl existuje, doplněk ve výchozím nastavení oznámí jeho roli a název a změněný obsah cíle, například *Okno: Claude, Editing readme.md* nebo *Seznam: Seznam zpráv, Řekli jste: Tak jo*. Úroveň podrobnosti těchto oznámení lze [upravit v nastavení doplňku](#do-oznámení-o-změně-zahrnout-skupina).
+Pokud cíl existuje, doplněk ve výchozím nastavení oznámí jeho typ (roli), název a změněný obsah cíle, například *Okno: Claude, Editing readme.md* nebo *Seznam: Seznam zpráv, Řekli jste: Tak jo*. Úroveň podrobnosti těchto oznámení lze [upravit v nastavení doplňku](#do-oznámení-o-změně-zahrnout-skupina).
 
 Hlavní klávesovou zkratku můžete změnit v dialogu Klávesové příkazy (nabídka NVDA → Možnosti → Klávesové příkazy), kde se příkaz doplňku nachází v kategorii **Sledování obsahu na pozadí**. Následné klávesy jsou součástí samotného vrstveného příkazu.
 
 ## Nabídka cílů
 
-**Nabídka cílů** (hlavní klávesová zkratka následovaná klávesou `t`) zobrazuje všechny aktuální cíle jako seřazené položky nabídky, takže si nemusíte pamatovat aktuální pořadí cíle v seznamu ani žádnou z ostatních kláves.
+**Nabídka cílů** (hlavní klávesová zkratka následovaná klávesou `t`) zobrazuje všechny sledované cíle jako seřazené položky nabídky, takže si nemusíte pamatovat aktuální pořadí cíle v seznamu ani žádnou z ostatních kláves.
 
-Každá položka přesně pojmenovává, čeho se týká, například *Okno: Claude, před 3 minutami, 3 tasks running*. Cíl, který právě neexistuje – třeba zapamatovaný cíl, jehož okno ještě není znovu otevřené –, místo času a obsahu uvádí *nenalezeno* a v nabídce zůstává, protože ho pořád můžete přestat sledovat, změnit jeho nastavení, nebo ho nechat být a počkat, až se zase objeví. Pořadí, ve kterém jsou cíle vypsány, respektuje [nastavení **Řazení cílů v nabídce**](#řazení-cílů).
+Každá položka přesně pojmenovává, čeho se týká, například *Okno: Claude, před 3 minutami, 3 tasks running*. Cíl, který právě neexistuje – třeba zapamatovaný cíl, jehož okno ještě není znovu otevřené –, místo času a obsahu uvádí *nenalezeno* a v nabídce zůstává, protože ho pořád můžete přestat sledovat, změnit jeho nastavení, nebo ho nechat být a počkat, až se zase objeví. Pořadí, ve kterém jsou cíle zobrazeny, respektuje [nastavení **Řazení cílů v nabídce**](#řazení-cílů).
 
 Každý cíl je podnabídkou. Když ji rozbalíte, můžete:
 
 - Cíl *Přestat sledovat*,
 - *Přesunout fokus* na něj (pokud ho už nemá),
-- Změnit jeho [*Nastavení cíle*](#nastavení-cíle) v podnabídce, která obsahuje vlastní kopii těch nastavení, jež lze zadat pro jednotlivý cíl,
-- Nebo procházet jeho [historii **nedávných změn**](#historie-nedávných-změn).
+- Změnit jeho [*Nastavení cíle*](#nastavení-cíle),
+- Nebo procházet jeho [**historii nedávných změn**](#historie-nedávných-změn).
 
 Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný cíl můžete rychle přesunout nebo ho přestat sledovat. Dále se zobrazí cíle, které můžete začít sledovat ze své aktuální pozice (okno, fokus, ukazatel myši nebo prohlížený objekt). Položka pro ukončení sledování všech aktuálních cílů je na konci nabídky.
 
 ### Nastavení cíle
 
-Každá položka v *Nastavení cíle* je zaškrtávací políčko a ukazuje to, co cíl skutečně dělá: Jeho vlastní hodnotu tam, kde jste mu ji zadali, a jinde [globální nastavení](#globální-nastavení). Zaškrtnutím nebo odškrtnutím dáte cíli vlastní hodnotu právě pro toto jedno nastavení, a to okamžitě; všechna ostatní nastavení dál respektují globální hodnotu.
+Každá položka v podnabídce *Nastavení cíle* je zaškrtávací políčko a ukazuje to, co cíl skutečně dělá: Jeho vlastní hodnotu tam, kde jste mu ji zadali, a jinde [globální nastavení](#globální-nastavení). Zaškrtnutím nebo odškrtnutím dáte cíli vlastní hodnotu právě pro toto jedno nastavení, a to okamžitě; všechna ostatní nastavení dál respektují globální hodnotu.
 
 - *Při oznamování nové změny přerušit předchozí řeč* se zobrazuje u všech cílů, pokud je zapnuta [globální možnost *Oznámit*](#oznámit-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto).
 - Možnosti *Ignorovat indikátory průběhu*, *Ignorovat počítadla, krokovače a časovače*, *Považovat změnu názvu za zmizení cíle* a *Ignorovat známé generické prvky* se zobrazují jen u těch cílů, které jsou okna.
 - *Sledovat tento cíl i v popředí* se zobrazuje u všech cílů.
 - *Ignorovat prvek pod fokusem* se zobrazuje, pokud je cíl okno a zároveň je u něj [nastaveno, že se má sledovat i v popředí](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto).
 - *Pamatovat si tento cíl* se zobrazuje u všech cílů.
-- *Zapomenout tento cíl, když přestane existovat* se zobrazuje jen u cílů, který si doplněk pamatuje.
+- *Zapomenout tento cíl, když přestane existovat* se zobrazuje jen u cílů, které si doplněk pamatuje.
 
-Změna [globálního nastavení](#globální-nastavení) se projeví i u existujících cílů, pokud jste ho nezměnili zvlášť právě pro tento cíl. Panel nastavení zadává výhradně globální hodnoty: Nic, co v něm uděláte, cíli jeho vlastní hodnotu nevezme. Všechny vlastní hodnoty vymaže až to, že cíl přestanete sledovat a přidáte ho znovu, nebo že zapamatovaný cíl zapomenete.
+Změna [globálního nastavení](#globální-nastavení) se projeví i u existujících cílů, pokud jste stejné nastavení nezměnili zvlášť právě pro tento cíl. Panel nastavení zadává výhradně globální hodnoty: Nic, co v něm uděláte, cíli jeho vlastní hodnotu nevezme. Všechny vlastní hodnoty vymaže až to, že cíl přestanete sledovat a přidáte ho znovu, nebo že zapamatovaný cíl zapomenete.
 
 ### Historie nedávných změn
 
-Tato podnabídka uvádí tolik nedávných změn, ke kterým v daném cíli došlo, kolik jste nastavili v možnosti [*Uchovávat u každého cíle historii nedávných změn*](#uchovávat-u-každého-cíle-historii-nedávných-změn-editační-pole-ve-výchozím-nastavení-50), v pořadí určeném [*řazením historie změn*](#řazení-cílů) a přesně s nastavenou [úrovní podrobnosti](#do-popisů-v-nabídce-zahrnout-skupina). Pokud je *Uchovávat u každého cíle historii nedávných změn* nastaveno na 0, podnabídka se vůbec nezobrazí. Starší změny nad tento počet se odstraňují. Toto nastavení je pouze globální. Výběrem kterékoli položky v této podnabídce zobrazíte danou změnu v dialogovém okně pro pohodlnější čtení.
+Tato podnabídka uvádí tolik nedávných změn, ke kterým v daném cíli došlo, kolik jste nastavili v možnosti [*Uchovávat u každého cíle historii nedávných změn*](#uchovávat-u-každého-cíle-historii-nedávných-změn-editační-pole-ve-výchozím-nastavení-50), v pořadí určeném [*řazením historie změn*](#řazení-cílů) a s nastavenou [výřečností](#do-popisů-v-nabídce-zahrnout-skupina). Pokud je *Uchovávat u každého cíle historii nedávných změn* nastaveno na 0, podnabídka se vůbec nezobrazí. Starší změny nad tento počet se odstraňují. Toto nastavení je pouze globální. Výběrem kterékoli položky v této podnabídce zobrazíte danou změnu v dialogovém okně pro pohodlnější čtení.
 
 Historie zmizí, když cíl přestanete sledovat, když je cíl automaticky [zapomenut poté, co zmizí](#zapomínat-zapamatované-cíle-když-přestanou-existovat-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto), nebo na konci relace, a nikam se neukládá. Když je [sledování pozastaveno](#povolit-sledování-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto), historie se také neaktualizuje.
 
@@ -123,7 +127,9 @@ Související možnosti jsou uspořádány do skupin. Všechny dostupné možnos
 
 ### **Povolit sledování** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Pokud není zaškrtnuto, doplněk vás přestane upozorňovat, ale zachová celý seznam cílů i všechna nastavení, takže ho můžete umlčet (třeba během schůzky) a později zase zapnout přesně v tom stavu, v jakém byl. Jde o stejný přepínač, který přepíná [klávesa pro pozastavení a obnovení](#klávesové-příkazy). Tento přepínač se neukládá: Při spuštění NVDA je sledování vždy povoleno.
+Pokud není zaškrtnuto, doplněk vás přestane upozorňovat, ale zachová celý seznam cílů i všechna nastavení, takže ho můžete umlčet (třeba během schůzky) a později zase zapnout přesně v tom stavu, v jakém byl. Jde o stejný přepínač, který přepíná [klávesa pro pozastavení a obnovení](#klávesové-příkazy).
+
+Toto nastavení se jako jediné nikdy neukládá: Při spuštění NVDA je sledování vždy povoleno.
 
 ### **Interval sledování** (editační pole, ve výchozím nastavení 1)
 
@@ -141,19 +147,19 @@ Lze zapsat pouze celá čísla. Nastavuje, kolik nedávných změn se má uchov�
 
 U zapamatovaných cílů, které zmizely, se historie také uchovává a zůstává dostupná, dokud cíl neodeberete, nebo do konce relace.
 
+### **Čas do zavření překrytí** (editační pole, ve výchozím nastavení 10)
+
+Lze zapsat pouze celá čísla. Určuje, kolik sekund bez stisku klávesy musí uplynout, než se překrytí samo zavře. Při hodnotě 0 se překrytí samo nezavře nikdy: Zůstane otevřené, dokud ho nezavřete klávesou escape nebo příkazem, který přesune fokus jinam, například otevřením [nabídky cílů](#nabídka-cílů).
+
 ### **Sledovat i cíle v popředí** (zaškrtávací políčko, ve výchozím nastavení nezaškrtnuto)
 
 Běžně se cíl čte jen ve chvíli, kdy pracujete někde jinde: Jakmile se jeho aplikace dostane do popředí, doplněk ji nechává být. Pokud je zaškrtnuto, nový obsah cíle se oznamuje i tehdy, když právě pracujete s tímto oknem nebo jednotlivým prvkem.
 
 Pokud aplikace cíle komunikuje s odečítači obrazovky přímo (prostřednictvím živých regionů ARIA nebo jiných událostí přístupnosti), mohou se při práci v jejím okně stejná oznámení někdy ohlásit dvakrát – jednou samotnou aplikací a jednou doplňkem. Chcete-li v takovém případě slyšet jen vlastní oznámení aplikace, můžete v [Nastavení cíle](#nastavení-cíle) daného cíle odškrtnout *Sledovat tento cíl i v popředí*, dočasně pozastavit sledování, nebo cíl odebrat a později ho přidat znovu. Chcete-li slyšet jen oznámení doplňku, vypněte v NVDA hlášení dynamických změn obsahu (ve výchozím nastavení NVDA+5).
 
-### **Čas do zavření překrytí** (editační pole, ve výchozím nastavení 10)
-
-Lze zapsat pouze celá čísla. Určuje, kolik sekund bez stisku klávesy musí uplynout, než se překrytí samo zavře. Při hodnotě 0 se překrytí samo nezavře nikdy: Zůstane otevřené, dokud ho nezavřete klávesou escape nebo příkazem, který přesune fokus jinam, například otevřením [nabídky cílů](#nabídka-cílů).
-
 ### Řazení cílů
 
-Jsou tu tři sady přepínačů, jedna za druhou: *Řazení cílů ve slotech*, *Řazení cílů v nabídce* a *Řazení historie změn*. Všechny nabízejí stejné možnosti uvedené níže (až na několik výjimek) a lze je nastavit buď shodně, nebo nezávisle na sobě. Určují, v jakém pořadí se cíle umisťují do deseti dostupných číslovaných slotů (viz [Klávesové příkazy](#klávesové-příkazy)), zobrazují v [nabídce cílů](#nabídka-cílů), respektive řadí v [historii nedávných změn jednotlivých cílů](#historie-nedávných-změn).
+Tři sady přepínačů, jedna za druhou: *Řazení cílů ve slotech*, *Řazení cílů v nabídce* a *Řazení historie změn*. Všechny nabízejí stejné možnosti uvedené níže (až na několik výjimek) a lze je nastavit buď shodně, nebo nezávisle na sobě. Určují, v jakém pořadí se cíle umisťují do deseti dostupných číslovaných slotů (viz [Klávesové příkazy](#klávesové-příkazy)), zobrazují v [nabídce cílů](#nabídka-cílů), respektive řadí v [historii nedávných změn jednotlivých cílů](#historie-nedávných-změn).
 
 - *Nejnovější cíl / změna první* (výchozí nastavení u všech typů řazení)
 - *Nejstarší cíl / změna první*
@@ -188,16 +194,18 @@ Pokud je zaškrtnuto a změní se název okna, které sledujete, doplněk ho za�
 
 #### **Ignorovat známé generické prvky** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Pokud je zaškrtnuto, tato možnost potlačí oznamování generických prvků, jako když se tlačítko „Minimalizovat“ změní na „Maximalizovat“ a naopak. Patří sem:
+Pokud je zaškrtnuto, potlačí oznamování generických prvků, jako například když se tlačítko „Minimalizovat“ v příslušném okně změní na „Maximalizovat“ a naopak. Patří sem:
 
-- Panel nabídek aplikace (obvykle se na něj přejde klávesou alt)
+- Panel nabídek aplikace (obvykle se na něj přechází klávesou alt)
 - Tlačítka „Minimalizovat“, „Obnovit“, „Maximalizovat“ a „Zavřít“
-- Tlačítka „OK“, „Storno“, „Zavřít“, „Přerušit“, „Opakovat“, „Pokračovat“, „Další“, „Předchozí“, „Zpět“, „Dokončit“ a „Teď ne“
+- Tlačítka „OK“, „Storno“, „Přerušit“, „Opakovat“, „Pokračovat“, „Další“, „Předchozí“, „Zpět“, „Dokončit“ a „Teď ne“
 - A tlačítka „Ano“ a „Ne“.
 
 #### **Při sledování okna v popředí ignorovat prvek pod fokusem** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Tato možnost je dostupná, pouze pokud je zaškrtnuto [Sledovat i cíle v popředí](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto), protože se projeví jen u okna, které se čte ve chvíli, kdy v něm právě pracujete. Oken na pozadí ani cílů, které jsou jednotlivé prvky, se tak či tak netýká. Pokud je zaškrtnuta, prvek, který má právě fokus, se nikdy neoznámí jako změna, takže se vám například znaky, které píšete do editačního pole, nebudou hlásit jako nový obsah.
+Tato možnost je dostupná, pouze pokud je zaškrtnuto [Sledovat i cíle v popředí](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto), protože se projeví jen u okna, které se čte ve chvíli, kdy v něm právě pracujete. Oken na pozadí ani cílů, které jsou jednotlivé prvky, se tak či tak netýká.
+
+Pokud je zaškrtnuta, prvek, který má právě fokus, se nikdy neoznámí jako změna, takže se vám například znaky, které píšete do editačního pole, nebudou hlásit jako nový obsah.
 
 ### **Při změně cíle** (skupina)
 
@@ -217,7 +225,7 @@ Tato možnost je dostupná, pouze pokud je zaškrtnuto výše uvedené políčko
 
 #### **Opakovat název cíle u po sobě jdoucích změn ve stejném cíli** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Tato možnost je dostupná, pouze pokud je zapnuto [slovní oznamování jako takové](#oznámit-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto). Pokud je zaškrtnuta, název cíle zazní v každém jednotlivém oznámení o změně, i když v tomtéž cíli došlo k několika změnám po sobě. Pokud zaškrtnuta není, název cíle se oznámí jen u první z po sobě jdoucích změn a také tehdy, když k naposledy oznámené změně došlo v jiném cíli.
+Tato možnost je dostupná, pouze pokud je zapnuto [slovní oznamování jako takové](#oznámit-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto). Pokud je zaškrtnuta, název cíle zazní v každém jednotlivém oznámení o změně, i když v tomtéž cíli došlo k několika změnám po sobě. Pokud zaškrtnuta není, název cíle se oznámí jen u první z po sobě jdoucích změn ve stejném cíli.
 
 ### **Parametry pípnutí** (skupina)
 
@@ -241,7 +249,7 @@ Možnosti v této skupině jsou dostupné, pouze pokud je zaškrtnuto výše uve
 
 #### **Typ cíle** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Jestli oznamovat typ cíle (například **okno**, **seznam** nebo **editační pole**).
+Jestli oznamovat typ (roli) cíle (například **okno**, **seznam** nebo **editační pole**).
 
 #### **Změněný obsah** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
@@ -249,11 +257,11 @@ Jestli oznamovat nový obsah v cíli po poslední změně.
 
 ### **Do popisů v nabídce zahrnout** (skupina)
 
-Možnosti v této skupině určují úroveň podrobnosti, kterou chcete slyšet při procházení [nabídky cílů](#nabídka-cílů). Ovlivňují také, jak se zapisují položky do [historie změn](#historie-nedávných-změn) jednotlivých cílů.
+Možnosti v této skupině určují, jak budou vypadat popisky položek v [nabídce cílů](#nabídka-cílů). Ovlivňují také, jak se zapisují položky do [historie změn](#historie-nedávných-změn) jednotlivých cílů.
 
 #### **Typ cíle** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
-Jestli v popisu příslušné položky pro daný cíl zobrazovat typ cíle (například **okno**, **seznam** nebo **editační pole**).
+Jestli v popisu příslušné položky pro daný cíl zobrazovat typ (roli) cíle (například **okno**, **seznam** nebo **editační pole**).
 
 #### **Čas od poslední změny** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
 
@@ -266,14 +274,14 @@ Jestli v popisu příslušné položky pro daný cíl zobrazovat nový obsah po 
 ## Známá omezení
 
 - **Panely prohlížečů na pozadí nelze sledovat.** Webové prohlížeče udržují čitelný pouze ten panel, na který se právě díváte. Pokud chcete některou stránku sledovat, zatímco pracujete jinde, otevřete si ji ve vlastním okně místo v panelu na pozadí. Vidící uživatelé panel na pozadí také nevidí.
-- **Některé aplikace toho na pozadí zobrazují jen velmi málo.** Kolik toho aplikace prozradí odečítači obrazovky o obsahu, na kterém není fokus, řídí výhradně ona sama. Moderní aplikace postavené na technologii UIA – Terminál, Nastavení, Kalkulačka, Fotky a většina programů z Microsoft Storu – a aplikace vykreslované jako webová stránka – desktopové aplikace Claude a ChatGPT, nový Outlook, Visual Studio Code, Discord, Slack, Signal, WhatsApp pro Windows, Spotify i skutečné webové stránky – se v tomto ohledu značně liší. Pokud aplikace nový obsah nezpřístupňuje jako text, doplněk ho oznámit nedokáže.
+- **Některé aplikace toho na pozadí zobrazují jen velmi málo.** Kolik toho aplikace prozradí odečítači obrazovky o obsahu, na kterém není fokus, řídí výhradně ona sama. Moderní aplikace postavené na technologii UIA – Terminál, Nastavení, Kalkulačka, Fotky a většina aplikací z Microsoft Storu – a aplikace vykreslované jako webová stránka – desktopové aplikace Claude a ChatGPT, nový Outlook, Visual Studio Code, Discord, Slack, Signal, WhatsApp pro Windows, Spotify i skutečné webové stránky – se v tomto ohledu značně liší. Pokud aplikace nový obsah nezpřístupňuje jako text, doplněk ho oznámit nedokáže.
 - **Počítá se jen to, co se v okně právě zobrazuje.** Dlouhé seznamy – historie chatu, seznamy souborů, výsledky hledání – existují obvykle jen jako těch několik řádků, které jsou zrovna zobrazeny. Doplněk nevidí položky odrolované mimo obrazovku, stejně jako je nevidí vidící uživatelé, a minimalizované okno může přestat svůj obsah zobrazovat úplně, dokud ho neobnovíte – podle toho, jak je daná aplikace naprogramovaná.
 
-Pokud často potřebujete vědět o aktualizacích z aplikace, kterou používáte na pozadí, bývá obvykle spolehlivější a jednodušší nastavit samotnou aplikaci tak, aby vám posílala oznámení, pokud to daná aplikace umožňuje. Také když aplikaci minimalizujete do systémové lišty, přestane zobrazovat viditelné okno, takže ji doplněk už nemůže sledovat. Pokud ale ikona na systémové liště prezentuje užitečné informace jako přístupné textové aktualizace, můžete sledovat přímo tuto ikonu.
+Pokud často potřebujete vědět o aktualizacích z aplikace, kterou používáte na pozadí, bývá obvykle spolehlivější a jednodušší nastavit samotnou aplikaci tak, aby vám posílala oznámení, pokud to daná aplikace umožňuje. Také když aplikaci minimalizujete do systémové lišty, přestane zobrazovat viditelné okno, takže ji doplněk už nemůže sledovat. Pokud ale ikona na systémové liště zobrazuje užitečné informace ve formě textu, můžete sledovat přímo tuto ikonu.
 
 ## Spolupráce
 
-Pokud byste chtěli přispět k vývoji doplňku – ať už překladem, hlášením chyb nebo vytvořením pull requestu – a víte, jak na to, můžete tak učinit v jeho [repozitáři na GitHubu](https://github.com/4sensegaming/background-content-tracker). Veškerou pomoc vítám a vážím si jí.
+Pokud byste chtěli přispět k vývoji doplňku – ať už překladem, hlášením chyb nebo vytvořením pull requestu – a víte, jak na to, můžete to udělat v jeho [repozitáři na GitHubu](https://github.com/4sensegaming/background-content-tracker). Veškerou pomoc vítám a vážím si jí.
 
 ## Historie změn
 
