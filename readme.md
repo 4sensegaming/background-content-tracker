@@ -68,7 +68,7 @@ After pressing the prefix, press one of the following keys:
 - `delete` — **stop tracking all targets** (clear the whole list at once).
 - `p` — **pause or resume** all tracking (this toggles the [*Enable tracking*](#enable-tracking-checkbox-enabled-by-default) switch).
 - `s` — open the add-on's **[settings](#global-settings)** (the same panel as NVDA menu → Preferences → Settings → Background Content Tracker).
-- `i` — open NVDA's **Input Gestures** dialog directly to the Background Content Tracker category, so you can rebind the prefix without hunting for it in the menus.
+- `i` — open NVDA's **Input Gestures** dialog directly to the Background Content Tracker category, so you can rebind the prefix without hunting for it.
 - `escape` — **close the overlay** without doing anything else.
 
 The window, focus, mouse and navigator commands are toggles: press one once to add that target to the list, and press it again to remove it as long as it's still the current window, has focus, etc. You can track any number of targets at the same time.
@@ -105,7 +105,7 @@ Each item in *Target settings* is a checkbox, and what it shows is what the targ
 - *Track this target even in the foreground* is displayed for all targets.
 - *Ignore the focused control* is displayed as long as the target is a window and it's also [set to be tracked even in the foreground](#track-even-foreground-targets-checkbox-disabled-by-default).
 - *Remember this target* is displayed for all targets.
-- *Forget this target when it disappears* is displayed just for a target that is being remembered.
+- *Forget this target when it disappears* is displayed just for target that are being remembered.
 
 Changing a [global setting](#global-settings) affects even existing targets unless that setting has been overridden locally. The settings panel sets globals only: nothing you do there takes a target's own value away from it. Stopping the target and adding it again, or forgetting a remembered target, is what clears all local values.
 
