@@ -26,7 +26,6 @@ SORT_ORDERS: tuple[str, ...] = (
 _SORT_SPEC = f"option({', '.join(repr(order) for order in SORT_ORDERS)}, default='newest')"
 
 confspec: dict[str, str] = {
-	"enabled": "boolean(default=True)",
 	"changeBeep": "boolean(default=True)",
 	"changeAnnounce": "boolean(default=True)",
 	"interruptSpeech": "boolean(default=False)",
@@ -55,7 +54,11 @@ confspec: dict[str, str] = {
 }
 
 _validator = Validator()
-DEFAULTS: Settings = {key: _validator.get_default_value(spec) for key, spec in confspec.items()}
+_session: Settings = {"enabled": True}
+DEFAULTS: Settings = {
+	**_session,
+	**{key: _validator.get_default_value(spec) for key, spec in confspec.items()},
+}
 
 LOCAL_KEYS: tuple[str, ...] = (
 	"interruptSpeech",
@@ -129,6 +132,8 @@ def snapshot() -> Settings:
 
 
 def get(key: str) -> ConfigValue:
+	if key in _session:
+		return _session[key]
 	try:
 		return config.conf[CONF_SECTION][key]
 	except (KeyError, TypeError):
@@ -144,7 +149,10 @@ def setMany(values: Mapping[str, ConfigValue], notify: bool = True):
 		config.conf[CONF_SECTION] = {}
 	section = config.conf[CONF_SECTION]
 	for key, value in values.items():
-		section[key] = value
+		if key in _session:
+			_session[key] = value
+		else:
+			section[key] = value
 	changed = refresh()
 	if notify:
 		notifyChanged(changed)

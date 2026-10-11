@@ -123,7 +123,7 @@ Related options are grouped. All available options are described below, in the o
 
 ### **Enable tracking** (checkbox, enabled by default)
 
-When disabled, the add-on stops notifying you but keeps your entire target list and all of your settings, so you can silence it (for instance during a meeting) and later switch it back on exactly as it was. This is the same switch toggled by the [pause/resume keystroke](#keystrokes).
+When disabled, the add-on stops notifying you but keeps your entire target list and all of your settings, so you can silence it (for instance during a meeting) and later switch it back on exactly as it was. This is the same switch toggled by the [pause/resume keystroke](#keystrokes). This switch is not saved: tracking is always enabled when NVDA starts.
 
 ### **Tracking interval** (edit, 1 by default)
 
