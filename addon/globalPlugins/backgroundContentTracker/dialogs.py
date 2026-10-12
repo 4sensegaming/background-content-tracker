@@ -6,6 +6,7 @@
 import contextlib
 import json
 import os
+from collections.abc import Callable
 from html import escape
 from typing import TYPE_CHECKING
 
@@ -14,8 +15,10 @@ import api
 import globalVars
 import gui
 import ui
+import winUser
 import wx
 from gui.message import HtmlMessageDialog
+from NVDAObjects import NVDAObject
 
 from . import addonConfig, documentation
 from .notifier import describe, relativeTime
@@ -54,14 +57,19 @@ if (start) {
 """
 
 
-_HELP_SCRIPT = """
-document.addEventListener("keydown", function (e) {
-	if (e.key === "F1") {
-		e.preventDefault();
-		window.location.href = "nvda-action://help";
-	}
-});
-"""
+_openChapters: dict[int, str] = {}
+
+
+def helpAt(focus: NVDAObject) -> Callable[[], str] | None:
+	"""
+	Whether F1 at the focus belongs to an open browseable dialog, judged by window handles alone.
+	@param focus: The focus.
+	@returns: What gives the chapter of the documentation F1 opens, or None when F1 is not the add-on's.
+	"""
+	chapter = _openChapters.get(winUser.getAncestor(focus.windowHandle, winUser.GA_ROOT))
+	if chapter is None:
+		return None
+	return lambda: chapter
 
 
 class BrowseableDialog(HtmlMessageDialog):
@@ -71,10 +79,12 @@ class BrowseableDialog(HtmlMessageDialog):
 		@param body: The HTML of the message.
 		@param chapter: The chapter of the documentation F1 opens.
 		"""
-		body = f"{body}\n<script>{_HELP_SCRIPT}</script>"
 		with open(os.path.join(globalVars.appDir, "message.html"), encoding="utf-8") as f:
 			page = f.read().replace("{{TITLE}}", escape(title)).replace("{{MESSAGE}}", body)
 		super().__init__(None, page, title, buttons=None)
+		self._handle = self.GetHandle()
+		_openChapters[self._handle] = chapter
+		self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 		self.addButton(
 			wx.ID_COPY,
 			# Translators: the button copying the text of a browseable message to the clipboard.
@@ -83,12 +93,16 @@ class BrowseableDialog(HtmlMessageDialog):
 			closesDialog=False,
 		)
 		self.registerAction("copy", self._copy)
-		self.registerAction("help", lambda: documentation.openChapter(chapter))
+
+	def _onDestroy(self, evt: wx.WindowDestroyEvent):
+		if evt.GetWindow() is self:
+			_openChapters.pop(self._handle, None)
+		evt.Skip()
 
 	def _copy(self):
 		api.copyToClip(self._messageControl.GetPageText())
 		# Translators: announced when the text of a browseable message is copied to the clipboard.
-		ui.message(_("Copied to clipboard"))
+		ui.message(_("Copied to clipboard."))
 
 	def present(self):
 		gui.mainFrame.prePopup()

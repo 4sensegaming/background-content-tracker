@@ -4,14 +4,17 @@
 # See the file COPYING.txt for more details.
 
 import contextlib
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 import addonHandler
 import tones
 import ui
+import winUser
 import wx
 from gui import guiHelper, nvdaControls
-from gui.settingsDialogs import SettingsPanel
+from gui.settingsDialogs import NVDASettingsDialog, SettingsPanel
+from NVDAObjects import NVDAObject
 
 from . import addonConfig, documentation
 
@@ -53,6 +56,8 @@ _CHAPTERS = {
 
 WINDOW_SETTINGS = ("ignoreProgressBars", "ignoreCounters", "titleChangeDisappears", "ignoreGenericControls")
 
+_shownPanel: "BCTSettingsPanel | None" = None
+
 
 def sharedSettingLabels() -> dict[str, str]:
 	"""
@@ -73,6 +78,23 @@ def sharedSettingLabels() -> dict[str, str]:
 	}
 
 
+def helpAt(focus: NVDAObject) -> Callable[[], str] | None:
+	"""
+	Whether F1 at the focus belongs to the add-on's settings, judged by window handles alone.
+	@param focus: The focus.
+	@returns: What gives the chapter of the documentation F1 opens, or None when F1 is not the add-on's.
+	"""
+	panel = _shownPanel
+	if panel is None or panel._dialog.currentCategory is not panel:
+		return None
+	hwnd = focus.windowHandle
+	if hwnd == panel._categoryListHandle:
+		return lambda: documentation.GLOBAL_SETTINGS
+	if winUser.isDescendantWindow(panel._handle, hwnd):
+		return panel._focusedChapter
+	return None
+
+
 class BCTSettingsPanel(SettingsPanel):
 	# Translators: the title of the add-on's category in NVDA's Settings dialog.
 	title = _("Background Content Tracker")
@@ -91,6 +113,9 @@ class BCTSettingsPanel(SettingsPanel):
 	_bound: dict[str, wx.CheckBox | nvdaControls.SelectOnFocusSpinCtrl]
 	_sortRadios: dict[str, tuple[wx.RadioBox, tuple[str, ...]]]
 	_chapters: dict[int, str]
+	_dialog: NVDASettingsDialog
+	_handle: int
+	_categoryListHandle: int
 
 	def _group(
 		self, helper: guiHelper.BoxSizerHelper, label: str
@@ -331,20 +356,33 @@ class BCTSettingsPanel(SettingsPanel):
 		for key, (radio, _orders) in self._sortRadios.items():
 			self._chapters[radio.GetId()] = _CHAPTERS[key]
 		self._chapters[self.testButton.GetId()] = "test-button"
-		self.Unbind(wx.EVT_HELP)
-		self.Bind(wx.EVT_HELP, self._onHelp)
+
+		global _shownPanel
+		_shownPanel = self
+		self._dialog = self.GetTopLevelParent()
+		self._handle = self.GetHandle()
+		self._categoryListHandle = self._dialog.catListCtrl.GetHandle()
+		self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
 		self._updateDependentControls()
 
-	def _onHelp(self, evt: wx.HelpEvent):
-		chapter = documentation.GLOBAL_SETTINGS
+	def _onDestroy(self, evt: wx.WindowDestroyEvent):
+		global _shownPanel
+		if evt.GetWindow() is self and _shownPanel is self:
+			_shownPanel = None
+		evt.Skip()
+
+	def _focusedChapter(self) -> str:
+		"""
+		The chapter of the documentation for the option with the focus.
+		@returns: The chapter, or the global settings when the option has none of its own.
+		"""
 		window = wx.Window.FindFocus()
 		while window:
 			if window.GetId() in self._chapters:
-				chapter = self._chapters[window.GetId()]
-				break
+				return self._chapters[window.GetId()]
 			window = window.GetParent()
-		documentation.openChapter(chapter)
+		return documentation.GLOBAL_SETTINGS
 
 	def _onDependencyChanged(self, evt: wx.CommandEvent):
 		self._updateDependentControls()
@@ -369,7 +407,7 @@ class BCTSettingsPanel(SettingsPanel):
 			radio.SetSelection(orders.index(str(addonConfig.DEFAULTS[key])))
 		self._updateDependentControls()
 		# Translators: announced when the add-on's settings panel is set back to the default values.
-		ui.message(_("Default settings restored"))
+		ui.message(_("Default settings restored."))
 
 	def _onTest(self, evt: wx.CommandEvent):
 		with contextlib.suppress(Exception):

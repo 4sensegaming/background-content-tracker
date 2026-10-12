@@ -21,8 +21,8 @@ msgid "&Copy"
 msgstr "&Copia"
 
 #. Translators: announced when the text of a browseable message is copied to the clipboard.
-msgid "Copied to clipboard"
-msgstr "Copiato negli appunti"
+msgid "Copied to clipboard."
+msgstr "Copiato negli appunti."
 
 #. Translators: the title of the dialog showing a target's recent changes.
 #. Translators: submenu of a target's menu, listing the target's recent changes.
@@ -172,8 +172,8 @@ msgstr "non trovato"
 msgid "no changes yet"
 msgstr "ancora nessuna modifica"
 
-#. Translators: announced when background content tracking is paused, and added to the end
-#. of a target's item in the target menu and of its information spoken on demand while it is.
+#. Translators: added to the end of a target's item in the target menu and of its
+#. information spoken on demand while background content tracking is paused.
 msgid "Tracking paused"
 msgstr "Monitoraggio sospeso"
 
@@ -202,39 +202,39 @@ msgid_plural "{n} hours ago"
 msgstr[0] "{n} ora fa"
 msgstr[1] "{n} ore fa"
 
-#. Translators: announced when tracking starts, e.g. "Tracking window: Claude".
+#. Translators: announced when tracking starts, e.g. "Tracking window: Claude."
 #, python-brace-format
-msgid "Tracking {target}"
-msgstr "Monitoraggio di {target}"
+msgid "Tracking {target}."
+msgstr "Monitoraggio di {target}."
 
 #. Translators: announced when tracking starts for a target added to be read even while
-#. its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground".
+#. its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground."
 #, python-brace-format
-msgid "Tracking {target} even in the foreground"
-msgstr "Monitoraggio di {target} anche in primo piano"
+msgid "Tracking {target} even in the foreground."
+msgstr "Monitoraggio di {target} anche in primo piano."
 
 #. Translators: announced at start-up or on resuming tracking when none of
 #. the remembered targets are there.
-msgid "No remembered targets found"
-msgstr "Nessun obiettivo ricordato trovato"
+msgid "No remembered targets found."
+msgstr "Nessun obiettivo ricordato trovato."
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found, and there are few enough to name.
 #. {n} is how many there are, {names} their names, each with its type if
 #. announced (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
-msgid "Found {n} remembered target: {names}"
-msgid_plural "Found {n} remembered targets: {names}"
-msgstr[0] "Trovato {n} obiettivo ricordato: {names}"
-msgstr[1] "Trovati {n} obiettivi ricordati: {names}"
+msgid "Found {n} remembered target: {names}."
+msgid_plural "Found {n} remembered targets: {names}."
+msgstr[0] "Trovato {n} obiettivo ricordato: {names}."
+msgstr[1] "Trovati {n} obiettivi ricordati: {names}."
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found. {n} is how many there are.
 #, python-brace-format
-msgid "Found {n} remembered target"
-msgid_plural "Found {n} remembered targets"
-msgstr[0] "Trovato {n} obiettivo ricordato"
-msgstr[1] "Trovati {n} obiettivi ricordati"
+msgid "Found {n} remembered target."
+msgid_plural "Found {n} remembered targets."
+msgstr[0] "Trovato {n} obiettivo ricordato."
+msgstr[1] "Trovati {n} obiettivi ricordati."
 
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
@@ -242,67 +242,75 @@ msgstr[1] "Trovati {n} obiettivi ricordati"
 #. {names} the names of the ones found, each with its type if announced
 #. (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
-msgid "Found {found} of {total} remembered targets: {names}"
-msgstr "Trovati {found} obiettivi ricordati su {total}: {names}"
+msgid "Found {found} of {total} remembered targets: {names}."
+msgstr "Trovati {found} obiettivi ricordati su {total}: {names}."
 
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
 #. for. {found} is how many are being tracked, {total} how many there are.
 #, python-brace-format
-msgid "Found {found} of {total} remembered targets"
-msgstr "Trovati {found} obiettivi ricordati su {total}"
+msgid "Found {found} of {total} remembered targets."
+msgstr "Trovati {found} obiettivi ricordati su {total}."
 
-#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
+#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list."
 #, python-brace-format
-msgid "Stopped tracking {target}"
-msgstr "Monitoraggio di {target} interrotto"
+msgid "Stopped tracking {target}."
+msgstr "Monitoraggio di {target} interrotto."
 
 #. Translators: announced right after "Stopped tracking" when the target was remembered.
-msgid "Target forgotten"
-msgstr "Obiettivo dimenticato"
+msgid "Target forgotten."
+msgstr "Obiettivo dimenticato."
 
 #. Translators: announced when a remembered target disappears and is kept in the
-#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
+#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude."
 #, python-brace-format
-msgid "Target disappeared: {target}"
-msgstr "Obiettivo scomparso: {target}"
+msgid "Target disappeared: {target}."
+msgstr "Obiettivo scomparso: {target}."
 
-#. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
+#. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2."
 #, python-brace-format
-msgid "No target in slot {slot}"
-msgstr "Nessun obiettivo nello slot {slot}"
+msgid "No target in slot {slot}."
+msgstr "Nessun obiettivo nello slot {slot}."
 
 #. Translators: announced when the whole target list is cleared at once.
-msgid "All targets cleared"
-msgstr "Tutti gli obiettivi cancellati"
+msgid "All targets cleared."
+msgstr "Tutti gli obiettivi cancellati."
 
 #. Translators: announced when a command needs a target and none is being tracked.
-msgid "No targets"
-msgstr "Nessun obiettivo"
+msgid "No targets."
+msgstr "Nessun obiettivo."
+
+#. Translators: announced at start-up or on resuming tracking when the target list is empty.
+msgid "No targets to track."
+msgstr "Nessun obiettivo da monitorare."
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-msgid "Could not set focus"
-msgstr "Impossibile impostare il focus"
+msgid "Could not set focus."
+msgstr "Impossibile impostare il focus."
 
 #. Translators: announced right after "Tracking" when the target was added to be remembered.
-msgid "Target remembered"
-msgstr "Obiettivo ricordato"
+msgid "Target remembered."
+msgstr "Obiettivo ricordato."
 
 #. Translators: announced when a second press would move the focus to a target that already has it.
-msgid "This target already has focus"
-msgstr "Questo obiettivo ha già il focus"
+msgid "This target already has focus."
+msgstr "Questo obiettivo ha già il focus."
+
+#. Translators: announced when background content tracking is paused.
+msgid "Tracking paused."
+msgstr "Monitoraggio sospeso."
 
 #. Translators: announced when background content tracking is resumed.
-msgid "Tracking resumed"
-msgstr "Monitoraggio ripreso"
+msgid "Tracking resumed."
+msgstr "Monitoraggio ripreso."
 
 #. Translators: announced when the command overlay opens.
-msgid "Overlay opened"
-msgstr "Overlay aperto"
+msgid "Overlay opened."
+msgstr "Overlay aperto."
 
 #. Translators: announced when the command overlay closes.
-msgid "Overlay closed"
-msgstr "Overlay chiuso"
+msgid "Overlay closed."
+msgstr "Overlay chiuso."
 
 #. Translators: announced when a key pressed in the overlay is not one of its commands.
 msgid ""
@@ -500,8 +508,8 @@ msgid "Restore &default add-on settings"
 msgstr "Ripristina le impostazioni predefinite del componente aggiuntivo"
 
 #. Translators: announced when the add-on's settings panel is set back to the default values.
-msgid "Default settings restored"
-msgstr "Impostazioni predefinite ripristinate"
+msgid "Default settings restored."
+msgstr "Impostazioni predefinite ripristinate."
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""

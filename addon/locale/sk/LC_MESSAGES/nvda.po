@@ -22,8 +22,8 @@ msgid "&Copy"
 msgstr "&Kopírovať"
 
 #. Translators: announced when the text of a browseable message is copied to the clipboard.
-msgid "Copied to clipboard"
-msgstr "Skopírované do schránky"
+msgid "Copied to clipboard."
+msgstr "Skopírované do schránky."
 
 #. Translators: the title of the dialog showing a target's recent changes.
 #. Translators: submenu of a target's menu, listing the target's recent changes.
@@ -173,8 +173,8 @@ msgstr "nenájdené"
 msgid "no changes yet"
 msgstr "zatiaľ bez zmeny"
 
-#. Translators: announced when background content tracking is paused, and added to the end
-#. of a target's item in the target menu and of its information spoken on demand while it is.
+#. Translators: added to the end of a target's item in the target menu and of its
+#. information spoken on demand while background content tracking is paused.
 msgid "Tracking paused"
 msgstr "Sledovanie pozastavené"
 
@@ -206,41 +206,41 @@ msgstr[0] "pred {n} hodinou"
 msgstr[1] "pred {n} hodinami"
 msgstr[2] "pred {n} hodinami"
 
-#. Translators: announced when tracking starts, e.g. "Tracking window: Claude".
+#. Translators: announced when tracking starts, e.g. "Tracking window: Claude."
 #, python-brace-format
-msgid "Tracking {target}"
-msgstr "Sledujem {target}"
+msgid "Tracking {target}."
+msgstr "Sledujem {target}."
 
 #. Translators: announced when tracking starts for a target added to be read even while
-#. its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground".
+#. its own application is in the foreground, e.g. "Tracking window: Claude even in the foreground."
 #, python-brace-format
-msgid "Tracking {target} even in the foreground"
-msgstr "Sledujem {target} aj v popredí"
+msgid "Tracking {target} even in the foreground."
+msgstr "Sledujem {target} aj v popredí."
 
 #. Translators: announced at start-up or on resuming tracking when none of
 #. the remembered targets are there.
-msgid "No remembered targets found"
-msgstr "Žiadne zapamätané ciele sa nenašli"
+msgid "No remembered targets found."
+msgstr "Žiadne zapamätané ciele sa nenašli."
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found, and there are few enough to name.
 #. {n} is how many there are, {names} their names, each with its type if
 #. announced (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
-msgid "Found {n} remembered target: {names}"
-msgid_plural "Found {n} remembered targets: {names}"
-msgstr[0] "Nájdený {n} zapamätaný cieľ: {names}"
-msgstr[1] "Nájdené {n} zapamätané ciele: {names}"
-msgstr[2] "Nájdených {n} zapamätaných cieľov: {names}"
+msgid "Found {n} remembered target: {names}."
+msgid_plural "Found {n} remembered targets: {names}."
+msgstr[0] "Nájdený {n} zapamätaný cieľ: {names}."
+msgstr[1] "Nájdené {n} zapamätané ciele: {names}."
+msgstr[2] "Nájdených {n} zapamätaných cieľov: {names}."
 
 #. Translators: announced at start-up or on resuming tracking when every
 #. remembered target has been found. {n} is how many there are.
 #, python-brace-format
-msgid "Found {n} remembered target"
-msgid_plural "Found {n} remembered targets"
-msgstr[0] "Nájdený {n} zapamätaný cieľ"
-msgstr[1] "Nájdené {n} zapamätané ciele"
-msgstr[2] "Nájdených {n} zapamätaných cieľov"
+msgid "Found {n} remembered target."
+msgid_plural "Found {n} remembered targets."
+msgstr[0] "Nájdený {n} zapamätaný cieľ."
+msgstr[1] "Nájdené {n} zapamätané ciele."
+msgstr[2] "Nájdených {n} zapamätaných cieľov."
 
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
@@ -248,67 +248,75 @@ msgstr[2] "Nájdených {n} zapamätaných cieľov"
 #. {names} the names of the ones found, each with its type if announced
 #. (e.g. "window: Claude"), separated by commas.
 #, python-brace-format
-msgid "Found {found} of {total} remembered targets: {names}"
-msgstr "Nájdených {found} z {total} zapamätaných cieľov: {names}"
+msgid "Found {found} of {total} remembered targets: {names}."
+msgstr "Nájdených {found} z {total} zapamätaných cieľov: {names}."
 
 #. Translators: announced at start-up or on resuming tracking when only some
 #. of the remembered targets have been found; the rest are still being looked
 #. for. {found} is how many are being tracked, {total} how many there are.
 #, python-brace-format
-msgid "Found {found} of {total} remembered targets"
-msgstr "Nájdených {found} z {total} zapamätaných cieľov"
+msgid "Found {found} of {total} remembered targets."
+msgstr "Nájdených {found} z {total} zapamätaných cieľov."
 
-#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list".
+#. Translators: announced when tracking stops, e.g. "Stopped tracking list: Message list."
 #, python-brace-format
-msgid "Stopped tracking {target}"
-msgstr "Prestávam sledovať {target}"
+msgid "Stopped tracking {target}."
+msgstr "Prestávam sledovať {target}."
 
 #. Translators: announced right after "Stopped tracking" when the target was remembered.
-msgid "Target forgotten"
-msgstr "Cieľ zabudnutý"
+msgid "Target forgotten."
+msgstr "Cieľ zabudnutý."
 
 #. Translators: announced when a remembered target disappears and is kept in the
-#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude".
+#. list to be tracked again once it reappears, e.g. "Target disappeared: Claude."
 #, python-brace-format
-msgid "Target disappeared: {target}"
-msgstr "Cieľ zmizol: {target}"
+msgid "Target disappeared: {target}."
+msgstr "Cieľ zmizol: {target}."
 
-#. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2".
+#. Translators: announced when a number key addresses an empty slot, e.g. "No target in slot 2."
 #, python-brace-format
-msgid "No target in slot {slot}"
-msgstr "Žiadny cieľ v slote {slot}"
+msgid "No target in slot {slot}."
+msgstr "Žiadny cieľ v slote {slot}."
 
 #. Translators: announced when the whole target list is cleared at once.
-msgid "All targets cleared"
-msgstr "Všetky ciele vymazané"
+msgid "All targets cleared."
+msgstr "Všetky ciele vymazané."
 
 #. Translators: announced when a command needs a target and none is being tracked.
-msgid "No targets"
-msgstr "Žiadne ciele"
+msgid "No targets."
+msgstr "Žiadne ciele."
+
+#. Translators: announced at start-up or on resuming tracking when the target list is empty.
+msgid "No targets to track."
+msgstr "Žiadne ciele na sledovanie."
 
 #. Translators: announced when "Set focus" cannot move the focus to a target (e.g. its window is gone).
-msgid "Could not set focus"
-msgstr "Nepodarilo sa presunúť fokus"
+msgid "Could not set focus."
+msgstr "Nepodarilo sa presunúť fokus."
 
 #. Translators: announced right after "Tracking" when the target was added to be remembered.
-msgid "Target remembered"
-msgstr "Cieľ zapamätaný"
+msgid "Target remembered."
+msgstr "Cieľ zapamätaný."
 
 #. Translators: announced when a second press would move the focus to a target that already has it.
-msgid "This target already has focus"
-msgstr "Tento cieľ už má fokus"
+msgid "This target already has focus."
+msgstr "Tento cieľ už má fokus."
+
+#. Translators: announced when background content tracking is paused.
+msgid "Tracking paused."
+msgstr "Sledovanie pozastavené."
 
 #. Translators: announced when background content tracking is resumed.
-msgid "Tracking resumed"
-msgstr "Sledovanie obnovené"
+msgid "Tracking resumed."
+msgstr "Sledovanie obnovené."
 
 #. Translators: announced when the command overlay opens.
-msgid "Overlay opened"
-msgstr "Prekrytie otvorené"
+msgid "Overlay opened."
+msgstr "Prekrytie otvorené."
 
 #. Translators: announced when the command overlay closes.
-msgid "Overlay closed"
-msgstr "Prekrytie zatvorené"
+msgid "Overlay closed."
+msgstr "Prekrytie zatvorené."
 
 #. Translators: announced when a key pressed in the overlay is not one of its commands.
 msgid ""
@@ -501,8 +509,8 @@ msgid "Restore &default add-on settings"
 msgstr "Obnoviť pr&edvolené nastavenia doplnku"
 
 #. Translators: announced when the add-on's settings panel is set back to the default values.
-msgid "Default settings restored"
-msgstr "Predvolené nastavenia obnovené"
+msgid "Default settings restored."
+msgstr "Predvolené nastavenia obnovené."
 
 #. Translators: the description of the main command, shown in Input Gestures.
 msgid ""

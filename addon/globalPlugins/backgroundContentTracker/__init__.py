@@ -14,6 +14,7 @@ import addonHandler
 import api
 import globalPluginHandler
 import gui
+import inputCore
 import ui
 import wx
 from gui import blockAction
@@ -108,9 +109,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self._dropUnkeptDetachedTargets()
 			self._saveRememberedTargets()
 		if "historySize" in changed:
-			limit = int(addonConfig.get("historySize"))
 			for target in self.registry:
-				target.trimHistory(limit)
+				target.trimHistory()
 
 	def _recaptureTrackedTitles(self):
 		for target in self.registry:
@@ -176,6 +176,24 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	)
 	def script_openOverlay(self, gesture):
 		self.overlay.open()
+
+	def event_foreground(self, obj: NVDAObject, nextHandler: Callable[[], None]):
+		self.monitor.wake()
+		nextHandler()
+
+	def getScript(self, gesture: inputCore.InputGesture) -> Callable[[inputCore.InputGesture], None] | None:
+		"""
+		Take F1 in the add-on's own menus and windows, and leave every other key as bound.
+		@param gesture: The gesture pressed.
+		@returns: The script to run, or None.
+		"""
+		if "kb:f1" in gesture.normalizedIdentifiers:
+			focus = api.getFocusObject()
+			for helpAt in (menuModule.helpAt, dialogs.helpAt, settingsModule.helpAt):
+				chapterOf = helpAt(focus)
+				if chapterOf is not None:
+					return lambda gesture: documentation.openChapter(chapterOf())
+		return super().getScript(gesture)
 
 	def _isSecondPress(self, pendingKind: PendingKind, uid: int | None) -> bool:
 		return self._pending == (pendingKind, uid, self.overlay.keyCount - 1)
@@ -390,9 +408,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	):
 		if obj is None or self.registry.findByObject(obj) is not None:
 			return
+		waiting = self.monitor.waitingTargetFor(obj)
+		if waiting is not None:
+			if self.monitor.link(waiting, obj):
+				self.notifier.announceTracking(waiting)
+				self._saveRememberedTargets()
+			return
 		overrides = overrides or {}
-		target = self.registry.add(obj, kind, overrides)
-		self.monitor.onAdded(target)
+		target = self.registry.add(obj, kind, overrides, self.monitor.onAdded)
 		if overrides.get("trackForegroundTargets"):
 			self.notifier.announceTrackingInForeground(target)
 		else:

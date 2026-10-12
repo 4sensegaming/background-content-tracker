@@ -61,7 +61,7 @@ class Overlay:
 		inputCore.manager._captureFunc = self._captureRef
 		self._restartTimer()
 		# Translators: announced when the command overlay opens.
-		ui.message(_("Overlay opened"))
+		ui.message(_("Overlay opened."))
 		if not addonConfig.get("enabled"):
 			self.controller.notifier.paused()
 
@@ -81,7 +81,7 @@ class Overlay:
 			return
 		self.close()
 		# Translators: announced when the command overlay closes.
-		text = _("Overlay closed")
+		text = _("Overlay closed.")
 		if announceDelayMs:
 			core.callLater(announceDelayMs, ui.message, text, Spri.NORMAL)
 		else:
@@ -118,7 +118,6 @@ class Overlay:
 			if not isinstance(gesture, KeyboardInputGesture):
 				return True
 			if not self._armed:
-				self._releaseCapture()
 				return True
 			if gesture.isModifier:
 				return True
@@ -134,7 +133,7 @@ class Overlay:
 			)
 		except Exception:
 			log.exception("Error in overlay capture function")
-			self._releaseCapture()
+			queueHandler.queueFunction(queueHandler.eventQueue, self.close)
 		return False
 
 	def _handleKey(self, key: str, mods: tuple[str, ...], session: int):

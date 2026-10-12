@@ -4,11 +4,14 @@
 # See the file COPYING.txt for more details.
 
 import contextlib
+import ctypes
 from collections.abc import Callable, Mapping, Sequence
+from ctypes import wintypes
 from typing import TYPE_CHECKING
 
 import addonHandler
 import gui
+import winUser
 import wx
 from logHandler import log
 from NVDAObjects import NVDAObject
@@ -27,6 +30,24 @@ addonHandler.initTranslation()
 
 Source = tuple[str, NVDAObject]
 Bind = Callable[[wx.MenuItem, Callable[[], None], str], None]
+
+_MN_GETHMENU = 0x01E1
+_MF_BYPOSITION = 0x0400
+_MF_HILITE = 0x0080
+_getMenuState = ctypes.WINFUNCTYPE(wintypes.UINT, wintypes.HMENU, wintypes.UINT, wintypes.UINT)(
+	("GetMenuState", ctypes.windll.user32)
+)
+_getSubMenu = ctypes.WINFUNCTYPE(wintypes.HMENU, wintypes.HMENU, ctypes.c_int)(
+	("GetSubMenu", ctypes.windll.user32)
+)
+_getMenuItemCount = ctypes.WINFUNCTYPE(ctypes.c_int, wintypes.HMENU)(
+	("GetMenuItemCount", ctypes.windll.user32)
+)
+_getMenuItemID = ctypes.WINFUNCTYPE(wintypes.UINT, wintypes.HMENU, ctypes.c_int)(
+	("GetMenuItemID", ctypes.windll.user32)
+)
+
+_openChapters: dict[int, str] | None = None
 
 
 def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
@@ -48,6 +69,49 @@ def showTargetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: Focu
 		_popUp(_targetSubmenu(plugin, target, focus, _binder(chapters)), chapters)
 	except Exception:
 		log.exception("Error showing the target menu")
+
+
+def helpAt(focus: NVDAObject) -> Callable[[], str] | None:
+	"""
+	Whether F1 at the focus belongs to the open target menu, judged by window handles alone.
+	@param focus: The focus.
+	@returns: What gives the chapter of the documentation F1 opens, or None when F1 is not the add-on's.
+	"""
+	chapters = _openChapters
+	if chapters is None or focus.windowClassName != "#32768":
+		return None
+	hwnd = focus.windowHandle
+	return lambda: _highlightedChapter(hwnd, chapters)
+
+
+def _highlightedChapter(hwnd: int, chapters: Mapping[int, str]) -> str:
+	"""
+	The chapter of the item highlighted in a menu window: that of the submenu it opens, or else that of the menu.
+	@param hwnd: The menu window.
+	@param chapters: The chapter of each item bound, by the low word of its id.
+	@returns: The chapter.
+	"""
+	hMenu = winUser.sendMessage(hwnd, _MN_GETHMENU, 0, 0)
+	submenu = None
+	for position in range(_getMenuItemCount(hMenu)):
+		if _getMenuState(hMenu, position, _MF_BYPOSITION) & _MF_HILITE:
+			submenu = _getSubMenu(hMenu, position)
+			break
+	return _menuChapter(submenu or hMenu, chapters) or documentation.TARGET_MENU
+
+
+def _menuChapter(hMenu: int, chapters: Mapping[int, str]) -> str | None:
+	"""
+	The chapter of a menu, which is that of the items in it.
+	@param hMenu: The menu.
+	@param chapters: The chapter of each item bound, by the low word of its id.
+	@returns: The chapter, or None for a menu with no item bound.
+	"""
+	for position in range(_getMenuItemCount(hMenu)):
+		chapter = chapters.get(_getMenuItemID(hMenu, position) & 0xFFFF)
+		if chapter is not None:
+			return chapter
+	return None
 
 
 def _plain(text: str) -> str:
@@ -184,18 +248,14 @@ def _popUp(menu: wx.Menu, chapters: Mapping[int, str]):
 	@param menu: The menu to show.
 	@param chapters: The ids of the items bound in it, with the chapter of the documentation F1 opens on each.
 	"""
-	byMenuId = {itemId & 0xFFFF: chapter for itemId, chapter in chapters.items()}
-
-	def onHelp(evt: wx.HelpEvent):
-		documentation.openChapter(byMenuId.get(evt.GetId() & 0xFFFF, documentation.TARGET_MENU))
-
-	gui.mainFrame.Bind(wx.EVT_HELP, onHelp)
+	global _openChapters
+	_openChapters = {itemId & 0xFFFF: chapter for itemId, chapter in chapters.items()}
 	gui.mainFrame.prePopup()
 	try:
 		gui.mainFrame.PopupMenu(menu)
 	finally:
 		gui.mainFrame.postPopup()
-		gui.mainFrame.Unbind(wx.EVT_HELP, handler=onHelp)
+		_openChapters = None
 		for itemId in chapters:
 			with contextlib.suppress(Exception):
 				gui.mainFrame.Unbind(wx.EVT_MENU, id=itemId)

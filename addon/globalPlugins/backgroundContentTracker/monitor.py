@@ -481,6 +481,7 @@ class Monitor:
 		self._onListChanged = onListChanged
 		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
+		self._wake = threading.Event()
 		self._lastAnnouncedUid: int | None = None
 		self._focusCopy: tuple[NVDAObject, NVDAObject] | None = None
 
@@ -497,7 +498,12 @@ class Monitor:
 
 	def stop(self):
 		self._stop.set()
+		self._wake.set()
 		self._thread = None
+
+	def wake(self):
+		"""Look for missing remembered targets now instead of at the next regular pass."""
+		self._wake.set()
 
 	def _callOnMainThread(self, func: Callable[..., object], *args: Any, **kwargs: Any):
 		if self._stop.is_set():
@@ -521,7 +527,39 @@ class Monitor:
 		target.resetTracking()
 		target.wasInForeground = target.isInForeground()
 		target.lastSeenInForeground = target.wasInForeground
-		target.captureTrackedTitle(addonConfig.snapshot())
+		target.captureTrackedTitle()
+
+	def link(self, target: TrackedTarget, obj: NVDAObject) -> bool:
+		"""
+		Link a target that has no object to one found for it.
+		@param target: The target.
+		@param obj: The object.
+		@returns: Whether the target had no object and took this one.
+		"""
+		if not target.link(obj, SETTLE_SECONDS):
+			return False
+		if self._refreshIdentity(target, obj):
+			self._notifyListChanged()
+		target.captureTrackedTitle()
+		return True
+
+	def waitingTargetFor(self, obj: NVDAObject) -> TrackedTarget | None:
+		"""
+		The remembered target waiting for an object like this one to appear.
+		@param obj: The object.
+		@returns: The target, or None.
+		"""
+		if targetsMod.isHungWindow(targetsMod.windowHandleOf(obj)):
+			return None
+		settings = addonConfig.snapshot()
+		for target in self.registry.detachedTargets():
+			if (
+				target.setting("rememberTargets", settings)
+				and targetsMod.matchesIdentity(target.identity, obj)
+				and self._keptItsTitle(target, obj, settings)
+			):
+				return target
+		return None
 
 	def _run(self):
 		sinceLast = 0.0
@@ -529,25 +567,29 @@ class Monitor:
 		wasEnabled = False
 		while True:
 			try:
-				now = time.monotonic()
-				elapsed = now - lastTick
-				lastTick = now
 				settings = addonConfig.snapshot()
 				enabled = bool(settings["enabled"])
 				report = enabled and not wasEnabled
 				wasEnabled = enabled
 				if enabled:
 					self._checkPresence(settings, report)
-					self._settlePass(settings)
-					interval = int(settings["trackingInterval"])
-					effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
-					sinceLast += elapsed
-					if sinceLast + 1e-6 >= effective:
-						sinceLast = 0.0
-						self._checkContent(settings, announce=interval != 0)
+				now = time.monotonic()
+				elapsed = now - lastTick
+				if elapsed + 1e-6 >= POLL_INTERVAL:
+					lastTick = now
+					if enabled:
+						self._settlePass(settings)
+						interval = int(settings["trackingInterval"])
+						effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
+						sinceLast += elapsed
+						if sinceLast + 1e-6 >= effective:
+							sinceLast = 0.0
+							self._checkContent(settings, announce=interval != 0)
 			except Exception:
 				log.exception("Error in Background Content Tracker poll")
-			if self._stop.wait(POLL_INTERVAL):
+			self._wake.wait(max(0.0, POLL_INTERVAL - (time.monotonic() - lastTick)))
+			self._wake.clear()
+			if self._stop.is_set():
 				return
 
 	def _checkPresence(self, settings: Settings, report: bool):
@@ -580,6 +622,12 @@ class Monitor:
 		if kept:
 			found = [target for target in kept if target.isAttached]
 			self._callOnMainThread(self.notifier.announceRestored, found, len(kept))
+		else:
+			self._callOnMainThread(self._reportEmptyList)
+
+	def _reportEmptyList(self):
+		if not len(self.registry):
+			self.notifier.noTargetsToTrack()
 
 	def _checkContent(self, settings: Settings, announce: bool):
 		for target in self.registry.liveTargets():
@@ -636,7 +684,7 @@ class Monitor:
 			return
 		target.lastDelta = delta
 		target.lastChangeTime = time.time()
-		change = target.recordChange(delta, target.lastChangeTime, int(settings["historySize"]))
+		change = target.recordChange(delta, target.lastChangeTime)
 		if change is not None:
 			self._callOnMainThread(dialogs.changeRecorded, target, change)
 		if not announce:
@@ -653,7 +701,15 @@ class Monitor:
 		target.announcedDelta = delta
 		target.announcedRun += 1
 		self._lastAnnouncedUid = target.uid
-		self._callOnMainThread(self.notifier.announceChange, target, spoken, sameTarget, immediate=True)
+		self._callOnMainThread(
+			self._whileTracked,
+			target,
+			self.notifier.announceChange,
+			target,
+			spoken,
+			sameTarget,
+			immediate=True,
+		)
 
 	def _focusIn(self, root: NVDAObject) -> NVDAObject | None:
 		"""
@@ -770,23 +826,38 @@ class Monitor:
 		forget = target.isForgottenWhenGone(settings)
 		target.obj = None
 		if forget:
-			self._callOnMainThread(self.registry.remove, target)
-		if not target.lastSeenInForeground:
-			if forget:
-				self._callOnMainThread(self.notifier.announceStopped, target, unprompted=True)
-			else:
-				self._callOnMainThread(self.notifier.announceDisappeared, target)
-		elif forget and target.setting("rememberTargets", settings):
-			self._callOnMainThread(self.notifier.announceStopped, target, unprompted=True)
-		if forget:
-			self._notifyListChanged()
+			announce = not target.lastSeenInForeground or bool(target.setting("rememberTargets", settings))
+			self._callOnMainThread(self._dropGone, target, announce)
+		elif not target.lastSeenInForeground:
+			self._callOnMainThread(self._whileTracked, target, self.notifier.announceDisappeared, target)
 		return forget
+
+	def _dropGone(self, target: TrackedTarget, announce: bool):
+		"""
+		Remove a target that is gone, unless it has been removed meanwhile.
+		@param target: The target.
+		@param announce: Whether to say that it stopped being tracked.
+		"""
+		if not self.registry.remove(target):
+			return
+		if announce:
+			self.notifier.announceStopped(target, unprompted=True)
+		if self._onListChanged is not None:
+			self._onListChanged()
+
+	def _whileTracked(self, target: TrackedTarget, func: Callable[..., object], *args: Any, **kwargs: Any):
+		"""
+		Run something about a target only if it is still in the list.
+		@param target: The target.
+		@param func: What to run, with its arguments.
+		"""
+		if target in self.registry:
+			func(*args, **kwargs)
 
 	def relocate(self, target: TrackedTarget) -> bool:
 		obj = self._locate(target.identity, target.kind)
-		if obj is None:
+		if obj is None or not target.replaceObject(obj):
 			return False
-		target.obj = obj
 		if self._refreshIdentity(target, obj):
 			self._notifyListChanged()
 		return True
@@ -911,11 +982,7 @@ class Monitor:
 		return None
 
 	def _attach(self, target: TrackedTarget, obj: NVDAObject, announce: bool = True):
-		target.obj = obj
-		moved = self._refreshIdentity(target, obj)
-		self.onAdded(target)
-		target.settleFor(SETTLE_SECONDS)
-		if announce:
-			self._callOnMainThread(self.notifier.announceTracking, target, unprompted=True)
-		if moved:
-			self._notifyListChanged()
+		if self.link(target, obj) and announce:
+			self._callOnMainThread(
+				self._whileTracked, target, self.notifier.announceTracking, target, unprompted=True
+			)

@@ -220,6 +220,7 @@ class TrackedTarget:
 		self.uid = uid
 		self._objects: tuple[NVDAObject | None, dict[int, NVDAObject]] = (None, {})
 		self._objectsLock = threading.Lock()
+		self._stateLock = threading.Lock()
 		self.obj = obj
 		self.kind = kind
 		self.overrides: dict[str, bool] = dict(overrides) if overrides else {}
@@ -243,26 +244,25 @@ class TrackedTarget:
 		self.staleCache = True
 		self.settleUntil: float | None = None
 
-	def recordChange(self, text: str, when: float, limit: int) -> Change | None:
+	def recordChange(self, text: str, when: float) -> Change | None:
 		"""
-		Add a change to the history, dropping the oldest beyond the limit.
+		Add a change to the history, dropping the oldest beyond the history size.
 		@param text: The new content.
 		@param when: When the change was found, as from time.time().
-		@param limit: How many changes the history keeps.
 		@returns: The change recorded, or None while the history is off.
 		"""
-		if limit <= 0:
-			return None
-		change = Change(next(_changeSerials), when, text)
-		self.history = (*self.history, change)[-limit:]
-		return change
+		with self._stateLock:
+			limit = int(addonConfig.snapshot()["historySize"])
+			if limit <= 0:
+				return None
+			change = Change(next(_changeSerials), when, text)
+			self.history = (*self.history, change)[-limit:]
+			return change
 
-	def trimHistory(self, limit: int):
-		"""
-		Drop the oldest changes beyond a new limit.
-		@param limit: How many changes the history keeps.
-		"""
-		self.history = self.history[-limit:] if limit > 0 else ()
+	def trimHistory(self):
+		with self._stateLock:
+			limit = int(addonConfig.snapshot()["historySize"])
+			self.history = self.history[-limit:] if limit > 0 else ()
 
 	def settleFor(self, seconds: float):
 		self.settleUntil = time.monotonic() + seconds
@@ -292,13 +292,43 @@ class TrackedTarget:
 		with self._objectsLock:
 			self._objects = (obj, {} if obj is None else {threading.get_ident(): obj})
 
+	def link(self, obj: NVDAObject, settleSeconds: float) -> bool:
+		"""
+		Link a target that has no object to one, ready to be tracked from scratch.
+		@param obj: The object.
+		@param settleSeconds: How long the target settles before changes in it count.
+		@returns: Whether the target had no object and took this one.
+		"""
+		with self._objectsLock:
+			if self._objects[0] is not None:
+				return False
+			self.resetTracking()
+			self.wasInForeground = isInForegroundApp(obj)
+			self.lastSeenInForeground = self.wasInForeground
+			self.settleFor(settleSeconds)
+			self._objects = (obj, {threading.get_ident(): obj})
+			return True
+
+	def replaceObject(self, obj: NVDAObject) -> bool:
+		"""
+		Swap in a fresh object for the target, unless it has been let go of meanwhile.
+		@param obj: The object.
+		@returns: Whether the target is still attached and took the object.
+		"""
+		with self._objectsLock:
+			if self._objects[0] is None:
+				return False
+			self._objects = (obj, {threading.get_ident(): obj})
+			return True
+
 	@property
 	def isAttached(self) -> bool:
 		return self._objects[0] is not None
 
 	def setting(self, key: str, settings: Settings | None = None) -> ConfigValue:
-		if key in self.overrides:
-			return self.overrides[key]
+		overrides = self.overrides
+		if key in overrides:
+			return overrides[key]
 		if settings is None:
 			settings = addonConfig.snapshot()
 		return settings[key]
@@ -322,8 +352,10 @@ class TrackedTarget:
 			return True
 		return bool(self.setting("forgetOnDisappear", settings))
 
-	def captureTrackedTitle(self, settings: Settings | None = None):
-		self.trackedTitle = self.title if self.isAttached and self.isHeldToItsTitle(settings) else None
+	def captureTrackedTitle(self):
+		with self._stateLock:
+			held = self.isAttached and self.isHeldToItsTitle(addonConfig.snapshot())
+			self.trackedTitle = self.title if held else None
 
 	@property
 	def name(self) -> str:
@@ -461,6 +493,14 @@ class TargetRegistry:
 		with self._lock:
 			return iter(list(self._targets))
 
+	def __contains__(self, target: object) -> bool:
+		with self._lock:
+			return target in self._targets
+
+	def __len__(self) -> int:
+		with self._lock:
+			return len(self._targets)
+
 	def _newUid(self) -> int:
 		uid = self._nextUid
 		self._nextUid += 1
@@ -470,12 +510,23 @@ class TargetRegistry:
 		self,
 		obj: NVDAObject,
 		kind: str,
-		overrides: Mapping[str, bool] | None = None,
+		overrides: Mapping[str, bool] | None,
+		prepare: Callable[[TrackedTarget], None],
 	) -> TrackedTarget:
+		"""
+		Start tracking an object.
+		@param obj: The object.
+		@param kind: What the object was taken as, such as "window".
+		@param overrides: The target's own settings.
+		@param prepare: Readies the new target before the list holds it.
+		@returns: The target.
+		"""
 		with self._lock:
 			target = TrackedTarget(self._newUid(), obj, kind, overrides)
+		prepare(target)
+		with self._lock:
 			self._targets.append(target)
-			return target
+		return target
 
 	def addDetached(
 		self,
