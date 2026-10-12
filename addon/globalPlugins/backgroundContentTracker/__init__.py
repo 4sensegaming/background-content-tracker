@@ -331,6 +331,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self.stopTracking(target)
 
 	def clearAll(self):
+		if self._newestTarget() is None:
+			return
 		self.registry.clear()
 		self.notifier.allCleared()
 		self._saveRememberedTargets()
