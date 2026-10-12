@@ -331,14 +331,12 @@ class BCTSettingsPanel(SettingsPanel):
 		for key, (radio, _orders) in self._sortRadios.items():
 			self._chapters[radio.GetId()] = _CHAPTERS[key]
 		self._chapters[self.testButton.GetId()] = "test-button"
-		self.GetTopLevelParent().Bind(wx.EVT_CHAR_HOOK, self._onCharHook)
+		self.Unbind(wx.EVT_HELP)
+		self.Bind(wx.EVT_HELP, self._onHelp)
 
 		self._updateDependentControls()
 
-	def _onCharHook(self, evt: wx.KeyEvent):
-		if evt.GetKeyCode() != wx.WXK_F1 or evt.HasAnyModifiers() or not self.IsShown():
-			evt.Skip()
-			return
+	def _onHelp(self, evt: wx.HelpEvent):
 		chapter = documentation.GLOBAL_SETTINGS
 		window = wx.Window.FindFocus()
 		while window:
