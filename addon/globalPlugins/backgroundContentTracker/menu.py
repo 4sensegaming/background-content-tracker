@@ -223,7 +223,7 @@ def _appendHistorySubmenu(submenu: wx.Menu, target: TrackedTarget, bind: Bind):
 	historyMenu = wx.Menu()
 	for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
 		item = historyMenu.Append(wx.ID_ANY, _plain(f"{relativeTime(change.time)}, {change.text}"))
-		bind(item, lambda serial=change.serial: dialogs.showHistory(target, serial), documentation.HISTORY)
+		bind(item, lambda: dialogs.showHistory(target), documentation.HISTORY)
 	# Translators: submenu of a target's menu, listing the target's recent changes.
 	submenu.AppendSubMenu(historyMenu, _("Recent changes"))
 
