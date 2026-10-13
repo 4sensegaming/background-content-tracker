@@ -719,9 +719,8 @@ class Monitor:
 			return
 		target.lastDelta = delta
 		target.lastChangeTime = time.time()
-		change = target.recordChange(delta, target.lastChangeTime)
-		if change is not None:
-			self._callOnMainThread(dialogs.changeRecorded, target, change)
+		if target.recordChange(delta, target.lastChangeTime) is not None:
+			self._callOnMainThread(dialogs.changeRecorded, target)
 		if not announce:
 			return
 		sameTarget = self._lastAnnouncedUid == target.uid
@@ -749,7 +748,8 @@ class Monitor:
 			return
 		if not target.setting("trackForegroundTargets") and target.isInForeground():
 			return
-		self.notifier.announceChange(target, spoken, sameTarget)
+		speak = bool(target.setting("announceWithHistoryOpen")) or not dialogs.historyOpenFor(target)
+		self.notifier.announceChange(target, spoken, sameTarget, speak)
 
 	def _focusIn(self, root: NVDAObject) -> NVDAObject | None:
 		"""
@@ -880,6 +880,7 @@ class Monitor:
 		"""
 		if not self.registry.remove(target):
 			return
+		dialogs.closeHistory(target)
 		if announce:
 			self.notifier.announceStopped(target, unprompted=True)
 		if self._onListChanged is not None:

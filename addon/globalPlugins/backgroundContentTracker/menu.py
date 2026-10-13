@@ -17,7 +17,6 @@ from logHandler import log
 from NVDAObjects import NVDAObject
 
 from . import addonConfig, dialogs, documentation
-from .notifier import relativeTime
 from .settings import WINDOW_SETTINGS, sharedSettingLabels
 from .targets import FocusState, TrackedTarget, safeCall, sortChanges
 
@@ -143,8 +142,13 @@ def _startLabel(kind: str, obj: NVDAObject) -> str:
 def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 	shared = sharedSettingLabels()
 	items: list[tuple[str, str]] = []
-	if addonConfig.get("changeAnnounce"):
+	announcing = addonConfig.get("changeAnnounce")
+	if announcing:
 		items.append(("interruptSpeech", shared["interruptSpeech"]))
+	if int(addonConfig.get("historySize")) > 0:
+		items.append(("updateOpenHistory", shared["updateOpenHistory"]))
+		if announcing:
+			items.append(("announceWithHistoryOpen", shared["announceWithHistoryOpen"]))
 	if target.kind == "window":
 		items.extend((key, shared[key]) for key in WINDOW_SETTINGS)
 	items.append(
@@ -208,7 +212,7 @@ def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusSt
 		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
 		bind(focusItem, lambda: plugin.setFocusToTarget(target), documentation.TARGET_MENU)
 	_appendSettingsSubmenu(submenu, plugin, target, bind)
-	if target.history and addonConfig.get("menuChangedContent"):
+	if dialogs.hasHistory(target):
 		_appendHistorySubmenu(submenu, target, bind)
 	return submenu
 
@@ -221,8 +225,10 @@ def _appendHistorySubmenu(submenu: wx.Menu, target: TrackedTarget, bind: Bind):
 	@param bind: Binds each item to what it does.
 	"""
 	historyMenu = wx.Menu()
+	parts = dialogs.historyParts()
 	for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
-		item = historyMenu.Append(wx.ID_ANY, _plain(f"{relativeTime(change.time)}, {change.text}"))
+		label = ", ".join(part for part in dialogs.entryParts(change, parts) if part is not None)
+		item = historyMenu.Append(wx.ID_ANY, _plain(label))
 		bind(item, lambda: dialogs.showHistory(target), documentation.HISTORY)
 	# Translators: submenu of a target's menu, listing the target's recent changes.
 	submenu.AppendSubMenu(historyMenu, _("Recent changes"))

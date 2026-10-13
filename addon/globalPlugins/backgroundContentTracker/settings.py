@@ -27,9 +27,11 @@ _CHAPTERS = {
 	"enabled": "enable-tracking-checkbox-enabled-by-default",
 	"trackingInterval": "tracking-interval-edit-1-by-default",
 	"changesAtOnce": "changes-to-announce-at-once-background-targets-only-edit-5-by-default",
-	"historySize": "keep-history-of-recent-changes-per-target-edit-50-by-default",
 	"overlayTimeout": "overlay-timeout-edit-10-by-default",
 	"trackForegroundTargets": "track-even-foreground-targets-checkbox-disabled-by-default",
+	"historySize": "keep-history-of-recent-changes-per-target-edit-50-by-default",
+	"updateOpenHistory": "update-change-history-while-viewing-checkbox-enabled-by-default",
+	"announceWithHistoryOpen": "announce-new-changes-while-history-is-open-checkbox-enabled-by-default",
 	"slotSorting": "target-sorting",
 	"menuSorting": "target-sorting",
 	"historySorting": "target-sorting",
@@ -67,6 +69,10 @@ def sharedSettingLabels() -> dict[str, str]:
 	return {
 		# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
 		"interruptSpeech": _("I&nterrupt previous speech when announcing a new change"),
+		# Translators: add new changes to an open history dialog and keep its times up to date.
+		"updateOpenHistory": _("Update change history while &viewing"),
+		# Translators: speak new changes in a target even while its history dialog is open.
+		"announceWithHistoryOpen": _("Announce new changes whi&le history is open"),
 		# Translators: suppress announcements of progress bar controls in a window.
 		"ignoreProgressBars": _("Ignore &progress bars"),
 		# Translators: suppress a control that does nothing but count (e.g. a timer).
@@ -103,6 +109,9 @@ class BCTSettingsPanel(SettingsPanel):
 	title = _("Background Content Tracker")
 
 	trackForegroundCb: wx.CheckBox
+	historySizeCtrl: nvdaControls.SelectOnFocusSpinCtrl
+	updateHistoryCb: wx.CheckBox
+	announceWithHistoryCb: wx.CheckBox
 	ignoreFocusedCb: wx.CheckBox
 	beepCb: wx.CheckBox
 	announceCb: wx.CheckBox
@@ -226,14 +235,6 @@ class BCTSettingsPanel(SettingsPanel):
 		)
 		self._spinCtrl(
 			sHelper,
-			"historySize",
-			# Translators: how many recent changes the target menu keeps for each target (0 means none).
-			_("Keep &history of recent changes per target (0 means no history)"),
-			0,
-			1000,
-		)
-		self._spinCtrl(
-			sHelper,
 			"overlayTimeout",
 			# Translators: how many seconds of inactivity close the command overlay
 			# (0 means the overlay stays open until it is closed by a command or escape).
@@ -249,6 +250,25 @@ class BCTSettingsPanel(SettingsPanel):
 			_("Trac&k even foreground targets"),
 		)
 		self.trackForegroundCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
+
+		# Translators: group of options for the history of recent changes kept for each target.
+		historyBox, historyGroup = self._group(sHelper, _("Change history"))
+		self.historySizeCtrl = self._spinCtrl(
+			historyGroup,
+			"historySize",
+			# Translators: how many recent changes the target menu keeps for each target (0 means none).
+			_("Keep &history of recent changes per target (0 means no history)"),
+			0,
+			1000,
+		)
+		self.historySizeCtrl.Bind(wx.EVT_SPINCTRL, self._onDependencyChanged)
+		self.historySizeCtrl.Bind(wx.EVT_TEXT, self._onDependencyChanged)
+		self.updateHistoryCb = self._checkBox(
+			historyGroup, historyBox, "updateOpenHistory", shared["updateOpenHistory"]
+		)
+		self.announceWithHistoryCb = self._checkBox(
+			historyGroup, historyBox, "announceWithHistoryOpen", shared["announceWithHistoryOpen"]
+		)
 
 		targetLabels = {
 			# Translators: a target order; the most recently added target comes first.
@@ -405,12 +425,15 @@ class BCTSettingsPanel(SettingsPanel):
 
 	def _updateDependentControls(self):
 		self.ignoreFocusedCb.Enable(self.trackForegroundCb.IsChecked())
+		historyOn = self.historySizeCtrl.GetValue() > 0
+		self.updateHistoryCb.Enable(historyOn)
 		beepOn = self.beepCb.IsChecked()
 		for control in (self.durationCtrl, self.pitchCtrl, self.testButton):
 			control.Enable(beepOn)
 		announceOn = self.announceCb.IsChecked()
 		for control in (self.interruptCb, self.repeatNameCb, self.annTypeCb, self.annContentCb):
 			control.Enable(announceOn)
+		self.announceWithHistoryCb.Enable(historyOn and announceOn)
 
 	def _onRestoreDefaults(self, evt: wx.CommandEvent):
 		for key, control in self._bound.items():

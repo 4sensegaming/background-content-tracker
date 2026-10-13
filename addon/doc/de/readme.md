@@ -64,8 +64,8 @@ Drücken Sie nach dem Präfix eine der folgenden Tasten:
 - `m` – startet oder stoppt die Verfolgung des Steuerelements unter dem **Maus**zeiger.
 - `n` – startet oder stoppt die Verfolgung des aktuellen **Navigator-Objekts** (dort, wo sich der NVDA-Cursor befindet).
 - `t` – öffnet das **[Zielmenü](#das-zielmenü)**.
-- `1` bis `0` – **sagt Informationen über ein Ziel an**, je nach seiner Position in der Liste (siehe unten). Drücken Sie dieselbe Zahl ein zweites Mal, um den Fokus auf dieses Ziel zu setzen.
-- `Leertaste` oder `Eingabetaste` – wie die Zahlentasten, aber immer für das **zuletzt hinzugefügte** Ziel: einmal drücken, um Informationen darüber zu hören, zweimal, um den Fokus darauf zu setzen.
+- `1` bis `0` – **sagt Informationen über ein Ziel an**, je nach seiner Position in der Liste (siehe unten). Drücken Sie dieselbe Zahl ein zweites Mal, um den Fokus auf dieses Ziel zu setzen, oder direkt danach ein drittes Mal, um stattdessen seinen [Verlauf der letzten Änderungen](#verlauf-der-letzten-änderungen) zu öffnen.
+- `Leertaste` oder `Eingabetaste` – wie die Zahlentasten, aber immer für das **zuletzt hinzugefügte** Ziel: einmal drücken, um Informationen darüber zu hören, zweimal, um den Fokus darauf zu setzen, dreimal, um seinen Verlauf zu öffnen.
 - `Strg`+eine Zahl (`1` bis `0`) – **stoppt die Verfolgung** des Ziels in diesem Fach.
 - `Alt`+eine Zahl (`1` bis `0`) – **öffnet das [Zielmenü](#das-zielmenü)** direkt für das Ziel in diesem Fach.
 - `Rücktaste` – **stoppt die Verfolgung des zuletzt hinzugefügten** Ziels.
@@ -96,7 +96,7 @@ Jedes Ziel ist ein Untermenü. Wenn Sie es aufklappen, können Sie:
 - Mit *Verfolgung stoppen* seine Verfolgung stoppen,
 - Mit *Fokus setzen* den Fokus darauf setzen (sofern es ihn nicht bereits hat),
 - Seine [*Zieleinstellungen*](#zieleinstellungen) ändern,
-- Oder den [**Verlauf der letzten Änderungen**](#verlauf-der-letzten-änderungen) dieses Ziels durchsehen.
+- Oder den [**Verlauf der letzten Änderungen**](#verlauf-der-letzten-änderungen) dieses Ziels durchsehen (wird gar nicht angezeigt, solange sich noch nichts geändert hat oder die Verlaufsgröße 0 ist).
 
 Alles, was Sie bereits verfolgen, steht im Menü ganz oben, sodass Sie schnell zum gewünschten Ziel wechseln oder seine Verfolgung stoppen können. Darunter folgen die Ziele, deren Verfolgung Sie von Ihrer aktuellen Position aus starten können (Fenster, Fokus, Mauszeiger oder Navigator-Objekt). Der Eintrag, mit dem Sie die Verfolgung aller aktuellen Ziele stoppen, steht am Ende des Menüs.
 
@@ -105,6 +105,8 @@ Alles, was Sie bereits verfolgen, steht im Menü ganz oben, sodass Sie schnell z
 Jeder Eintrag unter *Zieleinstellungen* ist ein Kontrollfeld, und es zeigt das, was das Ziel tatsächlich tut: seinen eigenen Wert, wo Sie ihm einen gegeben haben, und überall sonst die [globale Einstellung](#globale-einstellungen). Wenn Sie eines aktivieren oder deaktivieren, erhält das Ziel einen eigenen Wert für genau diese eine Einstellung, und zwar sofort; alle anderen Einstellungen folgen weiterhin der globalen.
 
 - *Beim Ansagen einer neuen Änderung vorherige Sprachausgabe unterbrechen* wird für alle Ziele angezeigt, solange die [globale Option *Ansagen*](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist.
+- *Änderungsverlauf beim Ansehen aktualisieren* wird für alle Ziele angezeigt, solange die [Verlaufsgröße](#verlauf-der-letzten-änderungen-pro-ziel-aufbewahren-eingabefeld-standardmäßig-50) nicht 0 ist.
+- *Neue Änderungen bei geöffnetem Verlauf ansagen* wird für alle Ziele angezeigt, solange die Verlaufsgröße nicht 0 ist und die globale Option *Ansagen* aktiviert ist.
 - Die Optionen *Fortschrittsbalken ignorieren*, *Zähler, Schrittanzeigen und Timer ignorieren*, *Geänderten Titel als verschwundenes Ziel betrachten* und *Bekannte allgemeine Steuerelemente ignorieren* werden nur für Fensterziele angezeigt.
 - *Dieses Ziel auch im Vordergrund verfolgen* wird für alle Ziele angezeigt.
 - *Fokussiertes Steuerelement ignorieren* wird angezeigt, solange das Ziel ein Fenster ist und außerdem [auch im Vordergrund verfolgt werden soll](#ziele-auch-im-vordergrund-verfolgen-kontrollfeld-standardmäßig-deaktiviert).
@@ -141,12 +143,6 @@ Akzeptiert nur ganze Zahlen. Legt fest, wie viele aufeinanderfolgende Änderunge
 
 Diese Option wirkt sich nie auf Ziele im Vordergrund aus. Wenn die [Verfolgung auch für Ziele im Vordergrund aktiviert ist](#ziele-auch-im-vordergrund-verfolgen-kontrollfeld-standardmäßig-deaktiviert), werden für diese immer alle Änderungen angesagt.
 
-### **Verlauf der letzten Änderungen pro Ziel aufbewahren** (Eingabefeld, standardmäßig 50)
-
-Akzeptiert nur ganze Zahlen. Legt fest, wie viele der letzten Änderungen im [Verlauf pro Ziel](#verlauf-der-letzten-änderungen) aufbewahrt werden sollen. Ältere Änderungen werden verworfen. 0 bedeutet kein Verlauf.
-
-Bei gemerkten Zielen, die verschwunden sind, wird auch der Verlauf gemerkt und bleibt verfügbar, bis das Ziel entfernt wird oder bis zum Ende der Sitzung.
-
 ### **Überlagerungs-Timeout** (Eingabefeld, standardmäßig 10)
 
 Akzeptiert nur ganze Zahlen. Legt fest, wie viele Sekunden ohne Tastendruck vergehen müssen, bevor sich die Überlagerung von selbst schließt. 0 bedeutet, dass sich die Überlagerung nie von selbst schließt: Sie bleibt geöffnet, bis Sie sie mit Escape oder einem Befehl schließen, der den Fokus woandershin verschiebt, etwa dem Öffnen des [Zielmenüs](#das-zielmenü).
@@ -156,6 +152,24 @@ Akzeptiert nur ganze Zahlen. Legt fest, wie viele Sekunden ohne Tastendruck verg
 Normalerweise wird ein Ziel nur gelesen, während Sie woanders arbeiten; sobald seine eigene App in den Vordergrund kommt, lässt das Add-on es in Ruhe. Wenn aktiviert, wird neuer Inhalt eines Ziels auch dann angesagt, wenn Sie gerade mit diesem Fenster oder einzelnen Steuerelement arbeiten.
 
 Beachten Sie: Wenn die App des Ziels direkt mit Screenreadern kommuniziert (über ARIA-Live-Regionen oder andere Barrierefreiheitsereignisse), können dieselben Ansagen beim Arbeiten in ihrem Fenster manchmal doppelt gemeldet werden – einmal von der App selbst und einmal vom Add-on. Um in diesem Fall nur die eigenen Ansagen der App zu hören, können Sie *Dieses Ziel auch im Vordergrund verfolgen* in den [Zieleinstellungen](#zieleinstellungen) dieses Ziels deaktivieren, die Verfolgung vorübergehend pausieren oder das Ziel entfernen und später wieder hinzufügen. Um nur die Ansagen des Add-ons zu hören, deaktivieren Sie in NVDA die Option „Änderungen dynamischer Inhalte vorlesen“ (standardmäßig NVDA+5).
+
+### **Änderungsverlauf** (Gruppierung)
+
+Die Optionen in dieser Gruppierung steuern den [Verlauf der letzten Änderungen](#verlauf-der-letzten-änderungen), der für jedes Ziel aufbewahrt wird.
+
+#### **Verlauf der letzten Änderungen pro Ziel aufbewahren** (Eingabefeld, standardmäßig 50)
+
+Akzeptiert nur ganze Zahlen. Legt fest, wie viele der letzten Änderungen im [Verlauf pro Ziel](#verlauf-der-letzten-änderungen) aufbewahrt werden sollen. Ältere Änderungen werden verworfen. 0 bedeutet kein Verlauf, und die anderen Optionen dieser Gruppierung sind dann nicht verfügbar.
+
+Bei gemerkten Zielen, die verschwunden sind, wird auch der Verlauf gemerkt und bleibt verfügbar, bis das Ziel entfernt wird oder bis zum Ende der Sitzung.
+
+#### **Änderungsverlauf beim Ansehen aktualisieren** (Kontrollfeld, standardmäßig aktiviert)
+
+Wenn aktiviert, fügt ein geöffneter Verlaufsdialog neue Änderungen laufend hinzu, und die Zeit jeder Änderung zählt weiter hoch. Wenn deaktiviert, bleibt der Dialog so, wie er beim Öffnen war.
+
+#### **Neue Änderungen bei geöffnetem Verlauf ansagen** (Kontrollfeld, standardmäßig aktiviert)
+
+Diese Option ist nur verfügbar, wenn das Kontrollfeld [**Ansagen**](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist. Wenn deaktiviert, werden neue Änderungen in einem Ziel nicht gesprochen, solange sein Verlaufsdialog geöffnet ist. Der [Signalton](#signalton-kontrollfeld-standardmäßig-aktiviert) ertönt trotzdem.
 
 ### Sortierung der Ziele
 

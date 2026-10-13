@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any
 
 import addonHandler
 import api
+import core
 import globalPluginHandler
 import gui
 import inputCore
@@ -48,6 +49,8 @@ _SOURCES: dict[str, Callable[[], NVDAObject | None]] = {
 
 PendingKind = tuple[str, int | None]
 
+_MULTI_PRESS_MS = 500
+
 
 class _InputGesturesAtCategory(InputGesturesDialog):
 	def __init__(self, parent: wx.Window, category: str = "", *args: Any, **kwargs: Any):
@@ -81,7 +84,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		self.preview = PreviewWindow()
 		self.monitor = Monitor(self.registry, self.notifier, self.preview, self._saveRememberedTargets)
 		self.overlay = Overlay(self)
-		self._pending: tuple[PendingKind, int | None, int] | None = None
+		self._pending: tuple[PendingKind, int | None, int, int] | None = None
 		NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
 		addonConfig.registerChangeHook(self._onSettingsChanged)
 		self._loadRememberedTargets()
@@ -133,6 +136,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		for target in self.registry:
 			if not target.isAttached and not target.setting("rememberTargets", settings):
 				self.registry.remove(target)
+				dialogs.closeHistory(target)
 
 	def _saveRememberedTargets(self):
 		settings = addonConfig.snapshot()
@@ -199,11 +203,26 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 					return lambda gesture: documentation.openChapter(chapterOf())
 		return super().getScript(gesture)
 
-	def _isSecondPress(self, pendingKind: PendingKind, uid: int | None) -> bool:
-		return self._pending == (pendingKind, uid, self.overlay.keyCount - 1)
+	def _pressNumber(self, pendingKind: PendingKind, uid: int | None) -> int:
+		"""
+		Which press in a row this is of a key that does more the more it is pressed.
+		@param pendingKind: The key's command.
+		@param uid: The target it acts on, or None.
+		@returns: 1 unless the key pressed just before was the same one, awaiting another press.
+		"""
+		pending = self._pending
+		if pending is None or pending[:3] != (pendingKind, uid, self.overlay.keyCount - 1):
+			return 1
+		return pending[3] + 1
 
-	def _awaitSecondPress(self, pendingKind: PendingKind, uid: int | None):
-		self._pending = (pendingKind, uid, self.overlay.keyCount)
+	def _awaitPress(self, pendingKind: PendingKind, uid: int | None, pressNumber: int):
+		"""
+		Let the next key, if it is the same one, count as a further press.
+		@param pendingKind: The key's command.
+		@param uid: The target it acts on, or None.
+		@param pressNumber: Which press in a row this one was.
+		"""
+		self._pending = (pendingKind, uid, self.overlay.keyCount, pressNumber)
 
 	def help(self):
 		# Translators: heading of the overlay help.
@@ -229,11 +248,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("T: open the target menu"),
 			_(
 				# Translators: overlay help line for the number keys.
-				"1 through 0: speak information about the target in that slot; press again to set focus to it"
+				"1 through 0: speak information about the target in that slot; press twice to set focus to it, three times to open its history of recent changes"
 			),
 			_(
 				# Translators: overlay help line for Space and Enter.
-				"Space or Enter: speak information about the most recently added target; press again to set focus to it"
+				"Space or Enter: speak information about the most recently added target; press twice to set focus to it, three times to open its history of recent changes"
 			),
 			# Translators: overlay help line for Control plus a number.
 			_("Control plus a number: stop tracking the target in that slot"),
@@ -252,12 +271,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			# Translators: overlay help line for the Escape key.
 			_("Escape: close the overlay"),
 		]
-		if self._isSecondPress(("help", None), None):
+		if self._pressNumber(("help", None), None) == 2:
 			self.overlay.handOff()
 			dialogs.showHelp(heading, commands)
 		else:
 			ui.message("\n".join([heading] + commands))
-			self._awaitSecondPress(("help", None), None)
+			self._awaitPress(("help", None), None, 1)
 
 	def openDocumentation(self):
 		self.overlay.handOff()
@@ -305,17 +324,48 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self._infoOrFocus(("newest", None), target)
 
 	def _infoOrFocus(self, pendingKind: PendingKind, target: TrackedTarget):
-		if self._isSecondPress(pendingKind, target.uid):
-			if not target.canTakeFocus():
-				self.notifier.focusFailed()
-				return
-			if target.hasFocus(currentFocus()):
-				self.notifier.alreadyFocused()
-				return
-			self._focus(target)
+		"""
+		Speak about a target on the first press, set focus to it on the second, and open its history on the third.
+		@param pendingKind: The key's command.
+		@param target: The target.
+		"""
+		pressNumber = self._pressNumber(pendingKind, target.uid)
+		if pressNumber == 3:
+			self._pending = None
+			self.overlay.handOff()
+			dialogs.showHistory(target)
+		elif pressNumber == 2 and dialogs.hasHistory(target):
+			self._awaitPress(pendingKind, target.uid, 2)
+			core.callLater(_MULTI_PRESS_MS, self._focusUnlessPressed, target, self.overlay.keyCount)
+		elif pressNumber == 2:
+			self._focusOrSay(target)
 		else:
 			self.notifier.speakInfo(target)
-			self._awaitSecondPress(pendingKind, target.uid)
+			self._awaitPress(pendingKind, target.uid, 1)
+
+	def _focusUnlessPressed(self, target: TrackedTarget, keyCount: int):
+		"""
+		Set focus to a target after its second press, unless another key has been pressed since.
+		@param target: The target.
+		@param keyCount: The overlay's key count at the second press.
+		"""
+		if self.overlay.keyCount != keyCount or target not in self.registry:
+			return
+		self._pending = None
+		self._focusOrSay(target)
+
+	def _focusOrSay(self, target: TrackedTarget):
+		"""
+		Set focus to a target, or say why it cannot be done.
+		@param target: The target.
+		"""
+		if not target.canTakeFocus():
+			self.notifier.focusFailed()
+			return
+		if target.hasFocus(currentFocus()):
+			self.notifier.alreadyFocused()
+			return
+		self._focus(target)
 
 	def _focus(self, target: TrackedTarget):
 		self.overlay.handOff()
@@ -356,6 +406,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		if self._newestTarget() is None:
 			return
 		self.registry.clear()
+		dialogs.closeHistory()
 		self.notifier.allCleared()
 		self._saveRememberedTargets()
 
@@ -430,6 +481,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def stopTracking(self, target: TrackedTarget):
 		if self.registry.remove(target):
+			dialogs.closeHistory(target)
 			self.notifier.announceStopped(target)
 			self._saveRememberedTargets()
 

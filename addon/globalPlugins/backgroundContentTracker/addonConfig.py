@@ -38,6 +38,8 @@ confspec: dict[str, str] = {
 	"trackingInterval": "integer(default=1,min=0,max=3600)",
 	"changesAtOnce": "integer(default=5,min=0,max=100)",
 	"historySize": "integer(default=50,min=0,max=1000)",
+	"updateOpenHistory": "boolean(default=True)",
+	"announceWithHistoryOpen": "boolean(default=True)",
 	"ignoreProgressBars": "boolean(default=True)",
 	"ignoreCounters": "boolean(default=True)",
 	"titleChangeDisappears": "boolean(default=False)",
@@ -69,6 +71,8 @@ DEFAULTS: Settings = {
 
 LOCAL_KEYS: tuple[str, ...] = (
 	"interruptSpeech",
+	"updateOpenHistory",
+	"announceWithHistoryOpen",
 	"ignoreProgressBars",
 	"ignoreCounters",
 	"titleChangeDisappears",

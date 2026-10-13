@@ -64,8 +64,8 @@ Po stisku hlavní klávesové zkratky stiskněte jednu z následujících kláve
 - `M` – začne nebo přestane sledovat prvek pod ukazatelem **myši**.
 - `N` – začne nebo přestane sledovat aktuální **prohlížený objekt** (tam, kde je prohlížecí kurzor).
 - `T` – otevře **[nabídku cílů](#nabídka-cílů)**.
-- `1` až `0` – **oznámí informace o cíli** podle jeho pořadí v seznamu (viz níže). Dalším stiskem téhož čísla se na daný cíl přesune fokus.
-- `Mezerník` nebo `enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus.
+- `1` až `0` – **oznámí informace o cíli** podle jeho pořadí v seznamu (viz níže). Dalším stiskem téhož čísla se na daný cíl přesune fokus, třetím stiskem hned po druhém se místo toho otevře jeho [historie nedávných změn](#historie-nedávných-změn).
+- `Mezerník` nebo `enter` – totéž jako číselné zkratky, ale vždy pro **naposledy přidaný** cíl: Prvním stiskem si o něm necháte oznámit informace, druhým se na něj přesune fokus, třetím se otevře jeho historie.
 - `Control`+číslo (`1` až `0`) – **přestane sledovat** cíl v daném slotu.
 - `Alt`+číslo (`1` až `0`) – **otevře [nabídku cílů](#nabídka-cílů)** přímo pro cíl v daném slotu.
 - `Backspace` – **přestane sledovat naposledy přidaný** cíl.
@@ -96,7 +96,7 @@ Každý cíl je podnabídkou. Když ji rozbalíte, můžete:
 - Cíl *Přestat sledovat*,
 - *Přesunout fokus* na něj (pokud ho už nemá),
 - Změnit jeho [*Nastavení cíle*](#nastavení-cíle),
-- Nebo procházet jeho [historii **nedávných změn**](#historie-nedávných-změn).
+- Nebo procházet jeho [historii **nedávných změn**](#historie-nedávných-změn) (vůbec se nezobrazuje, pokud se zatím nic nezměnilo nebo je velikost historie 0).
 
 Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný cíl můžete rychle přesunout nebo ho přestat sledovat. Dále se zobrazí cíle, které můžete začít sledovat ze své aktuální pozice (okno, fokus, ukazatel myši nebo prohlížený objekt). Položka pro ukončení sledování všech aktuálních cílů je na konci nabídky.
 
@@ -105,6 +105,8 @@ Vše, co už sledujete, se v nabídce zobrazí jako první, takže se na daný c
 Každá položka v podnabídce *Nastavení cíle* je zaškrtávací políčko a ukazuje to, co cíl skutečně dělá: Jeho vlastní hodnotu tam, kde jste mu ji zadali, a jinde [globální nastavení](#globální-nastavení). Zaškrtnutím nebo odškrtnutím dáte cíli vlastní hodnotu právě pro toto jedno nastavení, a to okamžitě; všechna ostatní nastavení dál respektují globální hodnotu.
 
 - *Při oznamování nové změny přerušit předchozí řeč* se zobrazuje u všech cílů, pokud je zapnuta [globální možnost *Oznámit*](#oznámit-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto).
+- *Aktualizovat historii změn během prohlížení* se zobrazuje u všech cílů, pokud [velikost historie](#uchovávat-u-každého-cíle-historii-nedávných-změn-editační-pole-ve-výchozím-nastavení-50) není 0.
+- *Při otevřené historii oznamovat nové změny* se zobrazuje u všech cílů, pokud velikost historie není 0 a je zapnuta globální možnost *Oznámit*.
 - Možnosti *Ignorovat indikátory průběhu*, *Ignorovat počítadla, krokovače a časovače*, *Považovat změnu názvu za zmizení cíle* a *Ignorovat známé generické prvky* se zobrazují jen u těch cílů, které jsou okna.
 - *Sledovat tento cíl i v popředí* se zobrazuje u všech cílů.
 - *Ignorovat prvek pod fokusem* se zobrazuje, pokud je cíl okno a zároveň je u něj [nastaveno, že se má sledovat i v popředí](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto).
@@ -141,12 +143,6 @@ Lze zapsat pouze celá čísla. Nastavuje, kolik po sobě jdoucích změn stejn�
 
 Cílů v popředí se tato možnost nikdy netýká. Pokud je [sledování zapnuto i pro cíle v popředí](#sledovat-i-cíle-v-popředí-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto), oznamují se u nich vždy všechny změny.
 
-### **Uchovávat u každého cíle historii nedávných změn** (editační pole, ve výchozím nastavení 50)
-
-Lze zapsat pouze celá čísla. Nastavuje, kolik nedávných změn se má uchovávat v [historii každého cíle](#historie-nedávných-změn). Starší změny se zahazují. 0 znamená žádnou historii.
-
-U zapamatovaných cílů, které zmizely, se historie také uchovává a zůstává dostupná, dokud cíl neodeberete, nebo do konce relace.
-
 ### **Čas do zavření překrytí** (editační pole, ve výchozím nastavení 10)
 
 Lze zapsat pouze celá čísla. Určuje, kolik sekund bez stisku klávesy musí uplynout, než se překrytí samo zavře. Při hodnotě 0 se překrytí samo nezavře nikdy: Zůstane otevřené, dokud ho nezavřete klávesou escape nebo příkazem, který přesune fokus jinam, například otevřením [nabídky cílů](#nabídka-cílů).
@@ -156,6 +152,24 @@ Lze zapsat pouze celá čísla. Určuje, kolik sekund bez stisku klávesy musí 
 Běžně se cíl čte jen ve chvíli, kdy pracujete někde jinde: Jakmile se jeho aplikace dostane do popředí, doplněk ji nechává být. Pokud je zaškrtnuto, nový obsah cíle se oznamuje i tehdy, když právě pracujete s tímto oknem nebo jednotlivým prvkem.
 
 Pokud aplikace cíle komunikuje s odečítači obrazovky přímo (prostřednictvím živých regionů ARIA nebo jiných událostí přístupnosti), mohou se při práci v jejím okně stejná oznámení někdy ohlásit dvakrát – jednou samotnou aplikací a jednou doplňkem. Chcete-li v takovém případě slyšet jen vlastní oznámení aplikace, můžete v [Nastavení cíle](#nastavení-cíle) daného cíle odškrtnout *Sledovat tento cíl i v popředí*, dočasně pozastavit sledování, nebo cíl odebrat a později ho přidat znovu. Chcete-li slyšet jen oznámení doplňku, vypněte v NVDA hlášení dynamických změn obsahu (ve výchozím nastavení NVDA+5).
+
+### **Historie změn** (skupina)
+
+Možnosti v této skupině ovládají [historii nedávných změn](#historie-nedávných-změn) uchovávanou u každého cíle.
+
+#### **Uchovávat u každého cíle historii nedávných změn** (editační pole, ve výchozím nastavení 50)
+
+Lze zapsat pouze celá čísla. Nastavuje, kolik nedávných změn se má uchovávat v [historii každého cíle](#historie-nedávných-změn). Starší změny se zahazují. 0 znamená žádnou historii a ostatní možnosti v této skupině jsou pak nedostupné.
+
+U zapamatovaných cílů, které zmizely, se historie také uchovává a zůstává dostupná, dokud cíl neodeberete, nebo do konce relace.
+
+#### **Aktualizovat historii změn během prohlížení** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
+
+Pokud je zaškrtnuta, otevřený dialog s historií průběžně přidává nové změny a čas u každé změny dál přibývá. Pokud zaškrtnuta není, dialog zůstane takový, jaký byl při otevření.
+
+#### **Při otevřené historii oznamovat nové změny** (zaškrtávací políčko, ve výchozím nastavení zaškrtnuto)
+
+Tato možnost je dostupná, pouze pokud je zaškrtnuto políčko [**Oznámit**](#oznámit-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto). Pokud zaškrtnuta není, nové změny v cíli se neoznamují, dokud je otevřený dialog s jeho historií. [Pípnutí](#pípnout-zaškrtávací-políčko-ve-výchozím-nastavení-zaškrtnuto) zazní i tak.
 
 ### Řazení cílů
 

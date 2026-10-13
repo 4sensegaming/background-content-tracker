@@ -324,6 +324,14 @@ msgstr ""
 msgid "I&nterrupt previous speech when announcing a new change"
 msgstr "Int&errompi il parlato precedente all'annuncio di una nuova modifica"
 
+#. Translators: add new changes to an open history dialog and keep its times up to date.
+msgid "Update change history while &viewing"
+msgstr "Aggiorna la cronologia delle modifiche durante la consulta&zione"
+
+#. Translators: speak new changes in a target even while its history dialog is open.
+msgid "Announce new changes whi&le history is open"
+msgstr "Annuncia le nuove modific&he con la cronologia aperta"
+
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
 msgstr "Ignora le barre di &avanzamento"
@@ -363,12 +371,6 @@ msgstr ""
 "Modifiche da annunciare in una &volta (solo obiettivi in background, 0 "
 "significa annunciare sempre ogni modifica)"
 
-#. Translators: how many recent changes the target menu keeps for each target (0 means none).
-msgid "Keep &history of recent changes per target (0 means no history)"
-msgstr ""
-"Conserva la &cronologia delle modifiche recenti per obiettivo (0 significa "
-"nessuna cronologia)"
-
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
 msgid "&Overlay timeout (seconds, 0 means never time out)"
@@ -377,6 +379,16 @@ msgstr "Timeout dell'&overlay (secondi, 0 significa nessun timeout)"
 #. Translators: also track a target while its own application is in the foreground.
 msgid "Trac&k even foreground targets"
 msgstr "Moni&tora anche gli obiettivi in primo piano"
+
+#. Translators: group of options for the history of recent changes kept for each target.
+msgid "Change history"
+msgstr "Cronologia delle modifiche"
+
+#. Translators: how many recent changes the target menu keeps for each target (0 means none).
+msgid "Keep &history of recent changes per target (0 means no history)"
+msgstr ""
+"Conserva la &cronologia delle modifiche recenti per obiettivo (0 significa "
+"nessuna cronologia)"
 
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
@@ -563,19 +575,22 @@ msgstr "T: apre il menu degli obiettivi"
 
 #. Translators: overlay help line for the number keys.
 msgid ""
-"1 through 0: speak information about the target in that slot; press again to "
-"set focus to it"
+"1 through 0: speak information about the target in that slot; press twice to "
+"set focus to it, three times to open its history of recent changes"
 msgstr ""
-"Da 1 a 0: annuncia le informazioni sull'obiettivo in quello slot; premi di "
-"nuovo per impostare il focus su di esso"
+"Da 1 a 0: annuncia le informazioni sull'obiettivo in quello slot; premi due "
+"volte per impostare il focus su di esso, tre volte per aprirne la cronologia "
+"delle modifiche recenti"
 
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press again to set focus to it"
+"press twice to set focus to it, three times to open its history of recent "
+"changes"
 msgstr ""
 "Spazio o Invio: annuncia le informazioni sull'obiettivo aggiunto più di "
-"recente; premi di nuovo per impostare il focus su di esso"
+"recente; premi due volte per impostare il focus su di esso, tre volte per "
+"aprirne la cronologia delle modifiche recenti"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"

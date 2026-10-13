@@ -207,16 +207,17 @@ class Notifier:
 		# list to be tracked again once it reappears, e.g. "Target disappeared: Claude."
 		self._announceTarget(_("Target disappeared: {target}."), target, unprompted=True)
 
-	def announceChange(self, target: TrackedTarget, delta: str, sameTarget: bool):
+	def announceChange(self, target: TrackedTarget, delta: str, sameTarget: bool, speak: bool = True):
 		"""
 		Beep and speak a change in a target, as the settings ask.
 		@param target: The target that changed.
 		@param delta: The new content of the target.
 		@param sameTarget: Whether the change announced before this one was in the same target.
+		@param speak: Whether the change may be spoken at all.
 		"""
 		if addonConfig.get("changeBeep"):
 			self.beep()
-		if not addonConfig.get("changeAnnounce"):
+		if not (speak and addonConfig.get("changeAnnounce")):
 			return
 		if not addonConfig.get("announceChangedContent"):
 			text = _sentence(self._describeTarget(target))

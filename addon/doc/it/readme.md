@@ -64,8 +64,8 @@ Dopo aver premuto il prefisso, premi uno dei tasti seguenti:
 - `m` – avvia o interrompe il monitoraggio del controllo sotto il puntatore del **mouse**.
 - `n` – avvia o interrompe il monitoraggio del **navigatore ad oggetti** corrente (dove si trova il cursore di controllo).
 - `t` – apre il **[menu degli obiettivi](#il-menu-degli-obiettivi)**.
-- Da `1` a `0` – **annuncia le informazioni su un obiettivo** in base alla sua posizione nell'elenco (vedi sotto). Premi lo stesso numero una seconda volta per impostare il focus su quell'obiettivo.
-- `Spazio` o `Invio` – come i tasti numerici, ma sempre per l'obiettivo **aggiunto più di recente**: premi una volta per sentire le informazioni, due volte per impostarvi il focus.
+- Da `1` a `0` – **annuncia le informazioni su un obiettivo** in base alla sua posizione nell'elenco (vedi sotto). Premi lo stesso numero una seconda volta per impostare il focus su quell'obiettivo, oppure una terza volta subito dopo la seconda per aprirne invece la [cronologia delle modifiche recenti](#cronologia-delle-modifiche-recenti).
+- `Spazio` o `Invio` – come i tasti numerici, ma sempre per l'obiettivo **aggiunto più di recente**: premi una volta per sentire le informazioni, due volte per impostarvi il focus, tre volte per aprirne la cronologia.
 - `Control`+un numero (da `1` a `0`) – **interrompe il monitoraggio** dell'obiettivo in quello slot.
 - `Alt`+un numero (da `1` a `0`) – **apre il [menu degli obiettivi](#il-menu-degli-obiettivi)** direttamente per l'obiettivo in quello slot.
 - `Backspace` – **interrompe il monitoraggio dell'obiettivo aggiunto più di recente**.
@@ -96,7 +96,7 @@ Ogni obiettivo è un sottomenu. Quando lo espandi, puoi:
 - Interromperne il monitoraggio con *Interrompi monitoraggio*,
 - Impostarvi il focus con *Imposta focus* (a meno che non lo abbia già),
 - Modificarne le [*Impostazioni obiettivo*](#impostazioni-obiettivo),
-- Oppure sfogliarne la [**cronologia delle modifiche recenti**](#cronologia-delle-modifiche-recenti).
+- Oppure sfogliarne la [**cronologia delle modifiche recenti**](#cronologia-delle-modifiche-recenti) (non viene mostrata affatto se non è ancora cambiato nulla o se la dimensione della cronologia è 0).
 
 Tutto ciò che stai già monitorando compare per primo nel menu, così puoi spostarti rapidamente sull'obiettivo che ti interessa o interromperne il monitoraggio. Sotto si trovano gli obiettivi di cui puoi avviare il monitoraggio dalla tua posizione attuale (finestra, focus, puntatore del mouse o navigatore ad oggetti). La voce per interrompere il monitoraggio di tutti gli obiettivi attuali si trova alla fine del menu.
 
@@ -105,6 +105,8 @@ Tutto ciò che stai già monitorando compare per primo nel menu, così puoi spos
 Ogni voce di *Impostazioni obiettivo* è una casella di controllo, e ciò che mostra è ciò che l'obiettivo fa realmente: il suo valore personale dove gliene hai assegnato uno, e l'[impostazione globale](#impostazioni-globali) in tutti gli altri casi. Selezionarne o deselezionarne una assegna a quell'obiettivo un valore proprio per quella sola impostazione, con effetto immediato; tutte le altre impostazioni continuano a seguire quella globale.
 
 - *Interrompi il parlato precedente all'annuncio di una nuova modifica* viene mostrata per tutti gli obiettivi, purché l'[opzione globale *Annuncia*](#annuncia-casella-di-controllo-attivata-per-impostazione-predefinita) sia attivata.
+- *Aggiorna la cronologia delle modifiche durante la consultazione* viene mostrata per tutti gli obiettivi, purché la [dimensione della cronologia](#conserva-la-cronologia-delle-modifiche-recenti-per-obiettivo-campo-editazione-50-per-impostazione-predefinita) non sia 0.
+- *Annuncia le nuove modifiche con la cronologia aperta* viene mostrata per tutti gli obiettivi, purché la dimensione della cronologia non sia 0 e l'opzione globale *Annuncia* sia attivata.
 - Le opzioni *Ignora le barre di avanzamento*, *Ignora contatori, progressioni e timer*, *Considera un titolo cambiato come obiettivo scomparso* e *Ignora i controlli generici noti* vengono mostrate solo per gli obiettivi che sono finestre.
 - *Monitora questo obiettivo anche in primo piano* viene mostrata per tutti gli obiettivi.
 - *Ignora il controllo con il focus* viene mostrata se l'obiettivo è una finestra ed è anche [impostato per essere monitorato anche in primo piano](#monitora-anche-gli-obiettivi-in-primo-piano-casella-di-controllo-disattivata-per-impostazione-predefinita).
@@ -141,12 +143,6 @@ Accetta solo numeri interi. Imposta quante modifiche consecutive dello stesso ob
 
 Questa opzione non riguarda mai gli obiettivi in primo piano. Se il [monitoraggio è attivato anche per gli obiettivi in primo piano](#monitora-anche-gli-obiettivi-in-primo-piano-casella-di-controllo-disattivata-per-impostazione-predefinita), per questi vengono sempre annunciate tutte le modifiche.
 
-### **Conserva la cronologia delle modifiche recenti per obiettivo** (campo editazione, 50 per impostazione predefinita)
-
-Accetta solo numeri interi. Imposta quante modifiche recenti conservare nella [cronologia di ciascun obiettivo](#cronologia-delle-modifiche-recenti). Le modifiche più vecchie vengono scartate. 0 significa nessuna cronologia.
-
-Per gli obiettivi ricordati che sono scomparsi, anche la cronologia viene ricordata e resta disponibile finché l'obiettivo non viene rimosso o fino alla fine della sessione.
-
 ### **Timeout dell'overlay** (campo editazione, 10 per impostazione predefinita)
 
 Accetta solo numeri interi. Imposta quanti secondi senza pressione di tasti devono trascorrere prima che l'overlay si chiuda da solo. 0 significa che l'overlay non si chiude mai da solo: resta aperto finché non lo chiudi con Escape o con un comando che sposta il focus altrove, come l'apertura del [menu degli obiettivi](#il-menu-degli-obiettivi).
@@ -156,6 +152,24 @@ Accetta solo numeri interi. Imposta quanti secondi senza pressione di tasti devo
 Normalmente un obiettivo viene letto solo mentre lavori altrove, quindi quando la sua app passa in primo piano il componente aggiuntivo lo lascia stare. Se attivata, il nuovo contenuto di un obiettivo viene annunciato anche mentre stai lavorando proprio con quella finestra o quel singolo controllo.
 
 Tieni presente che se l'app dell'obiettivo comunica direttamente con gli screen reader (tramite regioni live ARIA o altri eventi di accessibilità), gli stessi annunci potrebbero a volte essere segnalati due volte mentre lavori nella sua finestra: una volta dall'app stessa e una dal componente aggiuntivo. In tal caso, per sentire solo gli annunci dell'app, puoi deselezionare *Monitora questo obiettivo anche in primo piano* nelle [Impostazioni obiettivo](#impostazioni-obiettivo) di quell'obiettivo, sospendere temporaneamente il monitoraggio oppure rimuovere l'obiettivo e aggiungerlo di nuovo più tardi. Per sentire solo gli annunci del componente aggiuntivo, disattiva in NVDA l'opzione «Leggi i cambiamenti dei contenuti dinamici» (NVDA+5 per impostazione predefinita).
+
+### **Cronologia delle modifiche** (gruppo)
+
+Le opzioni di questo gruppo controllano la [cronologia delle modifiche recenti](#cronologia-delle-modifiche-recenti) conservata per ciascun obiettivo.
+
+#### **Conserva la cronologia delle modifiche recenti per obiettivo** (campo editazione, 50 per impostazione predefinita)
+
+Accetta solo numeri interi. Imposta quante modifiche recenti conservare nella [cronologia di ciascun obiettivo](#cronologia-delle-modifiche-recenti). Le modifiche più vecchie vengono scartate. 0 significa nessuna cronologia e rende non disponibili le altre opzioni di questo gruppo.
+
+Per gli obiettivi ricordati che sono scomparsi, anche la cronologia viene ricordata e resta disponibile finché l'obiettivo non viene rimosso o fino alla fine della sessione.
+
+#### **Aggiorna la cronologia delle modifiche durante la consultazione** (casella di controllo, attivata per impostazione predefinita)
+
+Se attivata, una finestra di dialogo della cronologia aperta continua ad aggiungere le nuove modifiche man mano che si verificano, e il tempo di ciascuna modifica continua ad aumentare. Se disattivata, la finestra di dialogo resta com'era quando l'hai aperta.
+
+#### **Annuncia le nuove modifiche con la cronologia aperta** (casella di controllo, attivata per impostazione predefinita)
+
+Questa opzione è disponibile solo quando la casella [**Annuncia**](#annuncia-casella-di-controllo-attivata-per-impostazione-predefinita) è attivata. Se disattivata, le nuove modifiche in un obiettivo non vengono pronunciate mentre la finestra di dialogo della sua cronologia è aperta. Il [bip](#bip-casella-di-controllo-attivata-per-impostazione-predefinita) viene comunque riprodotto.
 
 ### Ordinamento degli obiettivi
 

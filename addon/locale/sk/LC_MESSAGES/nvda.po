@@ -330,6 +330,14 @@ msgstr ""
 msgid "I&nterrupt previous speech when announcing a new change"
 msgstr "Pri oznamovaní novej zmeny p&rerušiť predchádzajúcu reč"
 
+#. Translators: add new changes to an open history dialog and keep its times up to date.
+msgid "Update change history while &viewing"
+msgstr "Ak&tualizovať históriu zmien počas prezerania"
+
+#. Translators: speak new changes in a target even while its history dialog is open.
+msgid "Announce new changes whi&le history is open"
+msgstr "Pri otvorene&j histórii oznamovať nové zmeny"
+
 #. Translators: suppress announcements of progress bar controls in a window.
 msgid "Ignore &progress bars"
 msgstr "Ignorovať indikátory priebeh&u"
@@ -369,11 +377,6 @@ msgstr ""
 "Počet zmien oznamovaných &naraz (len ciele na pozadí, 0 znamená vždy "
 "oznamovať všetky zmeny)"
 
-#. Translators: how many recent changes the target menu keeps for each target (0 means none).
-msgid "Keep &history of recent changes per target (0 means no history)"
-msgstr ""
-"Uchovávať pri každom cieli &históriu nedávnych zmien (0 znamená bez histórie)"
-
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
 msgid "&Overlay timeout (seconds, 0 means never time out)"
@@ -382,6 +385,15 @@ msgstr "Čas do zatvorenia &prekrytia (sekundy, 0 znamená nikdy nezatvárať)"
 #. Translators: also track a target while its own application is in the foreground.
 msgid "Trac&k even foreground targets"
 msgstr "S&ledovať aj ciele v popredí"
+
+#. Translators: group of options for the history of recent changes kept for each target.
+msgid "Change history"
+msgstr "História zmien"
+
+#. Translators: how many recent changes the target menu keeps for each target (0 means none).
+msgid "Keep &history of recent changes per target (0 means no history)"
+msgstr ""
+"Uchovávať pri každom cieli &históriu nedávnych zmien (0 znamená bez histórie)"
 
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
@@ -562,19 +574,21 @@ msgstr "T: Otvorí ponuku cieľov"
 
 #. Translators: overlay help line for the number keys.
 msgid ""
-"1 through 0: speak information about the target in that slot; press again to "
-"set focus to it"
+"1 through 0: speak information about the target in that slot; press twice to "
+"set focus to it, three times to open its history of recent changes"
 msgstr ""
-"1 až 0: Oznámi informácie o cieli v danom slote; ďalším stlačením sa naň "
-"presunie fokus"
+"1 až 0: Oznámi informácie o cieli v danom slote; druhým stlačením sa naň "
+"presunie fokus, tretím sa otvorí jeho história nedávnych zmien"
 
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press again to set focus to it"
+"press twice to set focus to it, three times to open its history of recent "
+"changes"
 msgstr ""
-"Medzerník alebo enter: Oznámi informácie o naposledy pridanom cieli; ďalším "
-"stlačením sa naň presunie fokus"
+"Medzerník alebo enter: Oznámi informácie o naposledy pridanom cieli; druhým "
+"stlačením sa naň presunie fokus, tretím sa otvorí jeho história nedávnych "
+"zmien"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"

@@ -64,8 +64,8 @@ After pressing the prefix, press one of the following keys:
 - `m` — start or stop tracking the control under the **mouse** pointer.
 - `n` — start or stop tracking the current **navigator object** (where the review cursor is).
 - `t` — open the **[target menu](#the-target-menu)**.
-- `1` to `0` — **speak information about a target** by its position in the list (see below). Press the same number a second time to set focus to that target.
-- `space` or `enter` — the same as the number keys, but always for the **most recently added** target: press once to hear about it, twice to set focus to it.
+- `1` to `0` — **speak information about a target** by its position in the list (see below). Press the same number a second time to set focus to that target, or a third time right after the second to open its [history of recent changes](#history-of-recent-changes) instead.
+- `space` or `enter` — the same as the number keys, but always for the **most recently added** target: press once to hear about it, twice to set focus to it, three times to open its history.
 - `control`+a number (`1` to `0`) — **stop tracking** the target in that slot.
 - `alt`+a number (`1` to `0`) — **open the [target menu](#the-target-menu)** for the target in that slot directly.
 - `backspace` — **stop tracking the most recently added** target.
@@ -96,7 +96,7 @@ Every target is a submenu. When you expand it, you can:
 - *Stop tracking* it,
 - *Set focus* to it (unless it's already focused),
 - Change its [*Target settings*](#target-settings),
-- Or browse that target's [history of **recent changes**](#history-of-recent-changes).
+- Or browse that target's [history of **recent changes**](#history-of-recent-changes) (not displayed at all if nothing has changed yet or the history size is 0).
 
 Anything you are already tracking appears first in the menu, so you can quickly move to the target you want, or stop tracking it. Below that are the targets you can start tracking from your current location (window, focus, mouse pointer, or navigator object). The item to stop tracking all current targets is at the end of the menu.
 
@@ -105,6 +105,8 @@ Anything you are already tracking appears first in the menu, so you can quickly 
 Each item in *Target settings* is a checkbox, and what it shows is what the target actually does: its own value where you have given it one, and the [global setting](#global-settings) everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting still follows the global.
 
 - *Interrupt previous speech when announcing a new change* is displayed for all targets, as long as the [global *Announce* option](#announce-checkbox-enabled-by-default) is enabled.
+- *Update change history while viewing* is displayed for all targets, as long as the [history size](#keep-history-of-recent-changes-per-target-edit-50-by-default) is not 0.
+- *Announce new changes while history is open* is displayed for all targets, as long as the history size is not 0 and the global *Announce* option is enabled.
 - The *Ignore progress bars*, *Ignore counters, steppers and timers*, *Consider changed title a disappeared target* and *Ignore known generic controls* options are displayed only for window targets.
 - *Track this target even in the foreground* is displayed for all targets.
 - *Ignore the focused control* is displayed as long as the target is a window and it's also [set to be tracked even in the foreground](#track-even-foreground-targets-checkbox-disabled-by-default).
@@ -141,12 +143,6 @@ Only accepts whole numbers. Sets how many consecutive changes to the same target
 
 This option never affects foreground targets. If [tracking is enabled even for foreground targets](#track-even-foreground-targets-checkbox-disabled-by-default), then all changes are always announced for those.
 
-### **Keep history of recent changes per target** (edit, 50 by default)
-
-Only accepts whole numbers. Sets how many recent changes should be kept in the [history per target](#history-of-recent-changes). Older changes are dropped. 0 means no history.
-
-For remembered targets that have disappeared, the history is also remembered and remains available until the target is removed or until the end of the session.
-
 ### **Overlay timeout** (edit, 10 by default)
 
 Only accepts whole numbers. Sets how many seconds without a key press must pass before the overlay closes on its own. 0 means that the overlay never closes by itself: it stays open until you close it with escape or a command that takes focus somewhere else, such as opening [the target menu](#the-target-menu).
@@ -156,6 +152,24 @@ Only accepts whole numbers. Sets how many seconds without a key press must pass 
 Normally, a target is only read while you are working somewhere else, so once its own app comes to the foreground, the add-on leaves it alone. When enabled, new content for a target is announced even when you are currently working with that window or single control.
 
 Note that if the target app talks to screen readers directly (via ARIA live regions or other accessibility events), the same announcements may sometimes be reported twice while working in its window — once from the app itself and once from the add-on. In that case, to hear only the app's own announcements, you can untick *Track this target even in the foreground* in that target's [Target settings](#target-settings), pause tracking temporarily, or remove the target and add it back later. To hear only the add-on's announcements, disable reporting of dynamically changed content in NVDA (NVDA+5 by default).
+
+### **Change history** (group)
+
+The options in this group control the [history of recent changes](#history-of-recent-changes) kept for each target.
+
+#### **Keep history of recent changes per target** (edit, 50 by default)
+
+Only accepts whole numbers. Sets how many recent changes should be kept in the [history per target](#history-of-recent-changes). Older changes are dropped. 0 means no history, and makes the other options in this group unavailable.
+
+For remembered targets that have disappeared, the history is also remembered and remains available until the target is removed or until the end of the session.
+
+#### **Update change history while viewing** (checkbox, enabled by default)
+
+When enabled, an open history dialog keeps adding new changes as they occur, and the time of each change keeps counting up. When disabled, the dialog stays as it was when you opened it.
+
+#### **Announce new changes while history is open** (checkbox, enabled by default)
+
+This option is only available when the [**Announce**](#announce-checkbox-enabled-by-default) checkbox is enabled. When disabled, new changes in a target are not spoken while its history dialog is open. The [beep](#beep-checkbox-enabled-by-default) still plays.
 
 ### Target sorting
 
