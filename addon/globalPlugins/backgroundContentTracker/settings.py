@@ -112,6 +112,8 @@ class BCTSettingsPanel(SettingsPanel):
 	historySizeCtrl: nvdaControls.SelectOnFocusSpinCtrl
 	updateHistoryCb: wx.CheckBox
 	announceWithHistoryCb: wx.CheckBox
+	rememberCb: wx.CheckBox
+	forgetCb: wx.CheckBox
 	ignoreFocusedCb: wx.CheckBox
 	beepCb: wx.CheckBox
 	announceCb: wx.CheckBox
@@ -317,8 +319,9 @@ class BCTSettingsPanel(SettingsPanel):
 		)
 
 		# Translators: keep the target list between NVDA restarts and re-attach on reappearance.
-		self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))
-		self._checkBox(
+		self.rememberCb = self._checkBox(sHelper, self, "rememberTargets", _("&Remember targets"))
+		self.rememberCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
+		self.forgetCb = self._checkBox(
 			sHelper,
 			self,
 			"forgetOnDisappear",
@@ -427,6 +430,7 @@ class BCTSettingsPanel(SettingsPanel):
 		self.ignoreFocusedCb.Enable(self.trackForegroundCb.IsChecked())
 		historyOn = self.historySizeCtrl.GetValue() > 0
 		self.updateHistoryCb.Enable(historyOn)
+		self.forgetCb.Enable(self.rememberCb.IsChecked())
 		beepOn = self.beepCb.IsChecked()
 		for control in (self.durationCtrl, self.pitchCtrl, self.testButton):
 			control.Enable(beepOn)

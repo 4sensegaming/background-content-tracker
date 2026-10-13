@@ -188,7 +188,7 @@ Wenn aktiviert, bleibt Ihre Zielliste über NVDA-Neustarts hinweg erhalten, und 
 
 ### **Gemerkte Ziele vergessen, wenn sie verschwinden** (Kontrollfeld, standardmäßig deaktiviert)
 
-Legt fest, ob ein gemerktes Ziel vergessen werden soll, wenn es nicht mehr existiert – weil Sie das Fenster des Ziels geschlossen haben oder es von selbst verschwunden ist. Wenn aktiviert, müssen Sie die Verfolgung desselben Ziels jedes Mal, wenn es verschwindet, erneut manuell starten. Ziele, deren Verfolgung Sie manuell stoppen, werden immer vergessen, unabhängig davon, wie diese Option eingestellt ist.
+Diese Option ist nur verfügbar, wenn [**Ziele merken**](#ziele-merken-kontrollfeld-standardmäßig-deaktiviert) aktiviert ist. Legt fest, ob ein gemerktes Ziel vergessen werden soll, wenn es nicht mehr existiert – weil Sie das Fenster des Ziels geschlossen haben oder es von selbst verschwunden ist. Wenn aktiviert, müssen Sie die Verfolgung desselben Ziels jedes Mal, wenn es verschwindet, erneut manuell starten. Ziele, deren Verfolgung Sie manuell stoppen, werden immer vergessen, unabhängig davon, wie diese Option eingestellt ist.
 
 ### **Verhalten bei Fensterverfolgung** (Gruppierung)
 

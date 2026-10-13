@@ -188,7 +188,7 @@ When enabled, your target list is kept between NVDA restarts, and the add-on re-
 
 ### **Forget remembered targets when they disappear** (checkbox, disabled by default)
 
-Determines whether a remembered target should be forgotten when it no longer exists — you closed the target's window or it disappeared by itself. When enabled, you will have to start tracking the same target manually again every time it disappears. Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
+This option is only available when [**Remember targets**](#remember-targets-checkbox-disabled-by-default) is enabled. Determines whether a remembered target should be forgotten when it no longer exists — you closed the target's window or it disappeared by itself. When enabled, you will have to start tracking the same target manually again every time it disappears. Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
 
 ### **Window tracking behavior** (group)
 

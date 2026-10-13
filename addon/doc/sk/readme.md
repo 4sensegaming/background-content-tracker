@@ -188,7 +188,7 @@ Ak je začiarknuté, zoznam cieľov zostane zachovaný aj po reštarte NVDA a do
 
 ### **Zabudnúť zapamätané ciele, keď prestanú existovať** (začiarkavacie políčko, v predvolenom nastavení nezačiarknuté)
 
-Určuje, či sa má zapamätaný cieľ zabudnúť, hneď ako prestane existovať – zatvorili ste okno cieľa, alebo zmizlo samo. Ak je začiarknuté, budete musieť začať ten istý cieľ sledovať znova ručne zakaždým, keď zmizne. Ciele, ktoré prestanete sledovať ručne, sa zabúdajú vždy, nech je táto možnosť nastavená akokoľvek.
+Táto možnosť je dostupná, iba ak je začiarknuté [**Pamätať si ciele**](#pamätať-si-ciele-začiarkavacie-políčko-v-predvolenom-nastavení-nezačiarknuté). Určuje, či sa má zapamätaný cieľ zabudnúť, hneď ako prestane existovať – zatvorili ste okno cieľa, alebo zmizlo samo. Ak je začiarknuté, budete musieť začať ten istý cieľ sledovať znova ručne zakaždým, keď zmizne. Ciele, ktoré prestanete sledovať ručne, sa zabúdajú vždy, nech je táto možnosť nastavená akokoľvek.
 
 ### **Správanie pri sledovaní okna** (zoskupenie)
 

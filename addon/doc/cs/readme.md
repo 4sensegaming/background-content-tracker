@@ -188,7 +188,7 @@ Pokud je zaškrtnuto, seznam cílů zůstane zachován i po restartu NVDA a dopl
 
 ### **Zapomínat zapamatované cíle, když přestanou existovat** (zaškrtávací políčko, ve výchozím nastavení nezaškrtnuto)
 
-Určuje, jestli se má zapamatovaný cíl zapomenout, jakmile přestane existovat – zavřeli jste okno cíle, nebo zmizelo samo. Pokud je zaškrtnuto, budete muset začít týž cíl sledovat znovu ručně pokaždé, když zmizí. Cíle, které přestanete sledovat ručně, se zapomínají vždy, ať je tato možnost nastavena jakkoli.
+Tato možnost je dostupná, pouze pokud je zaškrtnuto [**Pamatovat si cíle**](#pamatovat-si-cíle-zaškrtávací-políčko-ve-výchozím-nastavení-nezaškrtnuto). Určuje, jestli se má zapamatovaný cíl zapomenout, jakmile přestane existovat – zavřeli jste okno cíle, nebo zmizelo samo. Pokud je zaškrtnuto, budete muset začít týž cíl sledovat znovu ručně pokaždé, když zmizí. Cíle, které přestanete sledovat ručně, se zapomínají vždy, ať je tato možnost nastavena jakkoli.
 
 ### **Chování při sledování oken** (skupina)
 

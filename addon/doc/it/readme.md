@@ -188,7 +188,7 @@ Se attivata, il tuo elenco di obiettivi viene conservato tra un riavvio di NVDA 
 
 ### **Dimentica gli obiettivi ricordati quando scompaiono** (casella di controllo, disattivata per impostazione predefinita)
 
-Stabilisce se un obiettivo ricordato debba essere dimenticato quando non esiste più, perché hai chiuso la sua finestra o perché è scomparso da solo. Se attivata, dovrai riavviare manualmente il monitoraggio dello stesso obiettivo ogni volta che scompare. Gli obiettivi di cui interrompi manualmente il monitoraggio vengono sempre dimenticati, indipendentemente da come è impostata questa opzione.
+Questa opzione è disponibile solo quando [**Ricorda gli obiettivi**](#ricorda-gli-obiettivi-casella-di-controllo-disattivata-per-impostazione-predefinita) è attivata. Stabilisce se un obiettivo ricordato debba essere dimenticato quando non esiste più, perché hai chiuso la sua finestra o perché è scomparso da solo. Se attivata, dovrai riavviare manualmente il monitoraggio dello stesso obiettivo ogni volta che scompare. Gli obiettivi di cui interrompi manualmente il monitoraggio vengono sempre dimenticati, indipendentemente da come è impostata questa opzione.
 
 ### **Comportamento del monitoraggio delle finestre** (gruppo)
 
