@@ -85,7 +85,10 @@ def helpAt(focus: NVDAObject) -> Callable[[], str] | None:
 	@returns: What gives the chapter of the documentation F1 opens, or None when F1 is not the add-on's.
 	"""
 	panel = _shownPanel
-	if panel is None or panel._dialog.currentCategory is not panel:
+	if panel is None:
+		return None
+	dialog: NVDASettingsDialog = panel.GetTopLevelParent()
+	if dialog.currentCategory is not panel:
 		return None
 	hwnd = focus.windowHandle
 	if hwnd == panel._categoryListHandle:
@@ -113,7 +116,6 @@ class BCTSettingsPanel(SettingsPanel):
 	_bound: dict[str, wx.CheckBox | nvdaControls.SelectOnFocusSpinCtrl]
 	_sortRadios: dict[str, tuple[wx.RadioBox, tuple[str, ...]]]
 	_chapters: dict[int, str]
-	_dialog: NVDASettingsDialog
 	_handle: int
 	_categoryListHandle: int
 
@@ -373,16 +375,16 @@ class BCTSettingsPanel(SettingsPanel):
 
 		global _shownPanel
 		_shownPanel = self
-		self._dialog = self.GetTopLevelParent()
+		dialog: NVDASettingsDialog = self.GetTopLevelParent()
 		self._handle = self.GetHandle()
-		self._categoryListHandle = self._dialog.catListCtrl.GetHandle()
+		self._categoryListHandle = dialog.catListCtrl.GetHandle()
 		self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
 		self._updateDependentControls()
 
 	def _onDestroy(self, evt: wx.WindowDestroyEvent):
 		global _shownPanel
-		if evt.GetWindow() is self and _shownPanel is self:
+		if evt.GetWindow().GetHandle() == self._handle and _shownPanel is self:
 			_shownPanel = None
 		evt.Skip()
 

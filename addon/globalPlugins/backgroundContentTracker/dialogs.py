@@ -34,9 +34,9 @@ function bctTimes(times) {
 	for (var key in times) {
 		var entry = document.getElementById(key);
 		if (entry) {
-			var shown = entry.getElementsByTagName("h2")[0];
-			if (shown.textContent !== times[key]) {
-				shown.textContent = times[key];
+			var shown = entry.getElementsByTagName("h2")[0].firstChild;
+			if (shown.nodeValue !== times[key]) {
+				shown.nodeValue = times[key];
 			}
 		}
 	}
@@ -46,9 +46,9 @@ function bctAdd(times, before, id, heading, text) {
 	var added = document.createElement("div");
 	added.id = id;
 	var h2 = document.createElement("h2");
-	h2.textContent = heading;
+	h2.appendChild(document.createTextNode(heading));
 	var pre = document.createElement("pre");
-	pre.textContent = text;
+	pre.appendChild(document.createTextNode(text));
 	added.appendChild(h2);
 	added.appendChild(pre);
 	document.getElementById("bctChanges").insertBefore(added, before ? document.getElementById(before) : null);
@@ -98,7 +98,7 @@ class BrowseableDialog(HtmlMessageDialog):
 		self.registerAction("copy", self._copy)
 
 	def _onDestroy(self, evt: wx.WindowDestroyEvent):
-		if evt.GetWindow() is self:
+		if evt.GetWindow().GetHandle() == self._handle:
 			_openChapters.pop(self._handle, None)
 		evt.Skip()
 
@@ -164,7 +164,7 @@ class HistoryDialog(BrowseableDialog):
 		Stop updating the times once the dialog is gone.
 		@param evt: The destroy event, also sent for the dialog's controls.
 		"""
-		if evt.GetWindow() is self:
+		if evt.GetWindow().GetHandle() == self._handle:
 			self._timer.Stop()
 		super()._onDestroy(evt)
 
