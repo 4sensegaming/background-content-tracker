@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 addonHandler.initTranslation()
 
 _HISTORY_SCRIPT = """
-function bctAdd(times, before, id, heading, text) {
+function bctTimes(times) {
 	for (var key in times) {
 		var entry = document.getElementById(key);
 		if (entry) {
@@ -40,6 +40,9 @@ function bctAdd(times, before, id, heading, text) {
 			}
 		}
 	}
+}
+function bctAdd(times, before, id, heading, text) {
+	bctTimes(times);
 	var added = document.createElement("div");
 	added.id = id;
 	var h2 = document.createElement("h2");
@@ -52,7 +55,7 @@ function bctAdd(times, before, id, heading, text) {
 }
 var start = document.getElementById("bctStart");
 if (start) {
-	start.focus();
+	start.scrollIntoView();
 }
 """
 
@@ -126,7 +129,7 @@ def _entryHtml(change: Change, start: bool) -> str:
 	@param start: Whether the dialog opens at this change.
 	@returns: The heading with the change's time, followed by its text.
 	"""
-	startAttributes = ' id="bctStart" tabindex="-1"' if start else ""
+	startAttributes = ' id="bctStart"' if start else ""
 	return (
 		f'<div id="{_entryId(change)}"><h2{startAttributes}>{escape(relativeTime(change.time))}</h2>'
 		f"<pre>{escape(change.text)}</pre></div>"
@@ -152,6 +155,36 @@ class HistoryDialog(BrowseableDialog):
 			f'<h1>{heading}</h1>\n<div id="bctChanges">{entries}</div>\n<script>{_HISTORY_SCRIPT}</script>',
 			documentation.HISTORY,
 		)
+		self._timer = wx.Timer(self)
+		self.Bind(wx.EVT_TIMER, lambda evt: self._run("bctTimes", self._times()), self._timer)
+		self._timer.Start(1000)
+
+	def _onDestroy(self, evt: wx.WindowDestroyEvent):
+		"""
+		Stop updating the times once the dialog is gone.
+		@param evt: The destroy event, also sent for the dialog's controls.
+		"""
+		if evt.GetWindow() is self:
+			self._timer.Stop()
+		super()._onDestroy(evt)
+
+	def _times(self) -> dict[str, str]:
+		"""
+		The time of every change shown.
+		@returns: The relative time of each change, by its HTML id.
+		"""
+		return {_entryId(shown): relativeTime(shown.time) for shown in self._history}
+
+	def _run(self, function: str, *arguments: object):
+		"""
+		Call a function of the page's script.
+		@param function: The function's name.
+		@param arguments: Its arguments, passed as JSON.
+		"""
+		with contextlib.suppress(RuntimeError):
+			self._messageControl.RunScript(
+				f"{function}({', '.join(json.dumps(value) for value in arguments)});"
+			)
 
 	def addChange(self, change: Change):
 		"""
@@ -162,13 +195,7 @@ class HistoryDialog(BrowseableDialog):
 		ordered = sortChanges(self._history, self._order)
 		index = ordered.index(change)
 		before = _entryId(ordered[index + 1]) if index + 1 < len(ordered) else None
-		times = {_entryId(shown): relativeTime(shown.time) for shown in self._history}
-		arguments = ", ".join(
-			json.dumps(value)
-			for value in (times, before, _entryId(change), relativeTime(change.time), change.text)
-		)
-		with contextlib.suppress(RuntimeError):
-			self._messageControl.RunScript(f"bctAdd({arguments});")
+		self._run("bctAdd", self._times(), before, _entryId(change), relativeTime(change.time), change.text)
 
 
 _historyDialogs: list[HistoryDialog] = []

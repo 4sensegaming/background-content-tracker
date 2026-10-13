@@ -179,7 +179,21 @@ class BCTSettingsPanel(SettingsPanel):
 			)
 		)
 		radio.SetSelection(orders.index(str(addonConfig.get(key))))
+		radio.Bind(wx.EVT_CHAR_HOOK, lambda evt: self._onRadioKey(evt, radio))
 		self._sortRadios[key] = (radio, orders)
+
+	def _onRadioKey(self, evt: wx.KeyEvent, radio: wx.RadioBox):
+		"""
+		Move to the first radio button with home and to the last with end.
+		@param evt: The key pressed.
+		@param radio: The radio buttons it was pressed in.
+		"""
+		key = evt.GetKeyCode()
+		if key not in (wx.WXK_HOME, wx.WXK_END) or evt.HasAnyModifiers():
+			evt.Skip()
+			return
+		radio.SetSelection(0 if key == wx.WXK_HOME else radio.GetCount() - 1)
+		radio.SetFocus()
 
 	def makeSettings(self, settingsSizer: wx.Sizer):
 		self._bound = {}

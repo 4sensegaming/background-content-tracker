@@ -164,6 +164,16 @@ def isHungWindow(hwnd: int | None) -> bool:
 	return bool(safeCall(lambda: user32.dll.IsHungAppWindow(root), False))
 
 
+def isChromiumWindow(hwnd: int) -> bool:
+	"""
+	Whether a window is in the top-level window of a Chromium-based application.
+	@param hwnd: The window.
+	@returns: False also when the class of its top-level window cannot be read.
+	"""
+	className = safeCall(lambda: winUser.getClassName(_rootWindowOf(hwnd))) or ""
+	return className.startswith("Chrome_WidgetWin_")
+
+
 def sharesRootWindow(first: NVDAObject, second: NVDAObject) -> bool:
 	"""
 	Whether two objects are in the same top-level window.
@@ -399,6 +409,16 @@ class TrackedTarget:
 
 	def isHung(self) -> bool:
 		return isHungWindow(windowHandleOf(self._objects[0]))
+
+	def needsPreview(self) -> bool:
+		"""
+		Whether the target is in a Chromium window that is out of the foreground but not minimized.
+		@returns: False for a target that is not attached or whose application has stopped responding.
+		"""
+		hwnd = windowHandleOf(self._objects[0])
+		if not hwnd or self.lastSeenInForeground or not isChromiumWindow(hwnd) or isHungWindow(hwnd):
+			return False
+		return not safeCall(lambda: user32.dll.IsIconic(_rootWindowOf(hwnd)), False)
 
 	def canTakeFocus(self) -> bool:
 		if self.isHung() or not self.isAlive():

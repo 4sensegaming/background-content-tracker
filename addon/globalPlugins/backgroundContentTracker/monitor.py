@@ -9,12 +9,13 @@ whole sweep that found content may lower a count: a truncated one has not seen
 the rest, and a minimised Chromium window reads as empty.
 """
 
+import contextlib
 import ctypes
 import re
 import threading
 import time
 from collections import Counter, deque
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Generator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 import addonHandler
@@ -27,6 +28,8 @@ from controlTypes import Role, State
 from editableText import EditableText
 from logHandler import log
 from NVDAObjects import NVDAObject, NVDAObjectTextInfo
+from NVDAObjects.UIA import UIATextInfo
+from NVDAObjects.UIA.web import UIAWebTextInfo
 from NVDAObjects.window import Window
 from winBindings import user32
 
@@ -34,6 +37,7 @@ from . import addonConfig, dialogs
 from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
+from .preview import PreviewWindow
 from .targets import Identity, TargetRegistry, TrackedTarget, onThisThread, safeCall, sharesRootWindow
 
 if TYPE_CHECKING:
@@ -46,6 +50,7 @@ Entry = tuple[str, str]
 _HIDDEN_STATES = frozenset((State.INVISIBLE, State.OFFSCREEN))
 
 POLL_INTERVAL = 1.0
+PREVIEW_WAIT = 0.25
 SETTLE_SECONDS = 10.0
 MAX_NODES = 1000
 MAX_TEXT_CHARS = 10000
@@ -62,18 +67,20 @@ def _hasOwnText(obj: NVDAObject) -> bool:
 
 def _ownText(obj: NVDAObject) -> str:
 	"""
-	The end of an object's own text, as much as L{_readableText} keeps.
+	An object's own text, of which L{_readableText} keeps the end.
 	@param obj: The object.
-	@returns: The text, or an empty string when it cannot be read.
+	@returns: Only the end of UI Automation text outside web content, which jumps there in one call,
+	the whole of any other text, or an empty string when it cannot be read.
 	"""
 
-	def tail() -> str:
+	def read() -> str:
 		info = obj.makeTextInfo(textInfos.POSITION_ALL)
-		info.collapse(end=True)
-		info.move(textInfos.UNIT_CHARACTER, -_RAW_TEXT_LIMIT, endPoint="start")
+		if isinstance(info, UIATextInfo) and not isinstance(info, UIAWebTextInfo):
+			info.collapse(end=True)
+			info.move(textInfos.UNIT_CHARACTER, -_RAW_TEXT_LIMIT, endPoint="start")
 		return info.text
 
-	return safeCall(tail, "") or ""
+	return safeCall(read, "") or ""
 
 
 def _labelOf(obj: NVDAObject, withValue: bool = True) -> str:
@@ -474,10 +481,18 @@ class Monitor:
 		self,
 		registry: TargetRegistry,
 		notifier: Notifier,
+		preview: PreviewWindow,
 		onListChanged: Callable[[], None] | None = None,
 	):
+		"""
+		@param registry: The targets.
+		@param notifier: Announces what the monitor finds.
+		@param preview: Keeps covered Chromium windows drawn while they are read.
+		@param onListChanged: Called when the target list changes on its own.
+		"""
 		self.registry = registry
 		self.notifier = notifier
+		self._preview = preview
 		self._onListChanged = onListChanged
 		self._thread: threading.Thread | None = None
 		self._stop = threading.Event()
@@ -578,19 +593,39 @@ class Monitor:
 				if elapsed + 1e-6 >= POLL_INTERVAL:
 					lastTick = now
 					if enabled:
-						self._settlePass(settings)
 						interval = int(settings["trackingInterval"])
 						effective = POLL_INTERVAL if interval <= 0 else max(interval, POLL_INTERVAL)
 						sinceLast += elapsed
-						if sinceLast + 1e-6 >= effective:
+						due = sinceLast + 1e-6 >= effective
+						if due:
 							sinceLast = 0.0
-							self._checkContent(settings, announce=interval != 0)
+						with self._drawnWhileRead(due):
+							self._settlePass(settings)
+							if due:
+								self._checkContent(settings, announce=interval != 0)
 			except Exception:
 				log.exception("Error in Background Content Tracker poll")
 			self._wake.wait(max(0.0, POLL_INTERVAL - (time.monotonic() - lastTick)))
 			self._wake.clear()
 			if self._stop.is_set():
 				return
+
+	@contextlib.contextmanager
+	def _drawnWhileRead(self, due: bool) -> Generator[None]:
+		"""
+		Keep covered Chromium windows drawn while this tick reads any target in one.
+		@param due: Whether this tick checks every target's content, not only that of settling ones.
+		"""
+		read = [target for target in self.registry.liveTargets() if due or target.isSettling()]
+		if not any(target.needsPreview() for target in read):
+			yield
+			return
+		self._preview.show()
+		try:
+			self._stop.wait(PREVIEW_WAIT)
+			yield
+		finally:
+			self._preview.hide()
 
 	def _checkPresence(self, settings: Settings, report: bool):
 		remembered = [
@@ -701,15 +736,20 @@ class Monitor:
 		target.announcedDelta = delta
 		target.announcedRun += 1
 		self._lastAnnouncedUid = target.uid
-		self._callOnMainThread(
-			self._whileTracked,
-			target,
-			self.notifier.announceChange,
-			target,
-			spoken,
-			sameTarget,
-			immediate=True,
-		)
+		self._callOnMainThread(self._announceChange, target, spoken, sameTarget, immediate=True)
+
+	def _announceChange(self, target: TrackedTarget, spoken: str, sameTarget: bool):
+		"""
+		Announce a change in a target still tracked, unless it has come to the foreground meanwhile.
+		@param target: The target that changed.
+		@param spoken: The new content to announce.
+		@param sameTarget: Whether the change announced before this one was in the same target.
+		"""
+		if target not in self.registry:
+			return
+		if not target.setting("trackForegroundTargets") and target.isInForeground():
+			return
+		self.notifier.announceChange(target, spoken, sameTarget)
 
 	def _focusIn(self, root: NVDAObject) -> NVDAObject | None:
 		"""

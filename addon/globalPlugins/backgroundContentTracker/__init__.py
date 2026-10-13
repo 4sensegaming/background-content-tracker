@@ -31,6 +31,7 @@ from .addonConfig import ChangedKeys
 from .monitor import Monitor
 from .notifier import Notifier
 from .overlay import Overlay
+from .preview import PreviewWindow
 from .targets import TargetRegistry, TrackedTarget, currentFocus, safeCall
 
 if TYPE_CHECKING:
@@ -77,7 +78,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		addonConfig.initialize()
 		self.registry = TargetRegistry()
 		self.notifier = Notifier()
-		self.monitor = Monitor(self.registry, self.notifier, self._saveRememberedTargets)
+		self.preview = PreviewWindow()
+		self.monitor = Monitor(self.registry, self.notifier, self.preview, self._saveRememberedTargets)
 		self.overlay = Overlay(self)
 		self._pending: tuple[PendingKind, int | None, int] | None = None
 		NVDASettingsDialog.categoryClasses.append(settingsModule.BCTSettingsPanel)
@@ -90,6 +92,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			self.monitor.stop()
 		except Exception:  # noqa: BLE001
 			log.debugWarning("Error stopping monitor", exc_info=True)
+		with contextlib.suppress(Exception):
+			self.preview.destroy()
 		with contextlib.suppress(Exception):
 			self.overlay.close()
 		try:
