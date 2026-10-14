@@ -46,7 +46,7 @@ _getMenuItemID = ctypes.WINFUNCTYPE(wintypes.UINT, wintypes.HMENU, ctypes.c_int)
 	("GetMenuItemID", ctypes.windll.user32)
 )
 
-_openChapters: dict[int, str] | None = None
+_openChapters: Mapping[int, str] | None = None
 
 
 def showTargetMenu(plugin: "GlobalPlugin", sources: Sequence[Source], focus: FocusState):
@@ -80,7 +80,9 @@ def helpAt(focus: NVDAObject) -> Callable[[], str] | None:
 	if chapters is None or focus.windowClassName != "#32768":
 		return None
 	hwnd = focus.windowHandle
-	return lambda: _highlightedChapter(hwnd, chapters)
+	return lambda: _highlightedChapter(
+		hwnd, {itemId & 0xFFFF: chapter for itemId, chapter in chapters.items()}
+	)
 
 
 def _highlightedChapter(hwnd: int, chapters: Mapping[int, str]) -> str:
@@ -194,13 +196,20 @@ def _appendSettingsSubmenu(
 	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
 
 
-def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusState, bind: Bind) -> wx.Menu:
+def _targetSubmenu(
+	plugin: "GlobalPlugin",
+	target: TrackedTarget,
+	focus: FocusState,
+	bind: Bind,
+	deferred: list[Callable[[], None]] | None = None,
+) -> wx.Menu:
 	"""
 	Build the submenu of one target.
 	@param plugin: The add-on, which carries out the chosen item.
 	@param target: The target the submenu acts on.
 	@param focus: The current focus, deciding whether "Set focus" is offered.
 	@param bind: Binds each item to what it does.
+	@param deferred: Receives what fills the history submenu, to be run later, or None to fill it now.
 	@returns: The submenu.
 	"""
 	submenu = wx.Menu()
@@ -213,23 +222,36 @@ def _targetSubmenu(plugin: "GlobalPlugin", target: TrackedTarget, focus: FocusSt
 		bind(focusItem, lambda: plugin.setFocusToTarget(target), documentation.TARGET_MENU)
 	_appendSettingsSubmenu(submenu, plugin, target, bind)
 	if dialogs.hasHistory(target):
-		_appendHistorySubmenu(submenu, target, bind)
+		_appendHistorySubmenu(submenu, target, bind, deferred)
 	return submenu
 
 
-def _appendHistorySubmenu(submenu: wx.Menu, target: TrackedTarget, bind: Bind):
+def _appendHistorySubmenu(
+	submenu: wx.Menu,
+	target: TrackedTarget,
+	bind: Bind,
+	deferred: list[Callable[[], None]] | None,
+):
 	"""
 	Add the submenu listing a target's recent changes.
 	@param submenu: The target's submenu.
 	@param target: The target.
 	@param bind: Binds each item to what it does.
+	@param deferred: Receives what fills the submenu, to be run later, or None to fill it now.
 	"""
 	historyMenu = wx.Menu()
-	parts = dialogs.historyParts()
-	for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
-		label = ", ".join(part for part in dialogs.entryParts(change, parts) if part is not None)
-		item = historyMenu.Append(wx.ID_ANY, _plain(label))
-		bind(item, lambda: dialogs.showHistory(target), documentation.HISTORY)
+
+	def fill():
+		parts = dialogs.historyParts()
+		for change in sortChanges(target.history, str(addonConfig.get("historySorting"))):
+			label = ", ".join(part for part in dialogs.entryParts(change, parts) if part is not None)
+			item = historyMenu.Append(wx.ID_ANY, _plain(label))
+			bind(item, lambda: dialogs.showHistory(target), documentation.HISTORY)
+
+	if deferred is None:
+		fill()
+	else:
+		deferred.append(fill)
 	# Translators: submenu of a target's menu, listing the target's recent changes.
 	submenu.AppendSubMenu(historyMenu, _("Recent changes"))
 
@@ -248,19 +270,30 @@ def _binder(chapters: dict[int, str]) -> Bind:
 	return bind
 
 
-def _popUp(menu: wx.Menu, chapters: Mapping[int, str]):
+def _popUp(menu: wx.Menu, chapters: Mapping[int, str], deferred: list[Callable[[], None]] | None = None):
 	"""
 	Show a menu until it closes, then unbind its items and destroy it.
 	@param menu: The menu to show.
 	@param chapters: The ids of the items bound in it, with the chapter of the documentation F1 opens on each.
+	@param deferred: What fills submenus, run when the first submenu opens.
 	"""
 	global _openChapters
-	_openChapters = {itemId & 0xFFFF: chapter for itemId, chapter in chapters.items()}
+
+	def fillDeferred(evt: wx.MenuEvent):
+		evt.Skip()
+		if evt.GetMenu() is not menu and deferred:
+			for fill in deferred:
+				fill()
+			deferred.clear()
+
+	_openChapters = chapters
+	gui.mainFrame.Bind(wx.EVT_MENU_OPEN, fillDeferred)
 	gui.mainFrame.prePopup()
 	try:
 		gui.mainFrame.PopupMenu(menu)
 	finally:
 		gui.mainFrame.postPopup()
+		gui.mainFrame.Unbind(wx.EVT_MENU_OPEN, handler=fillDeferred)
 		_openChapters = None
 		for itemId in chapters:
 			with contextlib.suppress(Exception):
@@ -273,11 +306,12 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 	menu = wx.Menu()
 	chapters: dict[int, str] = {}
 	bind = _binder(chapters)
+	deferred: list[Callable[[], None]] = []
 
 	tracked = plugin.registry.sortedTargets(str(addonConfig.get("menuSorting")))
 	for target in tracked:
 		menu.AppendSubMenu(
-			_targetSubmenu(plugin, target, focus, bind), _plain(notifier.menuDescription(target))
+			_targetSubmenu(plugin, target, focus, bind, deferred), _plain(notifier.menuDescription(target))
 		)
 
 	if sources:
@@ -298,4 +332,4 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 		menu.Destroy()
 		return
 
-	_popUp(menu, chapters)
+	_popUp(menu, chapters, deferred)

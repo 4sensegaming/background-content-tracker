@@ -239,7 +239,10 @@ class Notifier:
 		if not target.hasReportableChange():
 			ui.message(_sentence(self._describeTarget(target, [_noChanges(), paused])))
 			return
-		content = target.lastDelta if addonConfig.get("announceChangedContent") else None
+		lastChange = target.lastChange
+		content = (
+			lastChange[0] if lastChange is not None and addonConfig.get("announceChangedContent") else None
+		)
 		desc = self._describeTarget(target, [content, paused])
 		if desc:
 			ui.message(desc if content and paused is None else _sentence(desc))
@@ -248,12 +251,12 @@ class Notifier:
 		paused = _pausedNote()
 		if not target.isAlive():
 			return self._describeTarget(target, [_notFound(), paused], "menuTargetType")
-		reportable = target.hasReportableChange()
+		lastChange = target.lastChange if target.hasReportableChange() else None
 		extras: list[str | None] = []
 		if addonConfig.get("menuTimeSinceChange"):
-			extras.append(relativeTime(target.lastChangeTime if reportable else None))
-		if addonConfig.get("menuChangedContent") and reportable and target.lastDelta:
-			extras.append(target.lastDelta)
+			extras.append(relativeTime(lastChange[1] if lastChange is not None else None))
+		if addonConfig.get("menuChangedContent") and lastChange is not None and lastChange[0]:
+			extras.append(lastChange[0])
 		extras.append(paused)
 		return self._describeTarget(target, extras, "menuTargetType")
 

@@ -16,11 +16,12 @@ import threading
 import time
 from collections import Counter, deque
 from collections.abc import Callable, Generator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import addonHandler
 import api
 import appModuleHandler
+import oleacc
 import queueHandler
 import textInfos
 import winUser
@@ -28,12 +29,13 @@ from controlTypes import Role, State
 from editableText import EditableText
 from logHandler import log
 from NVDAObjects import NVDAObject, NVDAObjectTextInfo
+from NVDAObjects.IAccessible import IAccessible
 from NVDAObjects.UIA import UIATextInfo
 from NVDAObjects.UIA.web import UIAWebTextInfo
 from NVDAObjects.window import Window
 from winBindings import user32
 
-from . import addonConfig, dialogs
+from . import addonConfig, dialogs, gecko
 from . import targets as targetsMod
 from .addonConfig import Settings
 from .notifier import Notifier
@@ -48,6 +50,7 @@ addonHandler.initTranslation()
 Entry = tuple[str, str]
 
 _HIDDEN_STATES = frozenset((State.INVISIBLE, State.OFFSCREEN))
+_INVISIBLE_STATES = frozenset((State.INVISIBLE,))
 
 POLL_INTERVAL = 1.0
 PREVIEW_WAIT = 0.25
@@ -156,13 +159,20 @@ def _isProgressBar(obj: NVDAObject) -> bool:
 	return safeCall(lambda: obj.role == Role.PROGRESSBAR, False) is True
 
 
-def _isPresented(obj: NVDAObject | None) -> bool:
+def _isPresented(obj: NVDAObject | None, dormant: bool) -> bool:
+	"""
+	Whether a control is shown.
+	@param obj: The control, or None.
+	@param dormant: Whether it is in a Firefox page Firefox does not keep up to date as the one shown,
+	where everything is off screen.
+	@returns: True also when its states cannot be read.
+	"""
 	if obj is None:
 		return True
 	states = safeCall(lambda: obj.states)
 	if not states:
 		return True
-	return not (states & _HIDDEN_STATES)
+	return not (states & (_INVISIBLE_STATES if dormant else _HIDDEN_STATES))
 
 
 _FRAME_ROLES = frozenset((Role.TITLEBAR, Role.MENUBAR))
@@ -243,6 +253,12 @@ def _isGenericControl(obj: NVDAObject, text: str) -> bool:
 
 
 def _focusedValues(focusObj: NVDAObject) -> frozenset[str]:
+	"""
+	The values of a focused control and of the controls in it, as read now.
+	@param focusObj: This thread's copy of the focused control.
+	@returns: Each value, and each with its control's name; none for a document.
+	"""
+	safeCall(focusObj.invalidateCache)
 	if safeCall(lambda: focusObj.role) == Role.DOCUMENT:
 		return frozenset()
 	values: set[str] = set()
@@ -340,58 +356,205 @@ def _isTyped(text: str, typed: frozenset[str], typedWords: frozenset[str]) -> bo
 	return bool(words) and any(_isEditOf(words, value) for value in typedWords)
 
 
-def _sweepEntries(
-	root: NVDAObject,
-	ignoreProgressBars: bool = False,
-) -> tuple[list[Entry], bool, dict[str, NVDAObject]]:
-	"""``(key, text)`` per control in document order, whether no cap cut it short, and key to control.
+class _Sweep(NamedTuple):
+	entries: list[Entry]
+	whole: bool
+	nodes: dict[str, NVDAObject]
+	dormant: frozenset[str]
+	shownTab: int | None
 
+
+class _Frame:
+	"""A control the sweep is inside of, with what is left of its children."""
+
+	def __init__(
+		self,
+		obj: NVDAObject,
+		key: str,
+		depth: int,
+		dormant: bool | None,
+		children: list[NVDAObject],
+		firstIndex: int,
+		looked: bool,
+	):
+		"""
+		@param obj: The control.
+		@param key: Its key in the sweep.
+		@param depth: How deep it is under where the sweep starts.
+		@param dormant: Whether it is in a Firefox page Firefox does not keep up to date as the one shown,
+		or None outside any Firefox page.
+		@param children: Its children the sweep reads.
+		@param firstIndex: The child index of the first of them.
+		@param looked: Whether the sweep looked into the control at all.
+		"""
+		self.obj = obj
+		self.key = key
+		self.depth = depth
+		self.dormant = dormant
+		self.children = children
+		self.firstIndex = firstIndex
+		self.looked = looked
+		self.next = len(children) - 1
+		self.gotText = False
+
+
+class _Sweeper:
+	def __init__(self, ignoreProgressBars: bool):
+		"""
+		@param ignoreProgressBars: Whether to skip progress bars below where the sweep starts.
+		"""
+		self.ignoreProgressBars = ignoreProgressBars
+		self.budget = MAX_NODES
+		self.whole = True
+		self.entries: list[Entry] = []
+		self.nodes: dict[str, NVDAObject] = {}
+		self.dormant: set[str] = set()
+		self.gecko = False
+		self.selectedPanelID: int | None = None
+		self.panelsID: int | None = None
+
+	def run(self, root: NVDAObject) -> _Sweep:
+		"""
+		Read the controls under a control, in post-order, children last first.
+		@param root: Where the sweep starts.
+		@returns: What the sweep read.
+		"""
+		stack: list[_Frame] = []
+		first = self._enter(root, "", 0, self._prepare(root), None)
+		if first is not None:
+			stack.append(first)
+		while stack:
+			frame = stack[-1]
+			if frame.next >= 0 and self.budget > 0:
+				child = frame.children[frame.next]
+				childKey = f"{frame.key}/{frame.firstIndex + frame.next}"
+				frame.next -= 1
+				entered = self._enter(child, childKey, frame.depth + 1, frame.dormant, frame)
+				if entered is not None:
+					stack.append(entered)
+				continue
+			if frame.next >= 0:
+				self.whole = False
+			stack.pop()
+			if self._finish(frame, not stack) and stack:
+				stack[-1].gotText = True
+		self.entries.reverse()
+		return _Sweep(self.entries, self.whole, self.nodes, frozenset(self.dormant), self.selectedPanelID)
+
+	def _prepare(self, root: NVDAObject) -> bool | None:
+		"""
+		Find out what a sweep of a Firefox window or page has to know before it starts.
+		@param root: Where the sweep starts.
+		@returns: Whether it is in a Firefox page Firefox does not keep up to date as the one shown,
+		or None outside any Firefox page.
+		"""
+		if not gecko.isGecko(root):
+			return None
+		self.gecko = True
+		acc = safeCall(lambda: root.IAccessibleObject)
+		document = gecko.tabDocument(acc) if acc is not None else None
+		if document is not None:
+			return gecko.isActiveDocument(document) is False
+		hwnd = targetsMod.windowHandleOf(root)
+		windowAcc = gecko.windowRoot(hwnd) if hwnd else None
+		selected = gecko.selectedDocument(windowAcc) if windowAcc is not None else None
+		panel = gecko.tabPanel(selected) if selected is not None else None
+		panels = gecko.parentOf(panel) if panel is not None else None
+		if panels is not None:
+			self.selectedPanelID = gecko.uniqueID(panel)
+			self.panelsID = gecko.uniqueID(panels)
+		return None
+
+	def _enter(
+		self,
+		obj: NVDAObject,
+		key: str,
+		depth: int,
+		dormant: bool | None,
+		parent: _Frame | None,
+	) -> _Frame | None:
+		"""
+		Start reading a control.
+		@param obj: The control.
+		@param key: Its key in the sweep.
+		@param depth: How deep it is under where the sweep starts.
+		@param dormant: As its parent is.
+		@param parent: The control it is a child of, or None where the sweep starts.
+		@returns: The control with the children to read, or None when it gives nothing.
+		"""
+		if self.budget <= 0:
+			self.whole = False
+			return None
+		if self.gecko and dormant is None:
+			role = safeCall(lambda: obj.IAccessibleRole)
+			if role == oleacc.ROLE_SYSTEM_PROPERTYPAGE and self._isOtherTabPanel(obj, parent):
+				return None
+			if role == oleacc.ROLE_SYSTEM_DOCUMENT:
+				dormant = safeCall(lambda: gecko.isActiveDocument(obj.IAccessibleObject)) is False
+		self.budget -= 1
+		if parent is not None and self.ignoreProgressBars and _isProgressBar(obj):
+			return None
+		looked = depth < MAX_DEPTH and self.budget > 0
+		if not looked:
+			self.whole = False
+		children, firstIndex = _childrenOf(obj, self.budget) if looked else ([], 0)
+		if firstIndex:
+			self.whole = False
+		return _Frame(obj, key, depth, dormant, children, firstIndex, looked)
+
+	def _isOtherTabPanel(self, obj: NVDAObject, parent: _Frame | None) -> bool:
+		"""
+		Whether a control is the tab panel of a Firefox tab other than the selected one.
+		@param obj: The control.
+		@param parent: The control it is a child of, or None where the sweep starts.
+		@returns: False when the selected tab is not known.
+		"""
+		if self.selectedPanelID is None or self.panelsID is None or parent is None:
+			return False
+		parentObj = parent.obj
+		if safeCall(lambda: parentObj.IA2UniqueID) != self.panelsID:
+			return False
+		return safeCall(lambda: obj.IA2UniqueID) != self.selectedPanelID
+
+	def _finish(self, frame: _Frame, isRoot: bool) -> bool:
+		"""
+		Add a control once its children are read: its label if they gave text, else its own text.
+		@param frame: The control.
+		@param isRoot: Whether the sweep started at it.
+		@returns: Whether the control or any control under it gave text.
+		"""
+		obj = frame.obj
+		text = ""
+		trustOwnText = frame.looked and (not frame.children or (frame.firstIndex == 0 and self.budget > 0))
+		if not frame.gotText and trustOwnText and _hasOwnText(obj):
+			text = _readableText(_ownText(obj))
+		if not text and not (isRoot and frame.children):
+			isFieldOverText = frame.gotText and isinstance(obj, EditableText)
+			text = _readableText(_labelOf(obj, withValue=not isFieldOverText))
+		if not text:
+			return frame.gotText
+		self.entries.append((frame.key, text))
+		self.nodes[frame.key] = obj
+		if frame.dormant:
+			self.dormant.add(frame.key)
+		return True
+
+
+def _sweepEntries(root: NVDAObject, ignoreProgressBars: bool = False) -> _Sweep:
+	"""
+	Read the text of every control of a target.
 	A node whose children gave text adds only its label; only a mute subtree falls
 	back to the node's own text, so nothing is read as one blob. Children are walked
 	last first, so a sweep cut short keeps the end, where new content arrives.
+	In Firefox, a window reads only the tab it shows, and a page in a tab Firefox does
+	not keep up to date as the one shown counts as on screen.
+	@param root: The target's object.
+	@param ignoreProgressBars: Whether to skip progress bars below the target.
+	@returns: ``(key, text)`` per control in document order, whether no cap cut the sweep short,
+	key to control, the keys in Firefox pages not kept up to date, and the unique ID of the tab
+	panel a Firefox window shows, or None.
 	"""
-	entries: list[Entry] = []
-	nodes: dict[str, NVDAObject] = {}
-	budget = [MAX_NODES]
-	whole = [True]
-
-	def visit(obj: NVDAObject, depth: int, key: str, isRoot: bool) -> bool:
-		if budget[0] <= 0:
-			whole[0] = False
-			return False
-		budget[0] -= 1
-		if not isRoot and ignoreProgressBars and _isProgressBar(obj):
-			return False
-		looked = depth < MAX_DEPTH and budget[0] > 0
-		if not looked:
-			whole[0] = False
-		children, firstIndex = _childrenOf(obj, budget[0]) if looked else ([], 0)
-		if firstIndex:
-			whole[0] = False
-		gotText = False
-		for offset in range(len(children) - 1, -1, -1):
-			if budget[0] <= 0:
-				whole[0] = False
-				break
-			childKey = f"{key}/{firstIndex + offset}"
-			if visit(children[offset], depth + 1, childKey, False):
-				gotText = True
-		text = ""
-		trustOwnText = looked and (not children or (firstIndex == 0 and budget[0] > 0))
-		if not gotText and trustOwnText and _hasOwnText(obj):
-			text = _readableText(_ownText(obj))
-		if not text and not (isRoot and children):
-			isFieldOverText = gotText and isinstance(obj, EditableText)
-			text = _readableText(_labelOf(obj, withValue=not isFieldOverText))
-		if not text:
-			return gotText
-		entries.append((key, text))
-		nodes[key] = obj
-		return True
-
-	visit(root, 0, "", True)
-	entries.reverse()
-	return entries, whole[0], nodes
+	return _Sweeper(ignoreProgressBars).run(root)
 
 
 def _isDarkSweep(entries: Sequence[Entry], cache: Mapping[str, int]) -> bool:
@@ -524,7 +687,17 @@ class Monitor:
 		if self._stop.is_set():
 			return
 		immediate = kwargs.pop("immediate", False)
-		queueHandler.queueFunction(queueHandler.eventQueue, func, *args, _immediate=immediate, **kwargs)
+		queueHandler.queueFunction(
+			queueHandler.eventQueue, self._unlessStopped, func, *args, _immediate=immediate, **kwargs
+		)
+
+	def _unlessStopped(self, func: Callable[..., object], *args: Any, **kwargs: Any):
+		"""
+		Run what the monitor queued, unless it has been stopped since.
+		@param func: What to run, with its arguments.
+		"""
+		if not self._stop.is_set():
+			func(*args, **kwargs)
 
 	def _notifyListChanged(self):
 		if self._onListChanged is not None:
@@ -581,6 +754,9 @@ class Monitor:
 		lastTick = time.monotonic()
 		wasEnabled = False
 		while True:
+			self._wake.clear()
+			if self._stop.is_set():
+				return
 			try:
 				settings = addonConfig.snapshot()
 				enabled = bool(settings["enabled"])
@@ -606,7 +782,6 @@ class Monitor:
 			except Exception:
 				log.exception("Error in Background Content Tracker poll")
 			self._wake.wait(max(0.0, POLL_INTERVAL - (time.monotonic() - lastTick)))
-			self._wake.clear()
 			if self._stop.is_set():
 				return
 
@@ -640,12 +815,16 @@ class Monitor:
 				return
 			if target.isHung():
 				continue
+			found = target.attachedObject
+			if found is None:
+				continue
 			title = target.liveTitle()
 			if title is not None and self._keptItsTitle(target, title, settings):
 				target.title = title
+				target.updateTabSelected()
 				target.lastSeenInForeground = target.isInForeground()
 				continue
-			if self._handleDisappeared(target, settings):
+			if self._handleDisappeared(target, settings, found):
 				dropped.add(target)
 		if not report:
 			return
@@ -684,7 +863,7 @@ class Monitor:
 				self._checkTargetContent(target, settings, announce=False)
 
 	def _checkTargetContent(self, target: TrackedTarget, settings: Settings, announce: bool):
-		obj = target.obj
+		obj = target.freshObj()
 		if obj is None or target.isHung():
 			return
 		isWindow = target.kind == "window"
@@ -702,24 +881,31 @@ class Monitor:
 			focusObj = self._focusIn(obj)
 			if focusObj is not None:
 				typedBefore = _focusedValues(focusObj)
-		entries, whole, nodes = _sweepEntries(obj, ignorePB)
-		dark = _isDarkSweep(entries, target.seenContent)
+		ignoredGeneration = target.ignoredGeneration
+		sweep = _sweepEntries(obj, ignorePB)
+		counts = Counter(text for _, text in sweep.entries)
+		dark = _isDarkSweep(sweep.entries, target.seenContent)
+		if sweep.shownTab != target.shownTab:
+			target.shownTab = sweep.shownTab
+			target.staleCache = True
 		if target.staleCache:
-			texts = frozenset(text for _, text in entries)
-			self._absorb(target, entries, whole, dark)
+			texts = frozenset(counts)
+			self._absorb(target, counts, sweep.whole, dark)
 			target.staleCache = target.isSettling() and not texts <= target.prevTexts
 			target.prevTexts = texts
 			if not target.staleCache:
 				target.settleUntil = None
 			return
-		delta = self._collectDelta(target, entries, nodes, isWindow, settings, focusObj, typedBefore)
-		self._absorb(target, entries, whole, dark)
-		target.prevTexts = frozenset(text for _, text in entries)
+		delta = self._collectDelta(
+			target, sweep, counts, isWindow, settings, focusObj, typedBefore, ignoredGeneration
+		)
+		self._absorb(target, counts, sweep.whole, dark)
+		target.prevTexts = frozenset(counts)
 		if not delta:
 			return
-		target.lastDelta = delta
-		target.lastChangeTime = time.time()
-		if target.recordChange(delta, target.lastChangeTime) is not None:
+		when = time.time()
+		target.lastChange = (delta, when)
+		if target.recordChange(delta, when) is not None:
 			self._callOnMainThread(dialogs.changeRecorded, target)
 		if not announce:
 			return
@@ -770,15 +956,16 @@ class Monitor:
 	def _collectDelta(
 		self,
 		target: TrackedTarget,
-		entries: Sequence[Entry],
-		nodes: Mapping[str, NVDAObject],
+		sweep: _Sweep,
+		counts: Mapping[str, int],
 		isWindow: bool,
 		settings: Settings,
 		focusObj: NVDAObject | None,
 		typedBefore: frozenset[str],
+		ignoredGeneration: int,
 	) -> str:
 		cache = target.seenContent
-		counts = Counter(text for _, text in entries)
+		nodes = sweep.nodes
 		outstanding: dict[str, int] = {}
 		for text, seen in counts.items():
 			known = cache.get(text, 0)
@@ -787,7 +974,7 @@ class Monitor:
 		if not outstanding:
 			return ""
 		picked: list[Entry] = []
-		for key, text in reversed(entries):
+		for key, text in reversed(sweep.entries):
 			left = outstanding.get(text)
 			if left:
 				outstanding[text] = left - 1
@@ -800,7 +987,7 @@ class Monitor:
 				picked = [(key, text) for key, text in picked if not _isTyped(text, typed, typedWords)]
 				if not picked:
 					return ""
-		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key))]
+		picked = [(key, text) for key, text in picked if _isPresented(nodes.get(key), key in sweep.dormant)]
 		if isWindow and target.setting("ignoreGenericControls", settings):
 			picked = [(key, text) for key, text in picked if not _isGenericControl(nodes[key], text)]
 		if not picked:
@@ -828,12 +1015,11 @@ class Monitor:
 				continue
 			surfaced.append((key, text))
 		if learned:
-			target.ignoredTemplates = ignored | learned
+			target.learnIgnoredControls(frozenset(learned), ignoredGeneration)
 		return _joinSurfaced(surfaced)
 
-	def _absorb(self, target: TrackedTarget, entries: Sequence[Entry], whole: bool, dark: bool):
+	def _absorb(self, target: TrackedTarget, counts: Mapping[str, int], whole: bool, dark: bool):
 		cache = target.seenContent
-		counts = Counter(text for _, text in entries)
 		trustAbsence = whole and not dark
 		if trustAbsence:
 			for gone in [text for text in cache if text not in counts]:
@@ -861,10 +1047,17 @@ class Monitor:
 			title = targetsMod.titleOf(title)
 		return title == target.trackedTitle
 
-	def _handleDisappeared(self, target: TrackedTarget, settings: Settings) -> bool:
-		"""Let go of a gone target and say what became of it; whether it was dropped."""
+	def _handleDisappeared(self, target: TrackedTarget, settings: Settings, found: NVDAObject) -> bool:
+		"""
+		Let go of a gone target and say what became of it, unless it has been found again meanwhile.
+		@param target: The target.
+		@param settings: The settings.
+		@param found: The object the target was found to have lost.
+		@returns: Whether the target was dropped.
+		"""
+		if not target.detachIf(found):
+			return False
 		forget = target.isForgottenWhenGone(settings)
-		target.obj = None
 		if forget:
 			announce = not target.lastSeenInForeground or bool(target.setting("rememberTargets", settings))
 			self._callOnMainThread(self._dropGone, target, announce)
@@ -929,10 +1122,16 @@ class Monitor:
 		windows = self._desktopWindows()
 		if not windows:
 			return
+		candidatesByApp: dict[str, list[NVDAObject]] = {}
 		for target in targets:
 			if self._stop.is_set():
 				break
-			candidates = self._candidateWindows(windows, target.identity)
+			if not target.identity:
+				continue
+			appName = target.identity.get("appName") or ""
+			candidates = candidatesByApp.get(appName)
+			if candidates is None:
+				candidates = candidatesByApp[appName] = self._candidateWindows(windows, target.identity)
 			obj = self._locateAmong(candidates, target.identity, target.kind)
 			if obj is not None and not self._keptItsTitle(target, obj, settings):
 				obj = None
@@ -942,12 +1141,14 @@ class Monitor:
 
 	def _desktopWindows(self) -> list[tuple[str, int]]:
 		"""
-		Every top-level window, with the name of its application.
+		Every top-level window that is shown and responding, with the name of its application.
 		@returns: The application names and window handles, frontmost first.
 		"""
 		appNames: dict[int, str] = {}
 		windows: list[tuple[str, int]] = []
 		for hwnd in _topLevelWindows():
+			if not targetsMod.isShownWindow(hwnd) or targetsMod.isHungWindow(hwnd):
+				continue
 			processID = safeCall(lambda h=hwnd: winUser.getWindowThreadProcessID(h)[0], 0)
 			if processID not in appNames:
 				appNames[processID] = (
@@ -962,8 +1163,8 @@ class Monitor:
 		identity: Identity,
 	) -> list[NVDAObject]:
 		"""
-		The windows a target may be in: its application's, visible and responding.
-		@param windows: Every top-level window, with its application's name.
+		The windows a target may be in: its application's.
+		@param windows: Every top-level window that is shown and responding, with its application's name.
 		@param identity: The target's identity.
 		@returns: The objects of those windows, in the order given.
 		"""
@@ -973,8 +1174,6 @@ class Monitor:
 		candidates: list[NVDAObject] = []
 		for appName, hwnd in windows:
 			if wantedApp and appName != wantedApp:
-				continue
-			if not targetsMod.isShownWindow(hwnd) or targetsMod.isHungWindow(hwnd):
 				continue
 			window = _windowObject(hwnd)
 			if window is not None:
@@ -993,10 +1192,32 @@ class Monitor:
 		if kind == "window":
 			return None
 		for window in candidates:
-			match = self._findMatchingDescendant(window, identity)
+			match = self._findInWindow(window, identity)
 			if match is not None:
 				return match
 		return None
+
+	def _findInWindow(self, window: NVDAObject, identity: Identity) -> NVDAObject | None:
+		"""
+		The control in a window that an identity describes, looked for in every Firefox tab first.
+		@param window: The window.
+		@param identity: The identity.
+		@returns: The control, or None.
+		"""
+		documents: list[NVDAObject] = []
+		if gecko.isGecko(window):
+			for acc in gecko.tabDocuments(window.IAccessibleObject):
+				document = safeCall(lambda a=acc: IAccessible(IAccessibleObject=a, IAccessibleChildID=0))
+				if document is not None:
+					documents.append(document)
+		for document in documents:
+			if targetsMod.matchesIdentity(identity, document):
+				return document
+		for document in documents:
+			match = self._findMatchingDescendant(document, identity)
+			if match is not None:
+				return match
+		return self._findMatchingDescendant(window, identity)
 
 	def _locate(self, identity: Identity, kind: str | None = None) -> NVDAObject | None:
 		if not identity:

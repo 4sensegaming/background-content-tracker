@@ -20,7 +20,7 @@ from NVDAObjects import NVDAObject
 from NVDAObjects.IAccessible import getNVDAObjectFromEvent
 from winBindings import user32
 
-from . import addonConfig
+from . import addonConfig, gecko
 from .addonConfig import ConfigValue, Settings
 
 Identity = dict[str, Any]
@@ -238,6 +238,9 @@ class TrackedTarget:
 		self.title: str = self.identity.get("name") or ""
 		self.wasInForeground = False
 		self.lastSeenInForeground = False
+		self.tabSelected = True
+		self._tabDocument: tuple[NVDAObject, Any] | None = None
+		self.ignoredGeneration = 0
 		self.trackedTitle: str | None = None
 		self.history: tuple[Change, ...] = ()
 		self.resetTracking()
@@ -246,12 +249,12 @@ class TrackedTarget:
 		self.seenContent: OrderedDict[str, int] = OrderedDict()
 		self.seenChars = 0
 		self.prevTexts: frozenset[str] = frozenset()
-		self.ignoredTemplates: frozenset[str] = frozenset()
+		self.forgetIgnoredControls()
 		self.announcedRun = 0
-		self.lastDelta = ""
-		self.lastChangeTime: float | None = None
+		self.lastChange: tuple[str, float] | None = None
 		self.announcedDelta = ""
 		self.staleCache = True
+		self.shownTab: int | None = None
 		self.settleUntil: float | None = None
 
 	def recordChange(self, text: str, when: float) -> Change | None:
@@ -331,6 +334,23 @@ class TrackedTarget:
 			self._objects = (obj, {threading.get_ident(): obj})
 			return True
 
+	def detachIf(self, found: NVDAObject) -> bool:
+		"""
+		Let go of the target's object, unless another has been swapped in meanwhile.
+		@param found: The object the target was found to have lost.
+		@returns: Whether the target still had that object and let go of it.
+		"""
+		with self._objectsLock:
+			if self._objects[0] is not found:
+				return False
+			self._objects = (None, {})
+			return True
+
+	@property
+	def attachedObject(self) -> NVDAObject | None:
+		"""The object the target was found as, made on whichever thread found it."""
+		return self._objects[0]
+
 	@property
 	def isAttached(self) -> bool:
 		return self._objects[0] is not None
@@ -352,7 +372,19 @@ class TrackedTarget:
 		self.overrides = overrides
 
 	def forgetIgnoredControls(self):
-		self.ignoredTemplates = frozenset()
+		with self._stateLock:
+			self.ignoredTemplates: frozenset[str] = frozenset()
+			self.ignoredGeneration += 1
+
+	def learnIgnoredControls(self, templates: frozenset[str], generation: int):
+		"""
+		Add counters to ignore, unless the ignored ones were forgotten since the sweep that found them.
+		@param templates: The counters found.
+		@param generation: L{ignoredGeneration} before that sweep.
+		"""
+		with self._stateLock:
+			if self.ignoredGeneration == generation:
+				self.ignoredTemplates = self.ignoredTemplates | templates
 
 	def isHeldToItsTitle(self, settings: Settings | None = None) -> bool:
 		return self.kind == "window" and bool(self.setting("titleChangeDisappears", settings))
@@ -395,8 +427,18 @@ class TrackedTarget:
 			return False
 		return isReachableWindow(found)
 
-	def liveTitle(self) -> str | None:
+	def freshObj(self) -> NVDAObject | None:
+		"""
+		This thread's object of the target, with nothing it read before kept.
+		@returns: The object, or None while the target is not attached.
+		"""
 		obj = self.obj
+		if obj is not None:
+			safeCall(obj.invalidateCache)
+		return obj
+
+	def liveTitle(self) -> str | None:
+		obj = self.freshObj()
 		if obj is None or not self.isAlive():
 			return None
 		name = safeCall(lambda: obj.name, _UNREADABLE)
@@ -405,7 +447,22 @@ class TrackedTarget:
 		return name or ""
 
 	def isInForeground(self) -> bool:
-		return isInForegroundApp(self._objects[0])
+		return isInForegroundApp(self._objects[0]) and self.tabSelected
+
+	def updateTabSelected(self):
+		"""Note whether a target inside a Firefox page is in the tab Firefox keeps up to date as the one shown."""
+		found = self._objects[0]
+		obj = self.obj
+		if self.kind == "window" or found is None or obj is None or not gecko.isGecko(obj):
+			self.tabSelected = True
+			return
+		cached = self._tabDocument
+		active = gecko.isActiveDocument(cached[1]) if cached is not None and cached[0] is found else None
+		if active is None:
+			document = gecko.tabDocument(obj.IAccessibleObject)
+			self._tabDocument = (found, document) if document is not None else None
+			active = gecko.isActiveDocument(document) if document is not None else None
+		self.tabSelected = active is not False
 
 	def isHung(self) -> bool:
 		return isHungWindow(windowHandleOf(self._objects[0]))
@@ -462,7 +519,7 @@ class TrackedTarget:
 		return any(safeCall(lambda c=candidate: obj == c, False) is True for candidate in candidates)
 
 	def hasReportableChange(self) -> bool:
-		if self.lastChangeTime is None:
+		if self.lastChange is None:
 			return False
 		return bool(self.setting("trackForegroundTargets")) or not self.isInForeground()
 
@@ -489,6 +546,10 @@ class TrackedTarget:
 		if hwnd and not winUser.isWindow(hwnd):
 			return False
 		self._reactivateWindow(obj)
+		if self.kind != "window" and gecko.isGecko(obj):
+			document = gecko.tabDocument(obj.IAccessibleObject)
+			if document is not None and not gecko.isInSelectedTab(document):
+				gecko.selectTab(document)
 		core.callLater(250, self._doSetFocus, obj, onFailure)
 		return True
 
@@ -588,8 +649,10 @@ class TargetRegistry:
 		if order in ("recentlyChanged", "leastRecentlyChanged"):
 
 			def changed(target: TrackedTarget) -> float:
-				reportable = target.isAttached and target.hasReportableChange()
-				return (target.lastChangeTime or 0.0) if reportable else 0.0
+				lastChange = target.lastChange
+				if lastChange is None or not (target.isAttached and target.hasReportableChange()):
+					return 0.0
+				return lastChange[1]
 
 			ordered.sort(key=changed)
 		elif order in ("alphabetical", "reverseAlphabetical"):
