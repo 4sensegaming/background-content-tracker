@@ -1,5 +1,7 @@
 # Hintergrund-Inhaltsverfolgung
 
+[Čeština](../cs/readme.md) | **Deutsch** | [English](../../../readme.md) | [Italiano](../it/readme.md) | [Slovenčina](../sk/readme.md)
+
 * Autor: Lukáš Hosnedl
 * Mindestens erforderliche NVDA-Version: 2026.3
 * Zuletzt getestete NVDA-Version: 2027.1
@@ -16,11 +18,11 @@ Die Hintergrund-Inhaltsverfolgung gibt Ihnen genau diesen Überblick: Sie wähle
 
 Dieses Add-on ist ein sehr mächtiges und anpassbares Werkzeug, das unzugängliche Fenster oder Steuerelemente im Grunde in sprechende Live-Regionen verwandeln kann, die überall funktionieren. Überraschend gut funktioniert es zum Beispiel mit:
 
-- Terminals, die im Hintergrund laufen,
-- Kurzen, sich schnell ändernden dynamischen Meldungen in einer einzelnen Liste, einem Textbereich oder einem NVDA-Objekt,
-- Unzugänglichen Webseiten mit dynamischen Änderungen,
+- Terminals,
+- Dynamischen Meldungen in einer einzelnen Liste, einem Textbereich oder einem anderen Container,
+- Webseiten, die sich laufend aktualisieren,
 - Messaging-Apps, die neu eingehende Nachrichten nicht automatisch vorlesen,
-- Sowie Electron-Apps wie dem neuen ChatGPT, die in puncto Barrierefreiheit viel zu wünschen übrig lassen: Sie können lange stumm bleiben und dann große Textblöcke an einer sich verschiebenden Stelle ausgeben, die womöglich schwer zu finden ist.
+- Sowie Electron-Apps wie dem neuen ChatGPT, die lange stumm bleiben und dann jedes Mal an einer anderen Stelle im Fenster große Textblöcke ausgeben.
 
 Allerdings werden das Add-on wohl nur Power-User zu schätzen wissen, die ihre Arbeit schneller und effizienter erledigen möchten, zum Beispiel:
 
@@ -33,7 +35,7 @@ Wenn Sie es brauchen, wissen Sie das wahrscheinlich schon. Anderen mag es überw
 
 ## Verwendung
 
-Sie erstellen eine Liste von Zielen, die verfolgt werden sollen – ganze Fenster oder einzelne Steuerelemente wie ein Eingabefeld oder die Nachrichtenliste eines Chats –, und das Add-on benachrichtigt Sie, sobald in einem davon neuer Inhalt erscheint. Sie können mehrere Ziele gleichzeitig verfolgen und die Verfolgung jedes einzelnen unabhängig starten oder stoppen.
+Sie erstellen eine Liste von Zielen, die verfolgt werden sollen – ganze Fenster oder einzelne Steuerelemente wie Eingabefelder oder Nachrichtenlisten in Chats –, und das Add-on benachrichtigt Sie, sobald in einem davon neuer Inhalt erscheint. Sie können mehrere Ziele gleichzeitig verfolgen und die Verfolgung jedes einzelnen unabhängig starten oder stoppen.
 
 ### Beispielszenarien
 
@@ -43,7 +45,7 @@ Sie erstellen eine Liste von Zielen, die verfolgt werden sollen – ganze Fenste
 ### Ein typischer Ablauf
 
 1. Gehen Sie zu dem Fenster oder Steuerelement, das Sie verfolgen möchten: Setzen Sie den Fokus darauf, zeigen Sie mit der Maus darauf oder bewegen Sie das Navigator-Objekt oder den NVDA-Cursor dorthin.
-2. Starten Sie die Verfolgung, entweder mit dem passenden [Tastenkombination](#tastenkombinationen) oder über das [Zielmenü](#das-zielmenü).
+2. Starten Sie die Verfolgung, entweder mit der passenden [Tastenkombination](#tastenkombinationen) oder über das [Zielmenü](#das-zielmenü).
 3. Wechseln Sie zu dem, woran Sie arbeiten möchten. Wenn im verfolgten Ziel neuer Inhalt erscheint, benachrichtigt NVDA Sie so, wie Sie es [eingestellt](#globale-einstellungen) haben.
 4. Stoppen Sie die Verfolgung eines Ziels, wenn Sie es nicht mehr brauchen, oder löschen Sie die ganze Zielliste auf einmal.
 
@@ -53,7 +55,7 @@ Das Add-on wird über einen einzigen **mehrstufigen Befehl** bedient: Sie drück
 
 Das Standardpräfix ist NVDA+; (Semikolon). Auf einer deutschen Tastatur wird das Semikolon mit Umschalt+Komma eingegeben, das Präfix ist dort also NVDA+Umschalt+Komma.
 
-Wenn Sie das Präfix drücken, öffnet das Add-on eine **virtuelle Überlagerung**. Solange die Überlagerung geöffnet ist, wird jede Taste, die Sie drücken, als einer der folgenden Befehle behandelt. Das Öffnen und Schließen der Überlagerung verschiebt nie den Fokus – er bleibt genau dort, wo er war, sodass die Befehle des Add-ons Sie nie bei dem stören, was Sie gerade tun.
+Wenn Sie das Präfix drücken, öffnet das Add-on eine **virtuelle Überlagerung**. Solange die Überlagerung geöffnet ist, wird jede Taste, die Sie drücken, als einer der folgenden Befehle behandelt. Das Öffnen und Schließen der Überlagerung verschiebt nie den Fokus, sodass die Befehle des Add-ons Sie nie bei dem stören, was Sie gerade tun.
 
 Drücken Sie nach dem Präfix eine der folgenden Tasten:
 
@@ -64,10 +66,10 @@ Drücken Sie nach dem Präfix eine der folgenden Tasten:
 - `m` – startet oder stoppt die Verfolgung des Steuerelements unter dem **Maus**zeiger.
 - `n` – startet oder stoppt die Verfolgung des aktuellen **Navigator-Objekts** (dort, wo sich der NVDA-Cursor befindet).
 - `t` – öffnet das **[Zielmenü](#das-zielmenü)**.
-- `1` bis `0` – **sagt Informationen über ein Ziel an**, je nach seiner Position in der Liste (siehe unten). Drücken Sie dieselbe Zahl ein zweites Mal, um den Fokus auf dieses Ziel zu setzen, oder direkt danach ein drittes Mal, um stattdessen seinen [Verlauf der letzten Änderungen](#verlauf-der-letzten-änderungen) zu öffnen.
-- `Leertaste` oder `Eingabetaste` – wie die Zahlentasten, aber immer für das **zuletzt hinzugefügte** Ziel: einmal drücken, um Informationen darüber zu hören, zweimal, um den Fokus darauf zu setzen, dreimal, um seinen Verlauf zu öffnen.
+- `1` bis `0` – **sagt Informationen über ein Ziel an**, je nach seiner Position in der Liste (siehe unten). Drücken Sie die Zahl zweimal, um den Fokus auf dieses Ziel zu setzen, oder dreimal, um direkt seinen [Verlauf der letzten Änderungen](#verlauf-der-letzten-änderungen) zu öffnen.
 - `Strg`+eine Zahl (`1` bis `0`) – **stoppt die Verfolgung** des Ziels in diesem Fach.
-- `Alt`+eine Zahl (`1` bis `0`) – **öffnet das [Zielmenü](#das-zielmenü)** direkt für das Ziel in diesem Fach.
+- `Alt`+eine Zahl (`1` bis `0`) – **öffnet [das Menü](#das-zielmenü)** direkt für das Ziel in diesem Fach.
+- `Leertaste` oder `Eingabetaste` – wie die Zahlentasten, aber immer für das **zuletzt hinzugefügte** Ziel: einmal drücken, um Informationen darüber zu hören, zweimal, um den Fokus darauf zu setzen, dreimal, um seinen Verlauf zu öffnen.
 - `Rücktaste` – **stoppt die Verfolgung des zuletzt hinzugefügten** Ziels.
 - `Entf` – **stoppt die Verfolgung aller Ziele** (löscht die ganze Liste auf einmal).
 - `p` – **pausiert** die gesamte Verfolgung **oder setzt sie fort** (schaltet [*Verfolgung aktivieren*](#verfolgung-aktivieren-kontrollfeld-standardmäßig-aktiviert) um).
@@ -77,36 +79,36 @@ Drücken Sie nach dem Präfix eine der folgenden Tasten:
 
 Die Befehle für Fenster, Fokus, Maus und Navigator-Objekt sind Umschalter: Drücken Sie einen davon einmal, um dieses Ziel zur Liste hinzuzufügen, und erneut, um es wieder zu entfernen, solange es noch das aktuelle Fenster ist, den Fokus hat usw. Sie können beliebig viele Ziele gleichzeitig verfolgen.
 
-Diese vier Befehle berücksichtigen außerdem `Umschalt` und `Strg`, die festlegen, wie das Ziel, das Sie hinzufügen, verfolgt werden soll: `Umschalt` merkt sich genau dieses eine Ziel, `Strg` liest es auch dann, wenn seine eigene App im Vordergrund ist, und beide zusammen tun beides. Das sind [zielbezogene Einstellungen](#zieleinstellungen), die beim Hinzufügen direkt für dieses Ziel gesetzt werden, anstatt von den [globalen Einstellungen](#globale-einstellungen) übernommen oder später im [Zielmenü](#das-zielmenü) manuell eingestellt zu werden, und sie ändern die globale Einstellung nicht. Ein Tastendruck, der die Verfolgung des Ziels *stoppt*, statt es hinzuzufügen, ignoriert die Zusatztasten einfach. Die Zusatztasten sind nur nützlich, wenn Sie die Optionen [**Ziele merken**](#ziele-merken-kontrollfeld-standardmäßig-deaktiviert) oder [**Ziele auch im Vordergrund verfolgen**](#ziele-auch-im-vordergrund-verfolgen-kontrollfeld-standardmäßig-deaktiviert) global deaktiviert haben, dieses Verhalten aber genau für dieses eine Ziel brauchen.
+Diese vier Befehle berücksichtigen außerdem `Umschalt` und `Strg`, die festlegen, wie das Ziel verfolgt werden soll: `Umschalt` merkt sich genau dieses eine Ziel, `Strg` liest es auch dann, wenn seine eigene App im Vordergrund ist, und beide zusammen tun beides. Das sind [zielbezogene Einstellungen](#zieleinstellungen), die beim Hinzufügen direkt für dieses Ziel gesetzt werden, anstatt von den [globalen Einstellungen](#globale-einstellungen) übernommen oder später im [Zielmenü](#das-zielmenü) manuell eingestellt zu werden, und sie ändern die globale Einstellung nicht. Ein Tastendruck, der die Verfolgung des Ziels *stoppt*, statt es hinzuzufügen, ignoriert die Zusatztasten einfach. Die Zusatztasten sind nur nützlich, wenn Sie die Optionen [**Ziele merken**](#ziele-merken-kontrollfeld-standardmäßig-deaktiviert) oder [**Ziele auch im Vordergrund verfolgen**](#ziele-auch-im-vordergrund-verfolgen-kontrollfeld-standardmäßig-deaktiviert) global deaktiviert haben, dieses Verhalten aber genau für dieses eine Ziel brauchen.
 
-Die Zahlentasten beziehen sich auf **Fächer** in Ihrer Zielliste, nicht auf feste Ziele. Standardmäßig ist `1` das zuletzt hinzugefügte Ziel, `2` das davor hinzugefügte und so weiter bis `0` – das zehnte Fach. Die Einstellung [**Sortierung der Zielfächer**](#sortierung-der-ziele) kann die Fächer anders anordnen, etwa ältestes Ziel zuerst, zuletzt geändertes Ziel zuerst oder alphabetisch. Wird ein Ziel entfernt – weil Sie seine Verfolgung gestoppt haben oder es nicht mehr existiert –, rücken die nachfolgenden Ziele auf und füllen die Lücke, sodass `2` immer das Ziel ansagt, das gerade an zweiter Stelle der Liste steht.
+Die Zahlentasten beziehen sich auf **Fächer** in Ihrer Zielliste, nicht auf feste Positionen. Standardmäßig ist `1` das zuletzt hinzugefügte Ziel, `2` das davor hinzugefügte und so weiter bis `0` – das zehnte Fach. Die Einstellung [**Sortierung der Zielfächer**](#sortierung-der-ziele) kann die Fächer anders anordnen, etwa ältestes Ziel zuerst, zuletzt geändertes Ziel zuerst oder alphabetisch. Wird ein Ziel entfernt – weil Sie seine Verfolgung gestoppt haben oder es nicht mehr existiert –, rücken die nachfolgenden Ziele auf und füllen die Lücke, sodass `2` immer das Ziel ansagt, das gerade an zweiter Stelle der Liste steht.
 
 Wenn ein Ziel vorhanden ist, sagt das Add-on standardmäßig seinen Typ (seine Rolle), seinen Namen und den geänderten Inhalt des Ziels an, zum Beispiel *Fenster: Claude, Editing readme.md* oder *Liste: Nachrichtenliste, Sie haben gesagt: Okay*. Der Detailgrad dieser Ansagen lässt sich [in den Einstellungen des Add-ons anpassen](#in-änderungsansage-einbeziehen-gruppierung).
 
-Sie können das Präfix im NVDA-Dialog Tastenzuordnungen (NVDA-Menü → Optionen → Tastenbefehle) ändern, wo der Befehl des Add-ons unter der Kategorie **Hintergrund-Inhaltsverfolgung** erscheint. Die nachfolgenden Tasten sind Teil des mehrstufigen Befehls selbst.
+Sie können das Präfix im NVDA-Dialog Tastenzuordnungen (NVDA-Menü → Optionen → Tastenbefehle) ändern, wo der Befehl des Add-ons unter der Kategorie **Hintergrund-Inhaltsverfolgung** erscheint. Die nachfolgenden Tasten sind Teil der Befehlsüberlagerung selbst.
 
 ## Das Zielmenü
 
 Das **Zielmenü** (das Präfix gefolgt von `t`) listet alle verfolgten Ziele als geordnete Menüeinträge auf, sodass Sie sich weder die aktuelle Position des Ziels in der Liste noch eine der anderen Tasten merken müssen.
 
-Jeder Eintrag benennt genau, worauf er sich bezieht, zum Beispiel *Fenster: Claude, vor 3 Minuten, 3 tasks running*. Ein Ziel, das gerade nicht existiert – ein gemerktes Ziel, dessen Fenster noch nicht wieder geöffnet wurde –, zeigt statt der Zeit und des Inhalts *nicht gefunden* an und bleibt im Menü, denn Sie können seine Verfolgung weiterhin stoppen, seine Einstellungen ändern oder es dort lassen und warten, bis es zurückkommt. Die Reihenfolge, in der die Ziele angezeigt werden, richtet sich nach der Einstellung [**Sortierung der Ziele im Menü**](#sortierung-der-ziele).
+Jeder Eintrag benennt genau, worauf er sich bezieht, zum Beispiel *Fenster: Claude, vor 3 Minuten, 3 tasks running*. Ein Ziel, das gerade nicht existiert – ein gemerktes Ziel, dessen Fenster gerade nicht geöffnet ist –, zeigt *Nicht gefunden* an und bleibt im Menü, denn Sie können seine Verfolgung weiterhin stoppen, seine Einstellungen ändern oder warten, bis es erscheint. Die Reihenfolge, in der die Ziele angezeigt werden, richtet sich nach der Einstellung [**Sortierung der Ziele im Menü**](#sortierung-der-ziele).
 
 Jedes Ziel ist ein Untermenü. Wenn Sie es aufklappen, können Sie:
 
 - Mit *Verfolgung stoppen* seine Verfolgung stoppen,
 - Mit *Fokus setzen* den Fokus darauf setzen (sofern es ihn nicht bereits hat),
 - Seine [*Zieleinstellungen*](#zieleinstellungen) ändern,
-- Oder den [**Verlauf der letzten Änderungen**](#verlauf-der-letzten-änderungen) dieses Ziels durchsehen (wird gar nicht angezeigt, solange sich noch nichts geändert hat oder die Verlaufsgröße 0 ist).
+- Oder den [**Verlauf der letzten Änderungen**](#verlauf-der-letzten-änderungen) dieses Ziels durchsehen (wird nicht angezeigt, wenn sich das Ziel noch nicht geändert hat oder die [Verlaufsgröße](#pro-ziel-aufzubewahrende-änderungen-eingabefeld-standardmäßig-50) auf 0 gesetzt ist).
 
 Alles, was Sie bereits verfolgen, steht im Menü ganz oben, sodass Sie schnell zum gewünschten Ziel wechseln oder seine Verfolgung stoppen können. Darunter folgen die Ziele, deren Verfolgung Sie von Ihrer aktuellen Position aus starten können (Fenster, Fokus, Mauszeiger oder Navigator-Objekt). Der Eintrag, mit dem Sie die Verfolgung aller aktuellen Ziele stoppen, steht am Ende des Menüs.
 
 ### Zieleinstellungen
 
-Jeder Eintrag unter *Zieleinstellungen* ist ein Kontrollfeld, und es zeigt das, was das Ziel tatsächlich tut: seinen eigenen Wert, wo Sie ihm einen gegeben haben, und überall sonst die [globale Einstellung](#globale-einstellungen). Wenn Sie eines aktivieren oder deaktivieren, erhält das Ziel einen eigenen Wert für genau diese eine Einstellung, und zwar sofort; alle anderen Einstellungen folgen weiterhin der globalen.
+Jeder Eintrag unter *Zieleinstellungen* ist ein Kontrollfeld, und es zeigt das, was das Ziel tatsächlich tut: seinen eigenen Wert, wo Sie einen festgelegt haben, und überall sonst die [globale Einstellung](#globale-einstellungen). Wenn Sie eines aktivieren oder deaktivieren, erhält das Ziel einen eigenen Wert für genau diese eine Einstellung, und zwar sofort; alle anderen Einstellungen folgen weiterhin der globalen.
 
 - *Beim Ansagen einer neuen Änderung vorherige Sprachausgabe unterbrechen* wird für alle Ziele angezeigt, solange die [globale Option *Ansagen*](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist.
-- *Änderungsverlauf beim Ansehen aktualisieren* wird für alle Ziele angezeigt, solange die [Verlaufsgröße](#verlauf-der-letzten-änderungen-pro-ziel-aufbewahren-eingabefeld-standardmäßig-50) nicht 0 ist.
-- *Neue Änderungen bei geöffnetem Verlauf ansagen* wird für alle Ziele angezeigt, solange die Verlaufsgröße nicht 0 ist und die globale Option *Ansagen* aktiviert ist.
+- *Verlauf aktualisieren, während er geöffnet ist* wird für alle Ziele angezeigt, solange die [Verlaufsgröße](#pro-ziel-aufzubewahrende-änderungen-eingabefeld-standardmäßig-50) nicht 0 ist.
+- *Neue Änderungen bei geöffnetem Verlauf ansagen* wird für alle Ziele angezeigt, solange die [Verlaufsgröße](#pro-ziel-aufzubewahrende-änderungen-eingabefeld-standardmäßig-50) nicht 0 ist und die globale Option [*Ansagen*](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist.
 - Die Optionen *Fortschrittsbalken ignorieren*, *Zähler, Schrittanzeigen und Timer ignorieren*, *Geänderten Titel als verschwundenes Ziel betrachten* und *Bekannte allgemeine Steuerelemente ignorieren* werden nur für Fensterziele angezeigt.
 - *Dieses Ziel auch im Vordergrund verfolgen* wird für alle Ziele angezeigt.
 - *Fokussiertes Steuerelement ignorieren* wird angezeigt, solange das Ziel ein Fenster ist und außerdem [auch im Vordergrund verfolgt werden soll](#ziele-auch-im-vordergrund-verfolgen-kontrollfeld-standardmäßig-deaktiviert).
@@ -117,7 +119,7 @@ Wenn Sie eine [globale Einstellung](#globale-einstellungen) ändern, wirkt sich 
 
 ### Verlauf der letzten Änderungen
 
-Dieses Untermenü listet so viele der letzten Änderungen im jeweiligen Ziel auf, wie Sie in der Einstellung [*Verlauf der letzten Änderungen pro Ziel aufbewahren*](#verlauf-der-letzten-änderungen-pro-ziel-aufbewahren-eingabefeld-standardmäßig-50) festgelegt haben, in der durch die [*Sortierung des Änderungsverlaufs*](#sortierung-der-ziele) bestimmten Reihenfolge und mit dem eingestellten [Detailgrad](#in-menübeschreibungen-einbeziehen-gruppierung). Ist *Verlauf der letzten Änderungen pro Ziel aufbewahren* auf 0 gesetzt, wird das Untermenü gar nicht angezeigt. Ältere Änderungen über diese Anzahl hinaus werden entfernt. Beachten Sie, dass diese Einstellung nur global gilt. Wenn Sie einen Eintrag in diesem Untermenü auswählen, wird diese Änderung als Meldung im Lesemodus geöffnet.
+Dieses Untermenü listet so viele der letzten Änderungen im jeweiligen Ziel auf, wie Sie in der Einstellung [*Pro Ziel aufzubewahrende Änderungen*](#pro-ziel-aufzubewahrende-änderungen-eingabefeld-standardmäßig-50) festgelegt haben, in der durch die [*Sortierung des Änderungsverlaufs*](#sortierung-der-ziele) bestimmten Reihenfolge und mit dem eingestellten [Detailgrad](#in-menübeschreibungen-einbeziehen-gruppierung). Ist *Pro Ziel aufzubewahrende Änderungen* auf 0 gesetzt, wird das Untermenü gar nicht angezeigt. Ältere Änderungen über diese Anzahl hinaus werden entfernt. Beachten Sie, dass diese Einstellung nur global gilt. Wenn Sie einen Eintrag in diesem Untermenü auswählen, wird der gesamte Verlauf als Meldung im Lesemodus geöffnet.
 
 Der Verlauf verschwindet, wenn Sie die Verfolgung eines Ziels stoppen, wenn ein Ziel [nach seinem Verschwinden](#gemerkte-ziele-vergessen-wenn-sie-verschwinden-kontrollfeld-standardmäßig-deaktiviert) automatisch vergessen wird oder am Ende der Sitzung, und er wird nirgends gespeichert. Wenn die [Verfolgung pausiert ist](#verfolgung-aktivieren-kontrollfeld-standardmäßig-aktiviert), wird auch der Verlauf nicht aktualisiert.
 
@@ -129,7 +131,7 @@ Zusammengehörige Optionen sind gruppiert. Alle verfügbaren Optionen werden unt
 
 ### **Verfolgung aktivieren** (Kontrollfeld, standardmäßig aktiviert)
 
-Wenn deaktiviert, benachrichtigt Sie das Add-on nicht mehr, behält aber Ihre gesamte Zielliste und alle Ihre Einstellungen, sodass Sie es stummschalten können (etwa während einer Besprechung) und später genau so wieder einschalten, wie es war. Das ist derselbe Schalter, den der [Tastenkombination zum Pausieren und Fortsetzen](#tastenkombinationen) umschaltet.
+Wenn deaktiviert, benachrichtigt Sie das Add-on nicht mehr, behält aber Ihre gesamte Zielliste und alle Ihre Einstellungen, sodass Sie es stummschalten können (etwa während einer Besprechung) und später genau so wieder einschalten, wie es war. Das ist derselbe Schalter, den die [Tastenkombination zum Pausieren und Fortsetzen](#tastenkombinationen) umschaltet.
 
 Dies ist die einzige Option, die nie gespeichert wird: Beim Start von NVDA ist die Verfolgung immer aktiviert.
 
@@ -149,31 +151,31 @@ Akzeptiert nur ganze Zahlen. Legt fest, wie viele Sekunden ohne Tastendruck verg
 
 ### **Ziele auch im Vordergrund verfolgen** (Kontrollfeld, standardmäßig deaktiviert)
 
-Normalerweise wird ein Ziel nur gelesen, während Sie woanders arbeiten; sobald seine eigene App in den Vordergrund kommt, lässt das Add-on es in Ruhe. Wenn aktiviert, wird neuer Inhalt eines Ziels auch dann angesagt, wenn Sie gerade mit diesem Fenster oder einzelnen Steuerelement arbeiten.
+Normalerweise wird ein Ziel nur gelesen, während Sie woanders arbeiten; sobald seine eigene App den Fokus erhält, lässt das Add-on es in Ruhe. Wenn aktiviert, wird neuer Inhalt eines Ziels auch dann angesagt, wenn Sie gerade mit diesem Fenster oder einzelnen Steuerelement arbeiten.
 
 Beachten Sie: Wenn die App des Ziels direkt mit Screenreadern kommuniziert (über ARIA-Live-Regionen oder andere Barrierefreiheitsereignisse), können dieselben Ansagen beim Arbeiten in ihrem Fenster manchmal doppelt gemeldet werden – einmal von der App selbst und einmal vom Add-on. Um in diesem Fall nur die eigenen Ansagen der App zu hören, können Sie *Dieses Ziel auch im Vordergrund verfolgen* in den [Zieleinstellungen](#zieleinstellungen) dieses Ziels deaktivieren, die Verfolgung vorübergehend pausieren oder das Ziel entfernen und später wieder hinzufügen. Um nur die Ansagen des Add-ons zu hören, deaktivieren Sie in NVDA die Option „Änderungen dynamischer Inhalte vorlesen“ (standardmäßig NVDA+5).
 
-### **Änderungsverlauf** (Gruppierung)
+### **Verlauf der letzten Änderungen** (Gruppierung)
 
-Die Optionen in dieser Gruppierung steuern den [Verlauf der letzten Änderungen](#verlauf-der-letzten-änderungen), der für jedes Ziel aufbewahrt wird.
+Die Optionen in dieser Gruppierung steuern das Verhalten des [Verlaufs der letzten Änderungen](#verlauf-der-letzten-änderungen), der für jedes Ziel getrennt aufbewahrt wird.
 
-#### **Verlauf der letzten Änderungen pro Ziel aufbewahren** (Eingabefeld, standardmäßig 50)
+#### **Pro Ziel aufzubewahrende Änderungen** (Eingabefeld, standardmäßig 50)
 
 Akzeptiert nur ganze Zahlen. Legt fest, wie viele der letzten Änderungen im [Verlauf pro Ziel](#verlauf-der-letzten-änderungen) aufbewahrt werden sollen. Ältere Änderungen werden verworfen. 0 bedeutet kein Verlauf, und die anderen Optionen dieser Gruppierung sind dann nicht verfügbar.
 
 Bei gemerkten Zielen, die verschwunden sind, wird auch der Verlauf gemerkt und bleibt verfügbar, bis das Ziel entfernt wird oder bis zum Ende der Sitzung.
 
-#### **Änderungsverlauf beim Ansehen aktualisieren** (Kontrollfeld, standardmäßig aktiviert)
+#### **Verlauf aktualisieren, während er geöffnet ist** (Kontrollfeld, standardmäßig aktiviert)
 
-Wenn aktiviert, fügt ein geöffneter Verlaufsdialog neue Änderungen laufend hinzu, und die Zeit jeder Änderung zählt weiter hoch. Wenn deaktiviert, bleibt der Dialog so, wie er beim Öffnen war.
+Wenn aktiviert, fügt ein geöffneter Verlaufsdialog neue Änderungen laufend hinzu, sobald sie auftreten. Wenn deaktiviert, bleibt der Dialog so, wie er beim Öffnen war.
 
 #### **Neue Änderungen bei geöffnetem Verlauf ansagen** (Kontrollfeld, standardmäßig aktiviert)
 
-Diese Option ist nur verfügbar, wenn das Kontrollfeld [**Ansagen**](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist. Wenn deaktiviert, werden neue Änderungen in einem Ziel nicht gesprochen, solange sein Verlaufsdialog geöffnet ist. Der [Signalton](#signalton-kontrollfeld-standardmäßig-aktiviert) ertönt trotzdem.
+Diese Option ist nur verfügbar, wenn das Kontrollfeld [**Ansagen**](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert ist. Wenn deaktiviert, werden neue Änderungen in einem Ziel nicht gesprochen, solange sein Verlaufsdialog geöffnet ist.
 
 ### Sortierung der Ziele
 
-Es gibt drei Sätze von Auswahlschaltern, eine nach der anderen: *Sortierung der Zielfächer*, *Sortierung der Ziele im Menü* und *Sortierung des Änderungsverlaufs*. Alle bieten (mit wenigen Ausnahmen) dieselben unten aufgeführten Optionen und können entweder gleich oder unabhängig voneinander eingestellt werden. Sie bestimmen, in welcher Reihenfolge Ziele auf die zehn verfügbaren nummerierten Fächer verteilt (siehe [Tastenkombinationen](#tastenkombinationen)), im [Zielmenü](#das-zielmenü) angezeigt beziehungsweise im [Verlauf der letzten Änderungen pro Ziel](#verlauf-der-letzten-änderungen) angeordnet werden.
+Es gibt drei Sätze von Auswahlschaltern, einer nach dem anderen: *Sortierung der Zielfächer*, *Sortierung der Ziele im Menü* und *Sortierung des Änderungsverlaufs*. Alle bieten (mit wenigen Ausnahmen) dieselben unten aufgeführten Optionen und können entweder gleich oder unabhängig voneinander eingestellt werden. Sie bestimmen, in welcher Reihenfolge Ziele auf die zehn verfügbaren nummerierten Fächer verteilt (siehe [Tastenkombinationen](#tastenkombinationen)), im [Zielmenü](#das-zielmenü) angezeigt beziehungsweise im [Verlauf der letzten Änderungen pro Ziel](#verlauf-der-letzten-änderungen) angeordnet werden.
 
 - *Neuestes Ziel / neueste Änderung zuerst* (Standard für alle Sortierungsarten)
 - *Ältestes Ziel / älteste Änderung zuerst*
@@ -188,11 +190,13 @@ Wenn aktiviert, bleibt Ihre Zielliste über NVDA-Neustarts hinweg erhalten, und 
 
 ### **Gemerkte Ziele vergessen, wenn sie verschwinden** (Kontrollfeld, standardmäßig deaktiviert)
 
-Diese Option ist nur verfügbar, wenn [**Ziele merken**](#ziele-merken-kontrollfeld-standardmäßig-deaktiviert) aktiviert ist. Legt fest, ob ein gemerktes Ziel vergessen werden soll, wenn es nicht mehr existiert – weil Sie das Fenster des Ziels geschlossen haben oder es von selbst verschwunden ist. Wenn aktiviert, müssen Sie die Verfolgung desselben Ziels jedes Mal, wenn es verschwindet, erneut manuell starten. Ziele, deren Verfolgung Sie manuell stoppen, werden immer vergessen, unabhängig davon, wie diese Option eingestellt ist.
+Diese Option ist nur verfügbar, wenn [**Ziele merken**](#ziele-merken-kontrollfeld-standardmäßig-deaktiviert) aktiviert ist. Sie legt fest, ob ein gemerktes Ziel vergessen werden soll, wenn es nicht mehr existiert – weil Sie das Fenster des Ziels geschlossen haben oder es von selbst verschwunden ist. Wenn aktiviert, müssen Sie die Verfolgung desselben Ziels jedes Mal, wenn es verschwindet, erneut starten.
+
+Ziele, deren Verfolgung Sie manuell stoppen, werden immer vergessen, unabhängig davon, wie diese Option eingestellt ist.
 
 ### **Verhalten bei Fensterverfolgung** (Gruppierung)
 
-Die Optionen in dieser Gruppierung legen genauer fest, wie das Add-on Änderungen in Zielen ansagen soll, die ganze Fenster sind.
+Die Optionen in dieser Gruppierung legen genauer fest, wie das Add-on Änderungen in Fensterzielen ansagen soll.
 
 #### **Fortschrittsbalken ignorieren** (Kontrollfeld, standardmäßig aktiviert)
 
@@ -239,7 +243,7 @@ Diese Option ist nur verfügbar, wenn das Kontrollfeld [**Ansagen**](#ansagen-ko
 
 #### **Zielnamen bei aufeinanderfolgenden Änderungen im selben Ziel wiederholen** (Kontrollfeld, standardmäßig aktiviert)
 
-Diese Option ist nur verfügbar, wenn [gesprochene Ansagen an sich](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert sind. Wenn aktiviert, enthält jede einzelne Änderungsansage den Namen des Ziels, auch wenn mehrere Änderungen hintereinander im selben Ziel aufgetreten sind. Wenn deaktiviert, wird der Name des Ziels nur bei der ersten von mehreren aufeinanderfolgenden Änderungen im selben Ziel angesagt.
+Diese Option ist nur verfügbar, wenn [gesprochene Ansagen an sich](#ansagen-kontrollfeld-standardmäßig-aktiviert) aktiviert sind. Wenn aktiviert, enthält jede einzelne Änderungsansage den Namen des Ziels, auch wenn mehrere Änderungen hintereinander im selben Ziel aufgetreten sind. Wenn deaktiviert, wird der Name des Ziels nur bei der ersten Änderung im selben Ziel angesagt.
 
 ### **Signalton-Parameter** (Gruppierung)
 
@@ -275,17 +279,17 @@ Die Optionen in dieser Gruppierung legen fest, wie die Einträge im [Zielmenü](
 
 #### **Zieltyp** (Kontrollfeld, standardmäßig aktiviert)
 
-Ob der Typ (die Rolle) des Ziels (zum Beispiel **Fenster**, **Liste** oder **Eingabefeld**) in der Beschreibung des Menüeintrags dieses Ziels angezeigt wird.
+Ob der Typ (die Rolle) des Ziels (zum Beispiel **Fenster**, **Liste** oder **Eingabefeld**) im Text des Menüeintrags des Ziels angezeigt wird.
 
 #### **Zeit seit letzter Änderung** (Kontrollfeld, standardmäßig aktiviert)
 
-Ob die relative Zeit seit der letzten Änderung im Ziel (zum Beispiel vor 3 Minuten) in der Beschreibung des Menüeintrags dieses Ziels angezeigt wird.
+Ob die relative Zeit seit der letzten Änderung im Ziel (zum Beispiel vor 3 Minuten) im Text des Menüeintrags des Ziels angezeigt wird.
 
 #### **Geänderter Inhalt** (Kontrollfeld, standardmäßig aktiviert)
 
-Ob der neue Inhalt des Ziels nach der letzten Änderung in der Beschreibung des Menüeintrags dieses Ziels angezeigt wird.
+Ob der neue Inhalt des Ziels nach der letzten Änderung im Text des Menüeintrags des Ziels angezeigt wird.
 
-## Bekannte Einschränkungen
+## Bekannte Einschränkungen (muss überarbeitet werden)
 
 - **Browser-Tabs im Hintergrund werden nie verfolgt.** Ein Webbrowser hält nur den Tab lesbar, den Sie gerade ansehen. Um eine Seite im Auge zu behalten, während Sie woanders arbeiten, öffnen Sie sie in einem eigenen Fenster, statt sie in einem Hintergrund-Tab zu lassen. Sehende Nutzer können einen Hintergrund-Tab auch nicht sehen.
 - **Manche Apps geben sehr wenig preis, wenn sie nicht im Vordergrund sind.** Wie viel eine App einem Screenreader über Inhalte ohne Fokus mitteilt, bestimmt ausschließlich die App selbst. Moderne UIA-Apps – Terminal, Einstellungen, Rechner, Fotos und die meisten Apps aus dem Microsoft Store – und Apps, die als Webansicht dargestellt werden – die Desktop-Apps von Claude und ChatGPT, das neue Outlook, Visual Studio Code, Discord, Slack, Signal, WhatsApp für Windows, Spotify sowie echte Webseiten – unterscheiden sich in dieser Hinsicht erheblich. Wo eine App ihren neuen Inhalt nicht als zugänglichen Text bereitstellt, kann das Add-on ihn nicht melden.
@@ -299,5 +303,5 @@ Wenn Sie zur Entwicklung des Add-ons beitragen möchten, indem Sie Übersetzunge
 
 ## Änderungsprotokoll
 
-### Version 1.0, 12.10.2026
+### Version 1.0, 18.10.2026
 * Erste Veröffentlichung

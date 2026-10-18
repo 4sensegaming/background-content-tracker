@@ -1,6 +1,7 @@
 
 import contextlib
 import gettext
+import os
 import re
 from pathlib import Path
 
@@ -22,7 +23,8 @@ def md2html(
 		*,
 		moFile: str | Path|None,
 		mdExtensions: list[str],
-		addon_info: AddonInfo
+		addon_info: AddonInfo,
+		baseLanguage: str,
 	):
 	if isinstance(source, str):
 		source = Path(source)
@@ -49,6 +51,11 @@ def md2html(
 		mdText = f.read()
 	for k, v in headerDic.items():
 		mdText = mdText.replace(k, v, 1)
+	# A translation links to the base language by the readme in the repository root,
+	# which is the one GitHub shows. That readme is not packaged; its copy beside the
+	# translations is, so the html links there.
+	rootReadme = Path(os.path.relpath("readme.md", source.parent)).as_posix()
+	mdText = re.sub(rf"\]\({re.escape(rootReadme)}(?=[)#])", f"](../{baseLanguage}/readme.md", mdText)
 	# GitHub renders these very markdown files as well, and slugs its heading anchors
 	# without stripping diacritics, so the toc extension is asked to keep them too.
 	# A link such as (#nastavení) would otherwise have to be spelt one way for GitHub

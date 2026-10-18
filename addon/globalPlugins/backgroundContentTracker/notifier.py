@@ -31,13 +31,14 @@ _NAMED_RESTORED_LIMIT = 5
 Extras = Sequence[str | None]
 
 
-def describe(roleText: str, name: str, includeType: bool, extras: Extras) -> str:
+def describe(roleText: str, name: str, includeType: bool, extras: Extras, notes: Extras = ()) -> str:
 	"""
-	Describe a target, e.g. "Window: Claude, 3 minutes ago".
+	Describe a target, e.g. "Window: Claude, 3 minutes ago. Tracking paused".
 	@param roleText: The target's type.
 	@param name: The target's name.
 	@param includeType: Whether the type is part of the description.
 	@param extras: What follows the name; empty pieces are left out.
+	@param notes: Sentences that follow the description; empty ones are left out.
 	@returns: The description.
 	"""
 	if includeType and roleText:
@@ -46,19 +47,23 @@ def describe(roleText: str, name: str, includeType: bool, extras: Extras) -> str
 		base = name or roleText
 	parts = [base] if base else []
 	parts.extend([piece for piece in extras if piece])
-	return ", ".join(parts)
+	text = ", ".join(parts)
+	for note in notes:
+		if note:
+			text = f"{_sentence(text)} {note}" if text else note
+	return text
 
 
 def _notFound() -> str:
-	# Translators: shown in the target menu, and spoken on demand, for a target
-	# that does not currently exist (e.g. a remembered target not yet reopened).
-	return _("not found")
+	# Translators: a sentence of its own, shown in the target menu and spoken on demand,
+	# for a target that does not currently exist (e.g. a remembered target not yet reopened).
+	return _("Not found")
 
 
 def _noChanges() -> str:
-	# Translators: shown in the target menu, and spoken on demand, for a target
-	# that has not changed since it was added, or is being looked at right now.
-	return _("no changes yet")
+	# Translators: a sentence of its own, shown in the target menu and spoken on demand,
+	# for a target that has not changed since it was added, or is being looked at right now.
+	return _("No changes yet")
 
 
 def _pausedNote() -> str | None:
@@ -68,23 +73,21 @@ def _pausedNote() -> str | None:
 	"""
 	if addonConfig.get("enabled"):
 		return None
-	# Translators: added to the end of a target's item in the target menu and of its
-	# information spoken on demand while background content tracking is paused.
+	# Translators: a sentence of its own, added to the end of a target's item in the target menu
+	# and of its information spoken on demand while background content tracking is paused.
 	return _("Tracking paused")
 
 
 def _sentence(text: str) -> str:
 	"""
-	End a spoken announcement with a full stop, unless it already ends a sentence.
-	@param text: The announcement.
-	@returns: The announcement as a sentence.
+	End a text with a full stop, unless it already ends a sentence.
+	@param text: The text.
+	@returns: The text as a sentence.
 	"""
 	return text if text.endswith((".", "!", "?", "…")) else f"{text}."
 
 
-def relativeTime(when: float | None) -> str:
-	if not when:
-		return _noChanges()
+def relativeTime(when: float) -> str:
 	secs = int(time.time() - when)
 	if secs < 5:
 		# Translators: relative time for a change that has only just happened.
@@ -130,8 +133,9 @@ class Notifier:
 		target: TrackedTarget,
 		extras: Extras = (),
 		typeSetting: str = "announceTargetType",
+		notes: Extras = (),
 	) -> str:
-		return describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras)
+		return describe(target.roleText(), target.name, bool(addonConfig.get(typeSetting)), extras, notes)
 
 	def _announceTarget(self, template: str, target: TrackedTarget, unprompted: bool):
 		self._announce([template.format(target=self._describeTarget(target))], unprompted, Spri.NEXT)
@@ -234,31 +238,35 @@ class Notifier:
 	def speakInfo(self, target: TrackedTarget):
 		paused = _pausedNote()
 		if not target.isAlive():
-			ui.message(_sentence(self._describeTarget(target, [_notFound(), paused])))
+			ui.message(_sentence(self._describeTarget(target, notes=[_notFound(), paused])))
 			return
 		if not target.hasReportableChange():
-			ui.message(_sentence(self._describeTarget(target, [_noChanges(), paused])))
+			ui.message(_sentence(self._describeTarget(target, notes=[_noChanges(), paused])))
 			return
 		lastChange = target.lastChange
 		content = (
 			lastChange[0] if lastChange is not None and addonConfig.get("announceChangedContent") else None
 		)
-		desc = self._describeTarget(target, [content, paused])
+		desc = self._describeTarget(target, [content], notes=[paused])
 		if desc:
 			ui.message(desc if content and paused is None else _sentence(desc))
 
 	def menuDescription(self, target: TrackedTarget) -> str:
 		paused = _pausedNote()
 		if not target.isAlive():
-			return self._describeTarget(target, [_notFound(), paused], "menuTargetType")
+			return self._describeTarget(target, typeSetting="menuTargetType", notes=[_notFound(), paused])
 		lastChange = target.lastChange if target.hasReportableChange() else None
 		extras: list[str | None] = []
+		notes: list[str | None] = []
 		if addonConfig.get("menuTimeSinceChange"):
-			extras.append(relativeTime(lastChange[1] if lastChange is not None else None))
+			if lastChange is None:
+				notes.append(_noChanges())
+			else:
+				extras.append(relativeTime(lastChange[1]))
 		if addonConfig.get("menuChangedContent") and lastChange is not None and lastChange[0]:
 			extras.append(lastChange[0])
-		extras.append(paused)
-		return self._describeTarget(target, extras, "menuTargetType")
+		notes.append(paused)
+		return self._describeTarget(target, extras, "menuTargetType", notes)
 
 	def beep(self):
 		try:

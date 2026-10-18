@@ -155,7 +155,7 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 		items.extend((key, shared[key]) for key in WINDOW_SETTINGS)
 	items.append(
 		# Translators: submenu item; read this one target while its own application is in the foreground.
-		("trackForegroundTargets", _("Track this target even in the foreground")),
+		("trackForegroundTargets", _("Trac&k this target even in the foreground")),
 	)
 	if target.kind == "window" and target.setting("trackForegroundTargets"):
 		items.append(
@@ -167,12 +167,12 @@ def _localSettingItems(target: TrackedTarget) -> list[tuple[str, str]]:
 		)
 	items.append(
 		# Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
-		("rememberTargets", _("Remember this target")),
+		("rememberTargets", _("&Remember this target")),
 	)
 	if target.setting("rememberTargets"):
 		items.append(
 			# Translators: submenu item; drop this one remembered target once it no longer exists.
-			("forgetOnDisappear", _("Forget this target when it disappears")),
+			("forgetOnDisappear", _("&Forget this target when it disappears")),
 		)
 	return items
 
@@ -193,7 +193,7 @@ def _appendSettingsSubmenu(
 			documentation.TARGET_SETTINGS,
 		)
 	# Translators: submenu of a target's menu, holding that target's own settings.
-	submenu.AppendSubMenu(settingsMenu, _("Target settings"))
+	submenu.AppendSubMenu(settingsMenu, _("Target &settings"))
 
 
 def _targetSubmenu(
@@ -214,11 +214,11 @@ def _targetSubmenu(
 	"""
 	submenu = wx.Menu()
 	# Translators: submenu item that stops tracking a single target.
-	stopItem = submenu.Append(wx.ID_ANY, _("Stop tracking"))
+	stopItem = submenu.Append(wx.ID_ANY, _("Stop &tracking"))
 	bind(stopItem, lambda: plugin.stopTracking(target), documentation.TARGET_MENU)
 	if target.canTakeFocus() and not target.hasFocus(focus):
 		# Translators: submenu item that moves the focus to a target.
-		focusItem = submenu.Append(wx.ID_ANY, _("Set focus"))
+		focusItem = submenu.Append(wx.ID_ANY, _("Set &focus"))
 		bind(focusItem, lambda: plugin.setFocusToTarget(target), documentation.TARGET_MENU)
 	_appendSettingsSubmenu(submenu, plugin, target, bind)
 	if dialogs.hasHistory(target):
@@ -253,7 +253,7 @@ def _appendHistorySubmenu(
 	else:
 		deferred.append(fill)
 	# Translators: submenu of a target's menu, listing the target's recent changes.
-	submenu.AppendSubMenu(historyMenu, _("Recent changes"))
+	submenu.AppendSubMenu(historyMenu, _("&Recent changes"))
 
 
 def _binder(chapters: dict[int, str]) -> Bind:
@@ -324,7 +324,7 @@ def _buildAndShow(plugin: "GlobalPlugin", sources: Sequence[Source], focus: Focu
 	if tracked:
 		menu.AppendSeparator()
 		# Translators: menu item that stops tracking every target at once.
-		allItem = menu.Append(wx.ID_ANY, _("Stop tracking all targets"))
+		allItem = menu.Append(wx.ID_ANY, _("Stop tracking &all targets"))
 		bind(allItem, lambda: plugin.clearAll(), documentation.TARGET_MENU)
 
 	if not (tracked or sources):

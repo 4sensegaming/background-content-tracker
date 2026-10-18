@@ -251,7 +251,9 @@ for mdFile in env.Glob(docsDir/"*/*.md"):
 	# Thus, we find the moFile for this language and depend on it if it exists.
 	lang = mdFile.dir.name
 	moFile = moByLang.get(lang)
-	htmlFile = env.md2html(mdFile, moFile=moFile, mdExtensions=buildVars.markdownExtensions)
+	htmlFile = env.md2html(
+		mdFile, moFile=moFile, mdExtensions=buildVars.markdownExtensions, baseLanguage=buildVars.baseLanguage
+	)
 	env.Depends(htmlFile, mdFile)
 	# The title also carries the add-on version, which lives in neither the markdown nor the mo
 	# file, so a version bump on its own has to invalidate the generated html as well.

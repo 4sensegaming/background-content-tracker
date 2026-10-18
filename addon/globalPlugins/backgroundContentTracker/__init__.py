@@ -242,22 +242,22 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			_("N: start or stop tracking the navigator object"),
 			_(
 				# Translators: overlay help line for shift and control with W, F, M or N.
-				"Add shift to W, F, M or N to remember that one target, control to read it even in the foreground, or both"
+				"Add shift to W, F, M or N to remember that target, control to read it even in the foreground, or both"
 			),
 			# Translators: overlay help line for the T key.
 			_("T: open the target menu"),
 			_(
 				# Translators: overlay help line for the number keys.
-				"1 through 0: speak information about the target in that slot; press twice to set focus to it, three times to open its history of recent changes"
+				"1 through 0: speak information about the target in that slot; press twice to focus it, three times to open its history of recent changes"
 			),
 			_(
 				# Translators: overlay help line for Space and Enter.
-				"Space or Enter: speak information about the most recently added target; press twice to set focus to it, three times to open its history of recent changes"
+				"Space or Enter: speak information about the most recently added target; press twice to focus it, three times to open its history of recent changes"
 			),
 			# Translators: overlay help line for Control plus a number.
 			_("Control plus a number: stop tracking the target in that slot"),
 			# Translators: overlay help line for Alt plus a number.
-			_("Alt plus a number: open the target menu for the target in that slot"),
+			_("Alt plus a number: open the menu for the target in that slot"),
 			# Translators: overlay help line for Backspace.
 			_("Backspace: stop tracking the most recently added target"),
 			# Translators: overlay help line for Delete.

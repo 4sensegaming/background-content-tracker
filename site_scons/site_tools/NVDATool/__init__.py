@@ -19,6 +19,7 @@ The following environment variables are required to build the HTML:
 - moFile: str | pathlib.Path | None
 - mdExtensions: list[str]
 - addon_info: .typings.AddonInfo
+- baseLanguage: str
 
 """
 
@@ -91,6 +92,7 @@ def _buildHtml(target: Nodes, source: Nodes, env: Environment) -> None:
 		moFile=moFile.path if moFile else None,
 		mdExtensions=env["mdExtensions"],
 		addon_info=env["addon_info"],
+		baseLanguage=env["baseLanguage"],
 	)
 
 

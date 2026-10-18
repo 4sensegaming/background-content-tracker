@@ -70,7 +70,7 @@ def sharedSettingLabels() -> dict[str, str]:
 		# Translators: cancel whatever NVDA is saying to speak a change announcement at once.
 		"interruptSpeech": _("I&nterrupt previous speech when announcing a new change"),
 		# Translators: add new changes to an open history dialog and keep its times up to date.
-		"updateOpenHistory": _("Update change history while &viewing"),
+		"updateOpenHistory": _("&Update history while it's open"),
 		# Translators: speak new changes in a target even while its history dialog is open.
 		"announceWithHistoryOpen": _("Announce new changes whi&le history is open"),
 		# Translators: suppress announcements of progress bar controls in a window.
@@ -221,7 +221,7 @@ class BCTSettingsPanel(SettingsPanel):
 			"trackingInterval",
 			# Translators: how often, in seconds, targets are queried for changes
 			# (0 means only display changes in the target menu, never announce them).
-			_("Tracking &interval (seconds, 0 means never announce, only display in target menu)"),
+			_("Tracking inter&val (seconds, 0 means never announce, only display in target menu)"),
 			0,
 			3600,
 		)
@@ -231,7 +231,7 @@ class BCTSettingsPanel(SettingsPanel):
 			# Translators: how many consecutive changes to one target to announce in a
 			# row before you have to refocus it (0 means announce every change). A target
 			# the user is currently working in is never limited.
-			_("Changes to announce at &once (background targets only, 0 means always announce every change)"),
+			_("Changes to announce at &once (background targets only, 0 means announce every change)"),
 			0,
 			100,
 		)
@@ -254,12 +254,12 @@ class BCTSettingsPanel(SettingsPanel):
 		self.trackForegroundCb.Bind(wx.EVT_CHECKBOX, self._onDependencyChanged)
 
 		# Translators: group of options for the history of recent changes kept for each target.
-		historyBox, historyGroup = self._group(sHelper, _("Change history"))
+		historyBox, historyGroup = self._group(sHelper, _("History of recent changes"))
 		self.historySizeCtrl = self._spinCtrl(
 			historyGroup,
 			"historySize",
 			# Translators: how many recent changes the target menu keeps for each target (0 means none).
-			_("Keep &history of recent changes per target (0 means no history)"),
+			_("Changes to &keep per target (0 means no history)"),
 			0,
 			1000,
 		)
@@ -297,7 +297,7 @@ class BCTSettingsPanel(SettingsPanel):
 			sHelper,
 			"slotSorting",
 			# Translators: the order the targets take the ten number slots in.
-			_("Target slot sorting"),
+			_("Target slot sort&ing"),
 			targetLabels,
 			addonConfig.SORT_ORDERS,
 		)
@@ -305,7 +305,7 @@ class BCTSettingsPanel(SettingsPanel):
 			sHelper,
 			"menuSorting",
 			# Translators: the order the targets are listed in, in the target menu.
-			_("Target menu sorting"),
+			_("Target menu sort&ing"),
 			targetLabels,
 			addonConfig.SORT_ORDERS,
 		)
@@ -313,7 +313,7 @@ class BCTSettingsPanel(SettingsPanel):
 			sHelper,
 			"historySorting",
 			# Translators: the order a target's recent changes are listed in, in the target menu.
-			_("Change history sorting"),
+			_("Change history sort&ing"),
 			changeLabels,
 			addonConfig.HISTORY_SORT_ORDERS,
 		)

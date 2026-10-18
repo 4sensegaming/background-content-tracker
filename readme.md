@@ -1,5 +1,7 @@
 # Background Content Tracker
 
+[Čeština](addon/doc/cs/readme.md) | [Deutsch](addon/doc/de/readme.md) | **English** | [Italiano](addon/doc/it/readme.md) | [Slovenčina](addon/doc/sk/readme.md)
+
 * Author: Lukáš Hosnedl
 * Minimum NVDA version: 2026.3
 * Last tested NVDA version: 2027.1
@@ -16,29 +18,29 @@ Background Content Tracker gives you this awareness: you choose what to track an
 
 This add-on is a very powerful and customizable tool that can essentially turn inaccessible windows or controls into talking live regions that work everywhere. For example, it works surprisingly well with:
 
-- Terminals running in the background,
-- Brief, quickly changing dynamic messages in a single list, text area or NVDA object,
-- Inaccessible web pages with dynamic changes,
+- Terminals,
+- Dynamic messages in a single list, text area or another container,
+- Web pages that keep updating,
 - Messaging apps that don't read new incoming messages automatically,
-- As well as Electron apps like the new ChatGPT that leave a lot to be desired in terms of accessibility, which can stay silent for long periods of time and then start dumping large chunks of text in a potentially hard to find, moving location.
+- As well as Electron apps, like the new ChatGPT, which stay silent for long periods of time and then start dumping large chunks of text in a different part of the window every time.
 
 However, the add-on will most likely be appreciated only by power users who feel the need to increase their speed and efficiency at work, such as:
 
 - Those who routinely use AI to create something substantial,
 - Those who often run long-term automated jobs and need to monitor their output in real time,
-- Those who have to switch between several different windows with dynamic output often,
+- Those who have to switch between several different windows with dynamic output frequently,
 - Or those participating in partially or fully automated workflows involving several tasks running at once.
 
 If you need it, you probably know it by now. Others might find it overwhelming, bloated or confusing.
 
 ## Usage
 
-You build a list of targets to track — whole windows, or individual controls such as a textbox or a chat's message list — and the add-on notifies you whenever new content appears in any of them. You can track several targets at once, and start or stop tracking each one independently.
+You build a list of targets to track — whole windows, or individual controls such as textboxes or message lists in chats — and the add-on notifies you whenever new content appears in any of them. You can track several targets at once, and start or stop tracking each one independently.
 
 ### Example scenarios
 
 - **Waiting for a long-running task in another app.** You set an AI assistant such as Claude working on a task and, rather than waiting on that window, you switch elsewhere to get on with something else. The add-on tracks the assistant's window and tells you as soon as new output appears, so you know it has replied without having to switch back to check again and again.
-- **Keeping an eye on a web page while you type elsewhere.** You are typing in a chat such as WhatsApp while a web page sits open beside it. When that background page updates, the add-on lets you know — so you catch it just as a sighted person would.
+- **Keeping an eye on a web page while you type elsewhere.** You are typing in a chat such as WhatsApp while a web page is open beside it. When that background page updates, the add-on lets you know — so you catch it just as a sighted person would.
 
 ### A typical workflow
 
@@ -53,7 +55,7 @@ The add-on is operated through a single **layered command**: you press a prefix 
 
 The default prefix is NVDA+; (the semicolon key, to the right of L on the home row).
 
-When you press the prefix, the add-on opens a **virtual overlay**. While the overlay is open, every key you press is treated as one of the commands below. Opening and closing the overlay never moves focus — it stays exactly where it was, so the add-on commands never disturb what you are doing.
+When you press the prefix, the add-on opens a **virtual overlay**. While the overlay is open, every key you press is treated as one of the commands below. Opening and closing the overlay never moves focus, so the add-on commands never disturb what you are doing.
 
 After pressing the prefix, press one of the following keys:
 
@@ -64,10 +66,10 @@ After pressing the prefix, press one of the following keys:
 - `m` — start or stop tracking the control under the **mouse** pointer.
 - `n` — start or stop tracking the current **navigator object** (where the review cursor is).
 - `t` — open the **[target menu](#the-target-menu)**.
-- `1` to `0` — **speak information about a target** by its position in the list (see below). Press the same number a second time to set focus to that target, or a third time right after the second to open its [history of recent changes](#history-of-recent-changes) instead.
-- `space` or `enter` — the same as the number keys, but always for the **most recently added** target: press once to hear about it, twice to set focus to it, three times to open its history.
+- `1` to `0` — **speak information about a target** by its position in the list (see below). Press the number twice to set focus to that target, or three times to open its [history of recent changes](#history-of-recent-changes) directly.
 - `control`+a number (`1` to `0`) — **stop tracking** the target in that slot.
-- `alt`+a number (`1` to `0`) — **open the [target menu](#the-target-menu)** for the target in that slot directly.
+- `alt`+a number (`1` to `0`) — **open [the menu](#the-target-menu)** for the target in that slot directly.
+- `space` or `enter` — the same as the number keys, but always for the **most recently added** target: press once to hear about it, twice to set focus to it, three times to open its history.
 - `backspace` — **stop tracking the most recently added** target.
 - `delete` — **stop tracking all targets** (clear the whole list at once).
 - `p` — **pause or resume** all tracking (this toggles the [*Enable tracking*](#enable-tracking-checkbox-enabled-by-default) switch).
@@ -77,36 +79,36 @@ After pressing the prefix, press one of the following keys:
 
 The window, focus, mouse and navigator commands are toggles: press one once to add that target to the list, and press it again to remove it as long as it's still the current window, has focus, etc. You can track any number of targets at the same time.
 
-Those four commands also take `shift` and `control`, which say how the target you are adding is to be tracked: `shift` remembers that one target, `control` reads it even while its own app is in the foreground, and holding both does both. These are [per-target settings](#target-settings), set on that specific target as it is added instead of being inherited from the [global settings](#global-settings) or manually configured in the [target menu](#the-target-menu) later, and they don't change the global setting. A press that *stops* tracking the target rather than adding it simply ignores the modifiers. The modifiers are only useful if you have the [**remember targets**](#remember-targets-checkbox-disabled-by-default) or [**track even foreground targets**](#track-even-foreground-targets-checkbox-disabled-by-default) options disabled globally but you need this behavior for this one target specifically.
+Those four commands also take `shift` and `control`, which say how the target is to be tracked: `shift` remembers that one target, `control` reads it even while its own app is in the foreground, and holding both does both. These are [per-target settings](#target-settings), set on that specific target as it is added instead of being inherited from the [global settings](#global-settings) or manually configured in the [target menu](#the-target-menu) later, and they don't change the global setting. A press that *stops* tracking the target rather than adding it simply ignores the modifiers. The modifiers are only useful if you have the [**remember targets**](#remember-targets-checkbox-disabled-by-default) or [**track even foreground targets**](#track-even-foreground-targets-checkbox-disabled-by-default) options disabled globally but you need this behavior for this one target specifically.
 
-The number keys refer to **slots** in your target list, not to fixed targets. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0` — the tenth slot. The [**Target slot sorting** setting](#target-sorting) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list.
+The number keys refer to **slots** in your target list, not to fixed positions. By default, `1` is the most recently added target, `2` the one added before it, and so on up to `0` — the tenth slot. The [**Target slot sorting** setting](#target-sorting) can put the slots in a different order, such as oldest target first, most recently changed target first, or alphabetically. If a target is removed — because you stopped tracking it or it no longer exists — the targets after it move up to fill the gap, so `2` always speaks whatever is currently second in the list.
 
 When a target is present, by default the add-on speaks its type (role), name, and the changed content of the target, for example *Window: Claude, Editing readme.md* or *List: Message list, You said: Okay*. The level of detail of these announcements can be [configured in the add-on's settings](#include-in-change-announcement-group).
 
-You can change the prefix from NVDA's Input Gestures dialog (NVDA menu → Preferences → Input Gestures), where the add-on's command appears under the **Background Content Tracker** category. The follow-up keys are part of the layered command itself.
+You can change the prefix from NVDA's Input Gestures dialog (NVDA menu → Preferences → Input Gestures), where the add-on's command appears under the **Background Content Tracker** category. The follow-up keys are part of the command overlay itself.
 
 ## The target menu
 
 The **target menu** (the prefix followed by `t`) lists all tracked targets as ordered menu items, so you don't have to remember the target's current position in the list or any of the other keys.
 
-Each item names exactly what it acts on, for example *Window: Claude, 3 minutes ago, 3 tasks running*. A target that does not exist at the moment — a remembered one whose window has not been reopened yet — reads *not found* in place of the time and the content, and stays in the menu, because you can still stop it, change its settings, or leave it there and wait for it to come back. The order in which the targets are displayed respects the [**Target menu sorting** setting](#target-sorting).
+Each item names exactly what it acts on, for example *Window: Claude, 3 minutes ago, 3 tasks running*. A target that does not exist at the moment — a remembered one whose window is not currently open — reads *Not found* and stays in the menu, because you can still stop it, change its settings, or wait for it to appear. The order in which the targets are displayed is determined by the [**Target menu sorting** setting](#target-sorting).
 
 Every target is a submenu. When you expand it, you can:
 
 - *Stop tracking* it,
 - *Set focus* to it (unless it's already focused),
 - Change its [*Target settings*](#target-settings),
-- Or browse that target's [history of **recent changes**](#history-of-recent-changes) (not displayed at all if nothing has changed yet or the history size is 0).
+- Or browse that target's [history of **recent changes**](#history-of-recent-changes) (not displayed if the target has no changes yet or the [history size](#changes-to-keep-per-target-edit-50-by-default) is set to 0).
 
 Anything you are already tracking appears first in the menu, so you can quickly move to the target you want, or stop tracking it. Below that are the targets you can start tracking from your current location (window, focus, mouse pointer, or navigator object). The item to stop tracking all current targets is at the end of the menu.
 
 ### Target settings
 
-Each item in *Target settings* is a checkbox, and what it shows is what the target actually does: its own value where you have given it one, and the [global setting](#global-settings) everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting still follows the global.
+Each item in *Target settings* is a checkbox, and what it shows is what the target actually does: its own value where you have set one, and the [global setting](#global-settings) everywhere else. Ticking or unticking one gives that target its own value for that one setting, effective immediately; every other setting still follows the global.
 
 - *Interrupt previous speech when announcing a new change* is displayed for all targets, as long as the [global *Announce* option](#announce-checkbox-enabled-by-default) is enabled.
-- *Update change history while viewing* is displayed for all targets, as long as the [history size](#keep-history-of-recent-changes-per-target-edit-50-by-default) is not 0.
-- *Announce new changes while history is open* is displayed for all targets, as long as the history size is not 0 and the global *Announce* option is enabled.
+- *Update history while it's open* is displayed for all targets, as long as the [history size](#changes-to-keep-per-target-edit-50-by-default) is not 0.
+- *Announce new changes while history is open* is displayed for all targets, as long as the [history size](#changes-to-keep-per-target-edit-50-by-default) is not 0 and the global [*Announce*](#announce-checkbox-enabled-by-default) option is enabled.
 - The *Ignore progress bars*, *Ignore counters, steppers and timers*, *Consider changed title a disappeared target* and *Ignore known generic controls* options are displayed only for window targets.
 - *Track this target even in the foreground* is displayed for all targets.
 - *Ignore the focused control* is displayed as long as the target is a window and it's also [set to be tracked even in the foreground](#track-even-foreground-targets-checkbox-disabled-by-default).
@@ -117,7 +119,7 @@ Changing a [global setting](#global-settings) affects even existing targets unle
 
 ### History of recent changes
 
-This submenu lists as many recent changes that occurred in the given target as you have set for the [*Keep history of recent changes per target*](#keep-history-of-recent-changes-per-target-edit-50-by-default) setting, in the order governed by [*change history sorting*](#target-sorting), with the configured [verbosity](#include-in-menu-descriptions-group). If *Keep history of recent changes per target* is set to 0, the submenu is not displayed at all. Older changes beyond that number are removed. Note that this setting is global only. Choosing any item in this submenu opens that change in a browseable message dialog.
+This submenu lists as many recent changes that occurred in the given target as you have set for the [*Changes to keep per target*](#changes-to-keep-per-target-edit-50-by-default) setting, in the order governed by [*change history sorting*](#target-sorting), with the configured [verbosity](#include-in-menu-descriptions-group). If *Changes to keep per target* is set to 0, the submenu is not displayed at all. Older changes beyond that number are removed. Note that this setting is global only. Choosing any item in this submenu opens the entire history in a browseable message dialog.
 
 The history disappears when you stop tracking a target, when a target is automatically [forgotten after it disappears](#forget-remembered-targets-when-they-disappear-checkbox-disabled-by-default), or at the end of the session, and is not saved anywhere. When [tracking is paused](#enable-tracking-checkbox-enabled-by-default), the history is not updated either.
 
@@ -131,7 +133,7 @@ Related options are grouped. All available options are described below, in the o
 
 When disabled, the add-on stops notifying you but keeps your entire target list and all of your settings, so you can silence it (for instance during a meeting) and later switch it back on exactly as it was. This is the same switch toggled by the [pause/resume keystroke](#keystrokes).
 
-This is is the only option that's never saved: tracking is always enabled when NVDA starts.
+This is the only option that's never saved: tracking is always enabled when NVDA starts.
 
 ### **Tracking interval** (edit, 1 by default)
 
@@ -149,27 +151,27 @@ Only accepts whole numbers. Sets how many seconds without a key press must pass 
 
 ### **Track even foreground targets** (checkbox, disabled by default)
 
-Normally, a target is only read while you are working somewhere else, so once its own app comes to the foreground, the add-on leaves it alone. When enabled, new content for a target is announced even when you are currently working with that window or single control.
+Normally, a target is only read while you are working somewhere else, so once its own app gets focus, the add-on leaves it alone. When enabled, new content for a target is announced even when you are currently working with that window or single control.
 
 Note that if the target app talks to screen readers directly (via ARIA live regions or other accessibility events), the same announcements may sometimes be reported twice while working in its window — once from the app itself and once from the add-on. In that case, to hear only the app's own announcements, you can untick *Track this target even in the foreground* in that target's [Target settings](#target-settings), pause tracking temporarily, or remove the target and add it back later. To hear only the add-on's announcements, disable reporting of dynamically changed content in NVDA (NVDA+5 by default).
 
-### **Change history** (group)
+### **History of recent changes** (group)
 
-The options in this group control the [history of recent changes](#history-of-recent-changes) kept for each target.
+The options in this group control the behavior of the [history of recent changes](#history-of-recent-changes) kept for each target separately.
 
-#### **Keep history of recent changes per target** (edit, 50 by default)
+#### **Changes to keep per target** (edit, 50 by default)
 
 Only accepts whole numbers. Sets how many recent changes should be kept in the [history per target](#history-of-recent-changes). Older changes are dropped. 0 means no history, and makes the other options in this group unavailable.
 
 For remembered targets that have disappeared, the history is also remembered and remains available until the target is removed or until the end of the session.
 
-#### **Update change history while viewing** (checkbox, enabled by default)
+#### **Update history while it's open** (checkbox, enabled by default)
 
-When enabled, an open history dialog keeps adding new changes as they occur, and the time of each change keeps counting up. When disabled, the dialog stays as it was when you opened it.
+When enabled, an open history dialog keeps adding new changes as they occur. When disabled, the dialog stays as it was when you opened it.
 
 #### **Announce new changes while history is open** (checkbox, enabled by default)
 
-This option is only available when the [**Announce**](#announce-checkbox-enabled-by-default) checkbox is enabled. When disabled, new changes in a target are not spoken while its history dialog is open. The [beep](#beep-checkbox-enabled-by-default) still plays.
+This option is only available when the [**Announce**](#announce-checkbox-enabled-by-default) checkbox is enabled. When disabled, new changes in a target are not spoken while its history dialog is open.
 
 ### Target sorting
 
@@ -188,11 +190,13 @@ When enabled, your target list is kept between NVDA restarts, and the add-on re-
 
 ### **Forget remembered targets when they disappear** (checkbox, disabled by default)
 
-This option is only available when [**Remember targets**](#remember-targets-checkbox-disabled-by-default) is enabled. Determines whether a remembered target should be forgotten when it no longer exists — you closed the target's window or it disappeared by itself. When enabled, you will have to start tracking the same target manually again every time it disappears. Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
+This option is only available when [**Remember targets**](#remember-targets-checkbox-disabled-by-default) is enabled. It determines whether a remembered target should be forgotten when it no longer exists — you closed the target's window or it disappeared by itself. When enabled, you will have to start tracking the same target again every time it disappears.
+
+Any targets that you stop tracking manually are always forgotten, regardless of how this option is set.
 
 ### **Window tracking behavior** (group)
 
-The options in this group refine how the add-on should announce changes in targets that are whole windows.
+The options in this group refine how the add-on should announce changes in window targets.
 
 #### **Ignore progress bars** (checkbox, enabled by default)
 
@@ -239,7 +243,7 @@ This option is only available when the [**Announce**](#announce-checkbox-enabled
 
 #### **Repeat target name for consecutive changes in the same target** (checkbox, enabled by default)
 
-This option is only available when [verbal announcements as such](#announce-checkbox-enabled-by-default) are enabled. When enabled, it includes the target's name in every single change announcement, even if multiple consecutive changes in a row occurred in the same target. When disabled, the target's name is announced only for the first consecutive change in the same target.
+This option is only available when [verbal announcements as such](#announce-checkbox-enabled-by-default) are enabled. When enabled, it includes the target's name in every single change announcement, even if multiple consecutive changes in a row occurred in the same target. When disabled, the target's name is announced only for the first change in the same target.
 
 ### **Beep parameters** (group)
 
@@ -275,17 +279,17 @@ The options in this group specify how items in the [target menu](#the-target-men
 
 #### **Target type** (checkbox, enabled by default)
 
-Whether the type (role) of the target (for example **window**, **list** or **textbox**) is displayed in the description of the target's respective menu item.
+Whether the type (role) of the target (for example **window**, **list** or **textbox**) is displayed in the target's menu item text.
 
 #### **Time since last change** (checkbox, enabled by default)
 
-Whether the relative time since the last change occurred in the target (for example 3 minutes ago) is displayed in the description of the target's respective menu item.
+Whether the relative time since the last change occurred in the target (for example 3 minutes ago) is displayed in the target's menu item text.
 
 #### **Changed content** (checkbox, enabled by default)
 
-Whether the new content in the target after the most recent change is displayed in the description of the target's respective menu item.
+Whether the new content in the target after the most recent change is displayed in the target's menu item text.
 
-## Known limitations
+## Known limitations (needs rewrite)
 
 - **Background browser tabs are never tracked.** A web browser only keeps the tab you are looking at readable. To keep an eye on a page while you work elsewhere, open it in a separate window rather than leaving it on a background tab. Sighted users can't see a background tab either.
 - **Some apps reveal very little while not in the foreground.** How much an app tells a screen reader about non-focused content is exclusively controlled by the app itself. Modern UIA apps — Terminal, Settings, Calculator, Photos and most apps from the Microsoft Store — and apps that are rendered as web views — the Claude and ChatGPT desktop apps, the new Outlook, Visual Studio Code, Discord, Slack, Signal, WhatsApp for Windows, Spotify, as well as actual websites — differ considerably in this respect. Where an app does not expose its new content as accessible text, the add-on cannot report it.
@@ -299,5 +303,5 @@ If you would like to contribute to the add-on's development by providing transla
 
 ## Changelog
 
-### Version 1.0, 2026/10/12
+### Version 1.0, 2026/10/18
 * Initial release

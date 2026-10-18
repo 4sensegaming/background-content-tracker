@@ -153,7 +153,7 @@ class Overlay:
 			ui.message(
 				_(
 					# Translators: announced when a key pressed in the overlay is not one of its commands.
-					"Unknown command. Press H once for help, twice to display the help as a browseable message."
+					"Unknown command. Press H for help, twice to display as a browseable message."
 				)
 			)
 		if self._armed:

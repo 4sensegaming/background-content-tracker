@@ -25,7 +25,6 @@ msgid "Copied to clipboard."
 msgstr "In Zwischenablage kopiert."
 
 #. Translators: the title of the dialog showing a target's recent changes.
-#. Translators: submenu of a target's menu, listing the target's recent changes.
 msgid "Recent changes"
 msgstr "Letzte Änderungen"
 
@@ -60,36 +59,40 @@ msgid "Track {source}: {name}"
 msgstr "{source} verfolgen: {name}"
 
 #. Translators: submenu item; read this one target while its own application is in the foreground.
-msgid "Track this target even in the foreground"
-msgstr "Dieses Ziel auch im Vordergrund verfolgen"
+msgid "Trac&k this target even in the foreground"
+msgstr "Dieses Ziel auch im Vor&dergrund verfolgen"
 
 #. Translators: suppress announcements of the control the user is typing in.
 msgid "Ignore the focu&sed control"
 msgstr "Fo&kussiertes Steuerelement ignorieren"
 
 #. Translators: submenu item; keep this one target between NVDA restarts and re-attach it on reappearance.
-msgid "Remember this target"
-msgstr "Dieses Ziel merken"
+msgid "&Remember this target"
+msgstr "Dieses Ziel &merken"
 
 #. Translators: submenu item; drop this one remembered target once it no longer exists.
-msgid "Forget this target when it disappears"
-msgstr "Dieses Ziel vergessen, wenn es verschwindet"
+msgid "&Forget this target when it disappears"
+msgstr "Dieses Ziel &vergessen, wenn es verschwindet"
 
 #. Translators: submenu of a target's menu, holding that target's own settings.
-msgid "Target settings"
-msgstr "Zieleinstellungen"
+msgid "Target &settings"
+msgstr "Ziel&einstellungen"
 
 #. Translators: submenu item that stops tracking a single target.
-msgid "Stop tracking"
-msgstr "Verfolgung stoppen"
+msgid "Stop &tracking"
+msgstr "&Verfolgung stoppen"
 
 #. Translators: submenu item that moves the focus to a target.
-msgid "Set focus"
-msgstr "Fokus setzen"
+msgid "Set &focus"
+msgstr "&Fokus setzen"
+
+#. Translators: submenu of a target's menu, listing the target's recent changes.
+msgid "&Recent changes"
+msgstr "&Letzte Änderungen"
 
 #. Translators: menu item that stops tracking every target at once.
-msgid "Stop tracking all targets"
-msgstr "Verfolgung aller Ziele stoppen"
+msgid "Stop tracking &all targets"
+msgstr "Verfolgung &aller Ziele stoppen"
 
 #. Translators: a dialog's OK button, never announced while "Ignore known generic controls" is on.
 msgid "OK"
@@ -162,18 +165,18 @@ msgstr "Maximieren"
 msgid "Restore"
 msgstr "Wiederherstellen"
 
-#. Translators: shown in the target menu, and spoken on demand, for a target
-#. that does not currently exist (e.g. a remembered target not yet reopened).
-msgid "not found"
-msgstr "nicht gefunden"
+#. Translators: a sentence of its own, shown in the target menu and spoken on demand,
+#. for a target that does not currently exist (e.g. a remembered target not yet reopened).
+msgid "Not found"
+msgstr "Nicht gefunden"
 
-#. Translators: shown in the target menu, and spoken on demand, for a target
-#. that has not changed since it was added, or is being looked at right now.
-msgid "no changes yet"
-msgstr "noch keine Änderungen"
+#. Translators: a sentence of its own, shown in the target menu and spoken on demand,
+#. for a target that has not changed since it was added, or is being looked at right now.
+msgid "No changes yet"
+msgstr "Noch keine Änderungen"
 
-#. Translators: added to the end of a target's item in the target menu and of its
-#. information spoken on demand while background content tracking is paused.
+#. Translators: a sentence of its own, added to the end of a target's item in the target menu
+#. and of its information spoken on demand while background content tracking is paused.
 msgid "Tracking paused"
 msgstr "Verfolgung pausiert"
 
@@ -314,11 +317,10 @@ msgstr "Überlagerung geschlossen."
 
 #. Translators: announced when a key pressed in the overlay is not one of its commands.
 msgid ""
-"Unknown command. Press H once for help, twice to display the help as a "
-"browseable message."
+"Unknown command. Press H for help, twice to display as a browseable message."
 msgstr ""
-"Unbekannter Befehl. Drücken Sie H einmal für die Hilfe, zweimal, um die "
-"Hilfe als Meldung im Lesemodus anzuzeigen."
+"Unbekannter Befehl. Drücken Sie H für die Hilfe, zweimal, um sie als Meldung "
+"im Lesemodus anzuzeigen."
 
 #. Translators: cancel whatever NVDA is saying to speak a change announcement at once.
 msgid "I&nterrupt previous speech when announcing a new change"
@@ -326,8 +328,8 @@ msgstr ""
 "Beim Ansagen einer neuen Änderung vorherige Sprachausgabe u&nterbrechen"
 
 #. Translators: add new changes to an open history dialog and keep its times up to date.
-msgid "Update change history while &viewing"
-msgstr "Änderungsverlauf beim Anse&hen aktualisieren"
+msgid "&Update history while it's open"
+msgstr "Verlauf aktualisieren, wä&hrend er geöffnet ist"
 
 #. Translators: speak new changes in a target even while its history dialog is open.
 msgid "Announce new changes whi&le history is open"
@@ -356,7 +358,7 @@ msgstr "&Verfolgung aktivieren"
 #. Translators: how often, in seconds, targets are queried for changes
 #. (0 means only display changes in the target menu, never announce them).
 msgid ""
-"Tracking &interval (seconds, 0 means never announce, only display in target "
+"Tracking inter&val (seconds, 0 means never announce, only display in target "
 "menu)"
 msgstr ""
 "Verfolgungs&intervall (Sekunden, 0 bedeutet nie ansagen, nur im Zielmenü "
@@ -366,11 +368,11 @@ msgstr ""
 #. row before you have to refocus it (0 means announce every change). A target
 #. the user is currently working in is never limited.
 msgid ""
-"Changes to announce at &once (background targets only, 0 means always "
-"announce every change)"
+"Changes to announce at &once (background targets only, 0 means announce "
+"every change)"
 msgstr ""
 "Auf &einmal anzusagende Änderungen (nur Ziele im Hintergrund, 0 bedeutet "
-"immer jede Änderung ansagen)"
+"jede Änderung ansagen)"
 
 #. Translators: how many seconds of inactivity close the command overlay
 #. (0 means the overlay stays open until it is closed by a command or escape).
@@ -382,14 +384,12 @@ msgid "Trac&k even foreground targets"
 msgstr "Ziele auch im Vor&dergrund verfolgen"
 
 #. Translators: group of options for the history of recent changes kept for each target.
-msgid "Change history"
-msgstr "Änderungsverlauf"
+msgid "History of recent changes"
+msgstr "Verlauf der letzten Änderungen"
 
 #. Translators: how many recent changes the target menu keeps for each target (0 means none).
-msgid "Keep &history of recent changes per target (0 means no history)"
-msgstr ""
-"Verlauf der letzten Änderungen &pro Ziel aufbewahren (0 bedeutet kein "
-"Verlauf)"
+msgid "Changes to &keep per target (0 means no history)"
+msgstr "&Pro Ziel aufzubewahrende Änderungen (0 bedeutet kein Verlauf)"
 
 #. Translators: a target order; the most recently added target comes first.
 msgid "Newest target first"
@@ -424,16 +424,16 @@ msgid "Oldest change first"
 msgstr "Älteste Änderung zuerst"
 
 #. Translators: the order the targets take the ten number slots in.
-msgid "Target slot sorting"
-msgstr "Sortierung der Zielfächer"
+msgid "Target slot sort&ing"
+msgstr "S&ortierung der Zielfächer"
 
 #. Translators: the order the targets are listed in, in the target menu.
-msgid "Target menu sorting"
-msgstr "Sortierung der Ziele im Menü"
+msgid "Target menu sort&ing"
+msgstr "S&ortierung der Ziele im Menü"
 
 #. Translators: the order a target's recent changes are listed in, in the target menu.
-msgid "Change history sorting"
-msgstr "Sortierung des Änderungsverlaufs"
+msgid "Change history sort&ing"
+msgstr "S&ortierung des Änderungsverlaufs"
 
 #. Translators: keep the target list between NVDA restarts and re-attach on reappearance.
 msgid "&Remember targets"
@@ -561,11 +561,11 @@ msgstr "N: Verfolgung des Navigator-Objekts starten oder stoppen"
 
 #. Translators: overlay help line for shift and control with W, F, M or N.
 msgid ""
-"Add shift to W, F, M or N to remember that one target, control to read it "
-"even in the foreground, or both"
+"Add shift to W, F, M or N to remember that target, control to read it even "
+"in the foreground, or both"
 msgstr ""
-"Mit Umschalt merkt sich W, F, M oder N genau dieses eine Ziel, mit Strg wird "
-"es auch im Vordergrund gelesen, mit beiden beides"
+"Mit Umschalt merkt sich W, F, M oder N dieses Ziel, mit Strg wird es auch im "
+"Vordergrund gelesen, mit beiden beides"
 
 #. Translators: overlay help line for the T key.
 msgid "T: open the target menu"
@@ -574,29 +574,28 @@ msgstr "T: das Zielmenü öffnen"
 #. Translators: overlay help line for the number keys.
 msgid ""
 "1 through 0: speak information about the target in that slot; press twice to "
-"set focus to it, three times to open its history of recent changes"
+"focus it, three times to open its history of recent changes"
 msgstr ""
 "1 bis 0: Informationen über das Ziel in diesem Fach ansagen; zweimal "
-"drücken, um den Fokus dorthin zu setzen, dreimal, um seinen Verlauf der "
-"letzten Änderungen zu öffnen"
+"drücken, um es zu fokussieren, dreimal, um seinen Verlauf der letzten "
+"Änderungen zu öffnen"
 
 #. Translators: overlay help line for Space and Enter.
 msgid ""
 "Space or Enter: speak information about the most recently added target; "
-"press twice to set focus to it, three times to open its history of recent "
-"changes"
+"press twice to focus it, three times to open its history of recent changes"
 msgstr ""
 "Leertaste oder Eingabetaste: Informationen über das zuletzt hinzugefügte "
-"Ziel ansagen; zweimal drücken, um den Fokus dorthin zu setzen, dreimal, um "
-"seinen Verlauf der letzten Änderungen zu öffnen"
+"Ziel ansagen; zweimal drücken, um es zu fokussieren, dreimal, um seinen "
+"Verlauf der letzten Änderungen zu öffnen"
 
 #. Translators: overlay help line for Control plus a number.
 msgid "Control plus a number: stop tracking the target in that slot"
 msgstr "Strg plus eine Zahl: Verfolgung des Ziels in diesem Fach stoppen"
 
 #. Translators: overlay help line for Alt plus a number.
-msgid "Alt plus a number: open the target menu for the target in that slot"
-msgstr "Alt plus eine Zahl: das Zielmenü für das Ziel in diesem Fach öffnen"
+msgid "Alt plus a number: open the menu for the target in that slot"
+msgstr "Alt plus eine Zahl: das Menü für das Ziel in diesem Fach öffnen"
 
 #. Translators: overlay help line for Backspace.
 msgid "Backspace: stop tracking the most recently added target"
