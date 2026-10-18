@@ -344,6 +344,9 @@ class TrackedTarget:
 			if self._objects[0] is not found:
 				return False
 			self._objects = (None, {})
+			self.seenContent = OrderedDict()
+			self.seenChars = 0
+			self.prevTexts = frozenset()
 			return True
 
 	@property

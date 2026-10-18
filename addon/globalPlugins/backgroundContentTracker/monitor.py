@@ -1026,14 +1026,13 @@ class Monitor:
 				target.seenChars -= len(gone)
 				del cache[gone]
 		for text, seen in counts.items():
-			known = cache.get(text)
+			# Re-inserted so the cache keeps this sweep's string, the one prevTexts holds.
+			known = cache.pop(text, None)
 			if known is None:
-				cache[text] = seen
 				target.seenChars += len(text)
-				continue
-			if seen > known or trustAbsence:
-				cache[text] = seen
-			cache.move_to_end(text)
+			elif not trustAbsence:
+				seen = max(seen, known)
+			cache[text] = seen
 		while cache and (len(cache) > MAX_CACHE_ENTRIES or target.seenChars > MAX_CACHE_CHARS):
 			evicted, _count = cache.popitem(last=False)
 			target.seenChars -= len(evicted)
